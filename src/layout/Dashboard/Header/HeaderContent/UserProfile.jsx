@@ -29,7 +29,7 @@ export default function HeaderUserProfile() {
     try {
       await signOut();
       router.push('/login');
-    } catch (error) {
+    } catch {
       router.push('/login');
     }
   };

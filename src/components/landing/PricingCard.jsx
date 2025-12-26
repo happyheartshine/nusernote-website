@@ -1,5 +1,3 @@
-import Link from 'next/link';
-
 export default function PricingCard({ plan }) {
   const { name, price, unit, description, features, cta, highlighted } = plan;
 

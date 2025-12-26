@@ -96,7 +96,10 @@ export default function RegisterPage() {
   // Handle field change
   const handleChange = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
-
+    // Clear error when user starts typing
+    if (errors[field]) {
+      setErrors((prev) => ({ ...prev, [field]: '' }));
+    }
   };
 
   // Handle field blur
@@ -118,14 +121,14 @@ export default function RegisterPage() {
 
     setIsLoading(true);
     try {
-      const { error } = await signUp(formData.email, formData.password);
+      const { data, error } = await signUp(formData.email, formData.password);
 
       if (error) {
         console.error('Registration error:', error);
-        
+
         // Provide user-friendly error messages
         let errorMessage = 'アカウント作成に失敗しました';
-        
+
         if (error.message.includes('already registered') || error.message.includes('User already registered')) {
           errorMessage = 'このメールアドレスは既に登録されています。ログインしてください。';
         } else if (error.message.includes('Invalid email')) {
@@ -135,7 +138,7 @@ export default function RegisterPage() {
         } else if (error.message) {
           errorMessage = error.message;
         }
-        
+
         setErrors((prev) => ({ ...prev, email: errorMessage }));
         return;
       }

@@ -99,7 +99,7 @@ export default function LoginPage() {
           router.push('/dashboard/default');
         }
       }
-    } catch (error) {
+    } catch {
       setErrors({ email: '', password: 'ログインに失敗しました' });
     } finally {
       setIsLoading(false);
@@ -110,7 +110,7 @@ export default function LoginPage() {
   const handleGoogleSignIn = async () => {
     setIsGoogleLoading(true);
     try {
-      const { data, error } = await signInWithGoogle();
+      const { error } = await signInWithGoogle();
 
       if (error) {
         console.error('Google sign-in error:', error);
