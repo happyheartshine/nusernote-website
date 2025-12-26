@@ -12,10 +12,6 @@ export default function AdminApprovalsPage() {
   const [processingId, setProcessingId] = useState(null);
   const [toast, setToast] = useState(null);
 
-  useEffect(() => {
-    fetchPendingUsers();
-  }, []);
-
   const fetchPendingUsers = async () => {
     setLoading(true);
     try {
@@ -23,12 +19,17 @@ export default function AdminApprovalsPage() {
 
       if (error) throw error;
       setPendingUsers(data || []);
-    } catch (error) {
+    } catch (err) {
+      console.error('Fetch error:', err);
       showToast('エラーが発生しました', 'error');
     } finally {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchPendingUsers();
+  }, []);
 
   const showToast = (message, type = 'success') => {
     setToast({ message, type });
@@ -39,7 +40,7 @@ export default function AdminApprovalsPage() {
     setProcessingId(userId);
     try {
       // Direct database update (temporary workaround until Edge Function is deployed)
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('profiles')
         .update({ status: 'approved', updated_at: new Date().toISOString() })
         .eq('id', userId)
@@ -64,7 +65,7 @@ export default function AdminApprovalsPage() {
     setProcessingId(userId);
     try {
       // Direct database update (temporary workaround until Edge Function is deployed)
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('profiles')
         .update({ status: 'rejected', updated_at: new Date().toISOString() })
         .eq('id', userId)
