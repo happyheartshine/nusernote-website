@@ -1,3 +1,13 @@
+// Deno global type declaration for Supabase Edge Functions
+declare const Deno: {
+  env: {
+    get(key: string): string | undefined;
+  };
+};
+
+// @deno-types="https://esm.sh/@supabase/supabase-js@2.39.3"
+// Deno-style ESM import - valid in Supabase Edge Functions runtime
+// @ts-ignore - TypeScript doesn't recognize Deno URL imports, but this is valid Deno code
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 
 /**
