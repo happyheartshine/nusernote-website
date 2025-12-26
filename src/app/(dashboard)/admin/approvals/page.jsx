@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import AdminGuard from '@/components/auth/AdminGuard';
 import { supabase } from '@/lib/supabase';
@@ -12,7 +12,7 @@ export default function AdminApprovalsPage() {
   const [processingId, setProcessingId] = useState(null);
   const [toast, setToast] = useState(null);
 
-  const fetchPendingUsers = async () => {
+  const fetchPendingUsers = useCallback(async () => {
     setLoading(true);
     try {
       const { data, error } = await supabase.from('profiles').select('*').eq('status', 'pending').order('created_at', { ascending: false });
@@ -25,11 +25,11 @@ export default function AdminApprovalsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchPendingUsers();
-  }, []);
+  }, [fetchPendingUsers]);
 
   const showToast = (message, type = 'success') => {
     setToast({ message, type });

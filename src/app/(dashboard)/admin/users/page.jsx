@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import AdminGuard from '@/components/auth/AdminGuard';
 import { supabase } from '@/lib/supabase';
@@ -16,15 +16,7 @@ export default function AdminUsersPage() {
   const [processingId, setProcessingId] = useState(null);
   const [toast, setToast] = useState(null);
 
-  useEffect(() => {
-    fetchUsers();
-  }, []);
-
-  useEffect(() => {
-    filterUsers();
-  }, [users, statusFilter, roleFilter, searchQuery]);
-
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
     setLoading(true);
     try {
       const { data, error } = await supabase.from('profiles').select('*').order('created_at', { ascending: false });
@@ -32,13 +24,14 @@ export default function AdminUsersPage() {
       if (error) throw error;
       setUsers(data || []);
     } catch (error) {
+      console.error('Fetch users error:', error);
       showToast('ユーザーの取得に失敗しました', 'error');
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const filterUsers = () => {
+  const filterUsers = useCallback(() => {
     let filtered = [...users];
 
     if (statusFilter !== 'all') {
@@ -57,7 +50,17 @@ export default function AdminUsersPage() {
     }
 
     setFilteredUsers(filtered);
-  };
+  }, [users, statusFilter, roleFilter, searchQuery]);
+
+  useEffect(() => {
+    fetchUsers();
+  }, [fetchUsers]);
+
+  useEffect(() => {
+    filterUsers();
+  }, [filterUsers]);
+
+  
 
   const showToast = (message, type = 'success') => {
     setToast({ message, type });
@@ -68,7 +71,7 @@ export default function AdminUsersPage() {
     setProcessingId(userId);
     try {
       // Direct database update (temporary workaround until Edge Function is deployed)
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('profiles')
         .update({ status: newStatus, updated_at: new Date().toISOString() })
         .eq('id', userId)
