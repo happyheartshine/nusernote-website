@@ -96,10 +96,7 @@ export default function RegisterPage() {
   // Handle field change
   const handleChange = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
-    // Clear error when user starts typing
-    if (errors[field]) {
-      setErrors((prev) => ({ ...prev, [field]: '' }));
-    }
+
   };
 
   // Handle field blur
@@ -121,7 +118,7 @@ export default function RegisterPage() {
 
     setIsLoading(true);
     try {
-      const { data, error } = await signUp(formData.email, formData.password);
+      const { error } = await signUp(formData.email, formData.password);
 
       if (error) {
         console.error('Registration error:', error);

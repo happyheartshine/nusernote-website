@@ -30,8 +30,8 @@ export default function LoginPage() {
   const [touched, setTouched] = useState({ email: false, password: false });
 
   // Basic email validation
-  const isValidEmail = (email) => {
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  const isValidEmail = (emailToValidate) => {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailToValidate);
   };
 
   // Validation
@@ -129,7 +129,7 @@ export default function LoginPage() {
   const handleMicrosoftSignIn = async () => {
     setIsMicrosoftLoading(true);
     try {
-      const { data, error } = await signInWithAzure();
+      const { error } = await signInWithAzure();
 
       if (error) {
         console.error('Microsoft sign-in error:', error);
