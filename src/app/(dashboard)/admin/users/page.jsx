@@ -101,7 +101,8 @@ export default function AdminUsersPage() {
 
       showToast('役割を更新しました', 'success');
       fetchUsers();
-    } catch (error) {
+    } catch (err) {
+      console.error('Role update error:', err);
       showToast('更新に失敗しました', 'error');
     } finally {
       setProcessingId(null);
