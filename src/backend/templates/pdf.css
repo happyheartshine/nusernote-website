@@ -1,0 +1,260 @@
+/**
+ * PDF Styles for Japanese Medical Documents - 精神科訪問看護記録書Ⅱ
+ * 
+ * This CSS file is specifically designed for WeasyPrint PDF generation
+ * with proper Japanese font embedding and exact form layout matching.
+ * 
+ * IMPORTANT: Font path is dynamically injected by Python code.
+ * The @font-face rule below uses a placeholder that will be replaced
+ * with the actual absolute font path at runtime.
+ */
+
+/* ============================================
+   FONT EMBEDDING - CRITICAL FOR JAPANESE TEXT
+   ============================================ */
+
+/**
+ * IPAexGothic Font - Primary Japanese Font
+ * 
+ * Font path will be dynamically injected by Python code.
+ * This ensures proper font embedding regardless of OS (Windows/Linux/Mac).
+ */
+@font-face {
+    font-family: 'IPAexGothic';
+    src: url('file:///app/fonts/IPAexGothic.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
+
+/* ============================================
+   PAGE SETUP - A4 SIZE
+   ============================================ */
+
+@page {
+    size: A4;
+    margin: 15mm 20mm; /* Top/Bottom: 15mm, Left/Right: 20mm */
+}
+
+/* ============================================
+   BASE STYLES
+   ============================================ */
+
+body {
+    font-family: 'IPAexGothic', 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', 'Meiryo', 'MS Gothic', sans-serif;
+    font-size: 10pt;
+    line-height: 1.5;
+    color: #000;
+    margin: 0;
+    padding: 0;
+}
+
+/* ============================================
+   TITLE SECTION
+   ============================================ */
+
+.title-section {
+    text-align: center;
+    margin-bottom: 12mm;
+    padding-bottom: 3mm;
+    border-bottom: 2pt solid #000;
+}
+
+.title-section h1 {
+    font-size: 16pt;
+    font-weight: bold;
+    margin: 0;
+    padding: 0;
+    letter-spacing: 0.5pt;
+}
+
+/* ============================================
+   HEADER TABLE - Basic Information
+   ============================================ */
+
+.header-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 8mm;
+    border: 1.5pt solid #000;
+}
+
+.header-table tr {
+    border-bottom: 1pt solid #000;
+}
+
+.header-table tr:last-child {
+    border-bottom: none;
+}
+
+.header-table td {
+    padding: 4pt 6pt;
+    vertical-align: middle;
+    border-right: 1pt solid #000;
+}
+
+.header-table td:last-child {
+    border-right: none;
+}
+
+.header-label {
+    width: 20%;
+    font-weight: bold;
+    background-color: #f5f5f5;
+    text-align: center;
+}
+
+.header-value {
+    width: 30%;
+    text-align: left;
+    padding-left: 8pt;
+}
+
+.date-field,
+.time-field {
+    display: inline-block;
+    min-width: 20pt;
+    text-align: center;
+}
+
+.time-separator {
+    margin: 0 4pt;
+}
+
+/* ============================================
+   FORM SECTIONS - Main Body
+   ============================================ */
+
+.form-section {
+    border: 1.5pt solid #000;
+    margin-bottom: 6mm;
+    page-break-inside: avoid;
+    min-height: 25mm;
+}
+
+.section-header {
+    border-bottom: 1pt solid #000;
+    padding: 4pt 6pt;
+    display: flex;
+    align-items: center;
+    background-color: #f5f5f5;
+}
+
+.section-number {
+    font-weight: bold;
+    font-size: 11pt;
+    margin-right: 8pt;
+    min-width: 12pt;
+    text-align: center;
+}
+
+.section-title {
+    font-weight: bold;
+    font-size: 11pt;
+    flex: 1;
+}
+
+.section-content {
+    padding: 6pt 8pt;
+    min-height: 20mm;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    line-height: 1.6;
+}
+
+/* ============================================
+   REMARKS SECTION (with GAF)
+   ============================================ */
+
+.remarks-section .section-header {
+    position: relative;
+}
+
+.gaf-box {
+    position: absolute;
+    right: 6pt;
+    top: 50%;
+    transform: translateY(-50%);
+    border: 1pt solid #000;
+    padding: 2pt 4pt;
+    background-color: #fff;
+    display: flex;
+    align-items: center;
+    gap: 4pt;
+}
+
+.gaf-label {
+    font-weight: bold;
+    font-size: 9pt;
+}
+
+.gaf-value {
+    font-size: 10pt;
+    min-width: 20pt;
+    text-align: center;
+    border: 0.5pt solid #ccc;
+    padding: 1pt 2pt;
+}
+
+/* ============================================
+   FOOTER TABLE - Next Visit Information
+   ============================================ */
+
+.footer-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 8mm;
+    border: 1.5pt solid #000;
+}
+
+.footer-table td {
+    padding: 4pt 6pt;
+    vertical-align: middle;
+    border-right: 1pt solid #000;
+}
+
+.footer-table td:last-child {
+    border-right: none;
+}
+
+.footer-label {
+    width: 20%;
+    font-weight: bold;
+    background-color: #f5f5f5;
+    text-align: center;
+}
+
+.footer-value {
+    width: 30%;
+    text-align: left;
+    padding-left: 8pt;
+}
+
+/* ============================================
+   PRINT-SPECIFIC STYLES
+   ============================================ */
+
+@media print {
+    body {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+    
+    .form-section {
+        page-break-inside: avoid;
+    }
+    
+    .header-table,
+    .footer-table {
+        page-break-inside: avoid;
+    }
+}
+
+/* ============================================
+   UTILITY CLASSES
+   ============================================ */
+
+/* Ensure proper spacing for empty fields */
+.date-field:empty::before,
+.time-field:empty::before {
+    content: '　';
+}

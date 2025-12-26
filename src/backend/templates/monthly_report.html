@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>月次レポート</title>
+    <!-- 
+        NOTE: External CSS (pdf.css) is loaded by WeasyPrint via Python code.
+        This ensures proper @font-face loading with absolute paths.
+        Do NOT embed styles here - keep them in pdf.css for font embedding to work.
+    -->
+    <style>
+        /* Monthly report specific styles (not in main pdf.css) */
+        .header-info {
+            font-size: 11pt;
+            margin-top: 10px;
+        }
+        
+        .section {
+            margin-bottom: 20px;
+            border: 1px solid #000;
+            padding: 12px;
+        }
+        
+        .section-content {
+            font-size: 10pt;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            min-height: 60px;
+            padding: 8px;
+            background-color: #f9f9f9;
+        }
+        
+        .info-row {
+            display: table;
+            width: 100%;
+            margin-bottom: 10px;
+        }
+        
+        .info-label {
+            display: table-cell;
+            width: 30%;
+            font-weight: bold;
+            vertical-align: top;
+        }
+        
+        .info-value {
+            display: table-cell;
+            width: 70%;
+            vertical-align: top;
+        }
+        
+        .summary-grid {
+            display: table;
+            width: 100%;
+            margin-top: 10px;
+        }
+        
+        .summary-item {
+            display: table-row;
+        }
+        
+        .summary-label {
+            display: table-cell;
+            width: 35%;
+            font-weight: bold;
+            padding: 5px;
+            vertical-align: top;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        .summary-content {
+            display: table-cell;
+            width: 65%;
+            padding: 5px;
+            vertical-align: top;
+            border-bottom: 1px solid #ddd;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        
+        .section {
+            page-break-inside: avoid;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>月次レポート</h1>
+        <div class="header-info">
+            <div class="info-row">
+                <div class="info-label">利用者名:</div>
+                <div class="info-value">{{ patient_name }}</div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">報告月:</div>
+                <div class="info-value">{{ report_month }}</div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">訪問回数:</div>
+                <div class="info-value">{{ num_visits }}回</div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- AI生成サマリー -->
+    <div class="section">
+        <div class="section-title">AI生成サマリー</div>
+        <div class="summary-grid">
+            <div class="summary-item">
+                <div class="summary-label">症状推移</div>
+                <div class="summary-content">{{ symptom_progression if symptom_progression else '（記録なし）' }}</div>
+            </div>
+            <div class="summary-item">
+                <div class="summary-label">睡眠・生活リズムの変化</div>
+                <div class="summary-content">{{ sleep_life_rhythm if sleep_life_rhythm else '（記録なし）' }}</div>
+            </div>
+            <div class="summary-item">
+                <div class="summary-label">不安・陽性症状・陰性症状のトレンド</div>
+                <div class="summary-content">{{ anxiety_positive_negative if anxiety_positive_negative else '（記録なし）' }}</div>
+            </div>
+            <div class="summary-item">
+                <div class="summary-label">服薬の安定性</div>
+                <div class="summary-content">{{ medication_stability if medication_stability else '（記録なし）' }}</div>
+            </div>
+            <div class="summary-item">
+                <div class="summary-label">家族・環境変化</div>
+                <div class="summary-content">{{ family_environment if family_environment else '（記録なし）' }}</div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 総合評価 -->
+    <div class="section">
+        <div class="section-title">総合評価</div>
+        <div class="section-content">{{ overall_assessment if overall_assessment else '（記録なし）' }}</div>
+    </div>
+    
+    <!-- 次月の方針 -->
+    <div class="section">
+        <div class="section-title">次月の方針</div>
+        <div class="section-content">{{ next_month_plan if next_month_plan else '（記録なし）' }}</div>
+    </div>
+    
+    <div class="footer">
+        <p>作成日時: {{ created_at }}</p>
+    </div>
+</body>
+</html>
+

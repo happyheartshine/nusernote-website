@@ -1,0 +1,81 @@
+╔═══════════════════════════════════════════════════════════════════════════╗
+║                       🚨 URGENT SIGNUP ERROR FIX 🚨                       ║
+╠═══════════════════════════════════════════════════════════════════════════╣
+║                                                                           ║
+║  ERROR: "Database error saving new user" (HTTP 500)                      ║
+║  CAUSE: RLS INSERT policy blocking trigger from creating profiles        ║
+║                                                                           ║
+╠═══════════════════════════════════════════════════════════════════════════╣
+║                           QUICKEST FIX (1 MINUTE)                         ║
+╠═══════════════════════════════════════════════════════════════════════════╣
+║                                                                           ║
+║  1. Go to: https://app.supabase.com/project/skqlxkmramgzdqjjqrui        ║
+║  2. Click: SQL Editor (left sidebar)                                     ║
+║  3. Click: New Query                                                     ║
+║  4. Paste this SQL and run:                                              ║
+║                                                                           ║
+╚═══════════════════════════════════════════════════════════════════════════╝
+
+DROP POLICY IF EXISTS "Only system can insert profiles" ON public.profiles;
+
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS TRIGGER SECURITY DEFINER SET search_path = public
+LANGUAGE plpgsql AS $$
+BEGIN
+  INSERT INTO public.profiles (id, email, role, status)
+  VALUES (NEW.id, NEW.email, 'nurse', 'pending');
+  RETURN NEW;
+EXCEPTION WHEN unique_violation THEN RETURN NEW;
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.handle_new_user() 
+TO authenticated, service_role;
+
+╔═══════════════════════════════════════════════════════════════════════════╗
+║                          ✅ VERIFY IT WORKED                              ║
+╠═══════════════════════════════════════════════════════════════════════════╣
+║                                                                           ║
+║  • Try creating a new account on your app                                ║
+║  • Should redirect to "pending approval" page (not error)                ║
+║  • Check Supabase → Authentication → Users (new user should appear)      ║
+║                                                                           ║
+╠═══════════════════════════════════════════════════════════════════════════╣
+║                         📚 OTHER OPTIONS                                  ║
+╠═══════════════════════════════════════════════════════════════════════════╣
+║                                                                           ║
+║  OPTION A - With Supabase CLI:                                           ║
+║  $ supabase login                                                        ║
+║  $ supabase link --project-ref skqlxkmramgzdqjjqrui                      ║
+║  $ supabase db push                                                      ║
+║                                                                           ║
+║  OPTION B - Automated Script (Windows):                                  ║
+║  PS> cd supabase                                                         ║
+║  PS> .\apply-hotfix.ps1                                                  ║
+║                                                                           ║
+║  OPTION C - Automated Script (Linux/Mac):                                ║
+║  $ cd supabase                                                           ║
+║  $ chmod +x apply-hotfix.sh                                              ║
+║  $ ./apply-hotfix.sh                                                     ║
+║                                                                           ║
+╠═══════════════════════════════════════════════════════════════════════════╣
+║                       📖 DETAILED DOCUMENTATION                           ║
+╠═══════════════════════════════════════════════════════════════════════════╣
+║                                                                           ║
+║  • Full explanation: supabase/HOTFIX_SIGNUP_ERROR.md                     ║
+║  • Complete summary: SIGNUP_FIX_SUMMARY.md                               ║
+║  • Migration file: supabase/migrations/20231225000007_...                ║
+║                                                                           ║
+╠═══════════════════════════════════════════════════════════════════════════╣
+║                          🔧 WHAT THIS FIXES                               ║
+╠═══════════════════════════════════════════════════════════════════════════╣
+║                                                                           ║
+║  1. Removes blocking INSERT policy that prevented trigger from working   ║
+║  2. Updates trigger function to properly bypass RLS                      ║
+║  3. Adds proper security settings and grants                             ║
+║  4. Maintains all security - users still can't insert directly           ║
+║                                                                           ║
+╠═══════════════════════════════════════════════════════════════════════════╣
+║                       ⏱️  ESTIMATED TIME: 1-2 MINUTES                     ║
+╚═══════════════════════════════════════════════════════════════════════════╝
+

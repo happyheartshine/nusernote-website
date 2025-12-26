@@ -1,0 +1,4 @@
+# This file keeps the fonts directory in git
+# The actual font files are ignored (see .gitignore)
+# Users must download IPAexGothic.ttf separately
+

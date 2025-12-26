@@ -1,0 +1,46 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+
+# Virtual Environment
+venv/
+env/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Environment Variables
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+
+# Fonts - DO NOT COMMIT (large files, license requirements)
+fonts/*.ttf
+fonts/*.otf
+fonts/*.woff
+fonts/*.woff2
+
+# BUT keep the documentation and scripts
+!fonts/README.md
+!fonts/FONT_INSTALLATION.md
+!fonts/setup_fonts.sh
+!fonts/setup_fonts.ps1
+!fonts/.gitkeep
+
+# OS
+.DS_Store
+Thumbs.db
+

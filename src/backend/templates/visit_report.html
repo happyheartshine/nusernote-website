@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>精神科訪問看護記録書Ⅱ</title>
+    <!-- 
+        NOTE: External CSS (pdf.css) is loaded by WeasyPrint via Python code.
+        This ensures proper @font-face loading with absolute paths.
+        Do NOT embed styles here - keep them in pdf.css for font embedding to work.
+    -->
+</head>
+<body>
+    <!-- TITLE: 精神科訪問看護記録書Ⅱ -->
+    <div class="title-section">
+        <h1>精神科訪問看護記録書Ⅱ</h1>
+    </div>
+    
+    <!-- HEADER TABLE: Basic Information -->
+    <table class="header-table">
+        <tr>
+            <td class="header-label">利用者氏名</td>
+            <td class="header-value">{{ patient_name }} 様</td>
+            <td class="header-label">看護師等氏名</td>
+            <td class="header-value">{{ nurse_names }}</td>
+        </tr>
+        <tr>
+            <td class="header-label">訪問職種</td>
+            <td class="header-value">{{ visit_type }}</td>
+            <td class="header-label">訪問年月日</td>
+            <td class="header-value">
+                <span class="date-field">{{ visit_year }} 年</span>
+                <span class="date-field">{{ visit_month }} 月</span>
+                <span class="date-field">{{ visit_day }} 日</span>
+            </td>
+        </tr>
+        <tr>
+            <td class="header-label">訪問時間</td>
+            <td class="header-value">
+                <span class="time-field">{{ start_hour }} 時</span>
+                <span class="time-field">{{ start_minute }} 分</span>
+                <span class="time-separator">～</span>
+                <span class="time-field">{{ end_hour }} 時</span>
+                <span class="time-field">{{ end_minute }} 分</span>
+            </td>
+            <td class="header-label">訪問先</td>
+            <td class="header-value">{{ visit_location if visit_location else '　' }}</td>
+        </tr>
+    </table>
+    
+    <!-- MAIN BODY SECTIONS -->
+    
+    <!-- Section 1: 食生活、清潔、排泄、睡眠、生活リズム、部屋の整頓等 -->
+    <div class="form-section">
+        <div class="section-header">
+            <div class="section-number">1</div>
+            <div class="section-title">食生活、清潔、排泄、睡眠、生活リズム、部屋の整頓等</div>
+        </div>
+        <div class="section-content">
+            {{ daily_living if daily_living else '　' }}
+        </div>
+    </div>
+    
+    <!-- Section 2: 精神状態 -->
+    <div class="form-section">
+        <div class="section-header">
+            <div class="section-number">2</div>
+            <div class="section-title">精神状態</div>
+        </div>
+        <div class="section-content">
+            {{ mental_state if mental_state else '　' }}
+        </div>
+    </div>
+    
+    <!-- Section 3: 服薬等の状況 -->
+    <div class="form-section">
+        <div class="section-header">
+            <div class="section-number">3</div>
+            <div class="section-title">服薬等の状況</div>
+        </div>
+        <div class="section-content">
+            {{ medication_status if medication_status else '　' }}
+        </div>
+    </div>
+    
+    <!-- Section 4: 作業、対人関係について -->
+    <div class="form-section">
+        <div class="section-header">
+            <div class="section-number">4</div>
+            <div class="section-title">作業、対人関係について</div>
+        </div>
+        <div class="section-content">
+            {{ work_interpersonal if work_interpersonal else '　' }}
+        </div>
+    </div>
+    
+    <!-- Section 5: 実施した看護内容 -->
+    <div class="form-section">
+        <div class="section-header">
+            <div class="section-number">5</div>
+            <div class="section-title">実施した看護内容</div>
+        </div>
+        <div class="section-content">
+            {{ nursing_interventions if nursing_interventions else '　' }}
+        </div>
+    </div>
+    
+    <!-- Section 6: 備考 (with GAF on the right) -->
+    <div class="form-section remarks-section">
+        <div class="section-header">
+            <div class="section-number">6</div>
+            <div class="section-title">備考</div>
+            <div class="gaf-box">
+                <div class="gaf-label">GAF</div>
+                <div class="gaf-value">{{ gaf_score if gaf_score else '　' }}</div>
+            </div>
+        </div>
+        <div class="section-content">
+            {{ remarks if remarks else '　' }}
+        </div>
+    </div>
+    
+    <!-- FOOTER: Next Visit Information -->
+    <table class="footer-table">
+        <tr>
+            <td class="footer-label">次回の訪問予定日</td>
+            <td class="footer-value">
+                <span class="date-field">{{ next_visit_year if next_visit_year else '　' }} 年</span>
+                <span class="date-field">{{ next_visit_month if next_visit_month else '　' }} 月</span>
+                <span class="date-field">{{ next_visit_day if next_visit_day else '　' }} 日</span>
+            </td>
+            <td class="footer-label">次回訪問時間</td>
+            <td class="footer-value">
+                <span class="time-field">{{ next_visit_start_hour if next_visit_start_hour else '　' }} 時</span>
+                <span class="time-field">{{ next_visit_start_minute if next_visit_start_minute else '　' }} 分</span>
+                <span class="time-separator">～</span>
+                <span class="time-field">{{ next_visit_end_hour if next_visit_end_hour else '　' }} 時</span>
+                <span class="time-field">{{ next_visit_end_minute if next_visit_end_minute else '　' }} 分</span>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>

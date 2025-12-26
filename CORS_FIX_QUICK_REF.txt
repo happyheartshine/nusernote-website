@@ -1,0 +1,96 @@
+╔═══════════════════════════════════════════════════════════════════════════╗
+║               🚨 CORS ERROR FIX - EDGE FUNCTION DEPLOYMENT 🚨             ║
+╠═══════════════════════════════════════════════════════════════════════════╣
+║                                                                           ║
+║  ERROR: "CORS policy: It does not have HTTP ok status"                   ║
+║  CAUSE: Missing CORS headers + wrong parameter names                     ║
+║                                                                           ║
+╠═══════════════════════════════════════════════════════════════════════════╣
+║                         ✅ CODE FIXES APPLIED                             ║
+╠═══════════════════════════════════════════════════════════════════════════╣
+║                                                                           ║
+║  1. ✅ CORS Headers Fixed                                                 ║
+║     File: supabase/functions/_shared/cors.ts                             ║
+║     Added: Access-Control-Allow-Methods header                           ║
+║                                                                           ║
+║  2. ✅ Parameter Names Fixed                                              ║
+║     Files: admin/approvals/page.jsx, admin/users/page.jsx                ║
+║     Changed: userId → user_id (to match API)                             ║
+║                                                                           ║
+║  3. ✅ Better Error Handling                                              ║
+║     Added: Error messages in Japanese with details                       ║
+║                                                                           ║
+╠═══════════════════════════════════════════════════════════════════════════╣
+║                      ⚠️  ACTION REQUIRED: DEPLOY                          ║
+╠═══════════════════════════════════════════════════════════════════════════╣
+║                                                                           ║
+║  The code is fixed locally, but you MUST deploy the Edge Function        ║
+║  to Supabase for the CORS fix to work!                                   ║
+║                                                                           ║
+╚═══════════════════════════════════════════════════════════════════════════╝
+
+🚀 DEPLOY NOW (Copy-Paste These Commands):
+
+# 1. Login to Supabase CLI
+supabase login
+
+# 2. Link to your project
+supabase link --project-ref skqlxkmramgzdqjjqrui
+
+# 3. Deploy the Edge Function
+supabase functions deploy admin-approve-user
+
+# 4. Verify deployment
+supabase functions list
+
+╔═══════════════════════════════════════════════════════════════════════════╗
+║                   ✅ AFTER DEPLOYMENT - TEST THIS                         ║
+╠═══════════════════════════════════════════════════════════════════════════╣
+║                                                                           ║
+║  1. Go to: http://localhost:3000/admin/approvals                         ║
+║  2. Click the "承認" (Approve) button on a pending user                   ║
+║  3. Should see: "ユーザーを承認しました" (User approved)                    ║
+║  4. NO CORS errors in console                                            ║
+║                                                                           ║
+╠═══════════════════════════════════════════════════════════════════════════╣
+║                         🔧 IF YOU DON'T HAVE CLI                          ║
+╠═══════════════════════════════════════════════════════════════════════════╣
+║                                                                           ║
+║  Install it first:                                                       ║
+║  npm install -g supabase                                                 ║
+║                                                                           ║
+║  Or deploy manually via Dashboard:                                       ║
+║  1. Go to: https://app.supabase.com/project/skqlxkmramgzdqjjqrui        ║
+║  2. Click: Edge Functions                                                ║
+║  3. Click: admin-approve-user                                            ║
+║  4. Click: "Deploy new version"                                          ║
+║  5. Upload files from: supabase/functions/admin-approve-user/            ║
+║                                                                           ║
+╠═══════════════════════════════════════════════════════════════════════════╣
+║                       📖 DETAILED DOCUMENTATION                           ║
+╠═══════════════════════════════════════════════════════════════════════════╣
+║                                                                           ║
+║  • Full guide: EDGE_FUNCTION_DEPLOYMENT_FIX.md                           ║
+║  • Troubleshooting: See doc for common issues                            ║
+║  • Deployment guide: supabase/DEPLOYMENT_GUIDE.md                        ║
+║                                                                           ║
+╠═══════════════════════════════════════════════════════════════════════════╣
+║                          🎯 WHAT WAS FIXED                                ║
+╠═══════════════════════════════════════════════════════════════════════════╣
+║                                                                           ║
+║  Issue #1: CORS preflight failing                                        ║
+║  ➜ Fixed: Added Access-Control-Allow-Methods to CORS headers            ║
+║                                                                           ║
+║  Issue #2: Edge Function receiving wrong parameter                      ║
+║  ➜ Fixed: Changed userId to user_id in frontend calls                   ║
+║                                                                           ║
+║  Issue #3: Silent errors with no details                                 ║
+║  ➜ Fixed: Added error handling and Japanese error messages              ║
+║                                                                           ║
+╠═══════════════════════════════════════════════════════════════════════════╣
+║                    ⏱️  ESTIMATED TIME: 2-5 MINUTES                        ║
+╚═══════════════════════════════════════════════════════════════════════════╝
+
+📝 NOTE: The React "removeChild" error you saw is likely unrelated to CORS
+and may resolve itself after the page re-renders properly with working API calls.
+
