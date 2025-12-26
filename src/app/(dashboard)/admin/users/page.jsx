@@ -60,8 +60,6 @@ export default function AdminUsersPage() {
     filterUsers();
   }, [filterUsers]);
 
-  
-
   const showToast = (message, type = 'success') => {
     setToast({ message, type });
     setTimeout(() => setToast(null), 3000);
