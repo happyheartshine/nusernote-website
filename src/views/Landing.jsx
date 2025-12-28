@@ -6,7 +6,6 @@ import Link from 'next/link';
 import { landingContent } from '@/data/landingContent';
 import LandingNavbar from '@/components/landing/LandingNavbar';
 import Section from '@/components/landing/Section';
-import FeatureCard from '@/components/landing/FeatureCard';
 import HorizontalFeatureScroll from '@/components/landing/HorizontalFeatureScroll';
 import PricingCard from '@/components/landing/PricingCard';
 import Counter from '@/components/landing/Counter';
@@ -74,7 +73,7 @@ export default function Landing() {
           <div className="grid items-center gap-12 lg:grid-cols-2">
             {/* Left: Content */}
             <div className="text-center lg:text-left">
-              <h1 className="mb-6 text-4xl  leading-tight font-bold text-white sm:text-5xl lg:text-6xl">{hero.headline}</h1>
+              <h1 className="mb-6 text-4xl leading-tight font-bold text-white sm:text-5xl lg:text-6xl">{hero.headline}</h1>
               <p className="mb-8 text-lg leading-relaxed text-blue-100 sm:text-xl">{hero.subhead}</p>
 
               {/* CTA Buttons */}

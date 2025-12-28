@@ -115,7 +115,7 @@ export const landingContent = {
       headline: 'すべての操作を記録\n監査対応とセキュリティを両立',
       href: '/dashboard/default',
       tag: 'セキュリティ'
-    },
+    }
 
   ],
 
