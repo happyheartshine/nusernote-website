@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import AdminGuard from '@/components/auth/AdminGuard';
+import ConfirmDialog from '@/components/ConfirmDialog';
 import { supabase } from '@/lib/supabase';
 
 export default function AdminUsersPage() {
@@ -15,6 +16,7 @@ export default function AdminUsersPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [processingId, setProcessingId] = useState(null);
   const [toast, setToast] = useState(null);
+  const [confirmDialog, setConfirmDialog] = useState(null);
 
   const fetchUsers = useCallback(async () => {
     setLoading(true);
@@ -88,23 +90,43 @@ export default function AdminUsersPage() {
     }
   };
 
-  const handleRoleChange = async (userId, newRole) => {
-    if (!confirm(`役割を「${newRole === 'admin' ? '管理者' : '看護師'}」に変更しますか？`)) return;
+  const handleRoleChange = (userId, newRole, currentRole) => {
+    // Prevent unnecessary changes
+    if (newRole === currentRole) return;
+    
+    // Prevent if already processing
+    if (processingId === userId) return;
 
-    setProcessingId(userId);
-    try {
-      const { error } = await supabase.from('profiles').update({ role: newRole }).eq('id', userId);
+    // Show confirmation dialog
+    setConfirmDialog({
+      isOpen: true,
+      title: '役割の変更',
+      message: `役割を「${newRole === 'admin' ? '管理者' : '看護師'}」に変更しますか？`,
+      onConfirm: async () => {
+        setConfirmDialog(null);
+        setProcessingId(userId);
+        try {
+          const { error } = await supabase.from('profiles').update({ role: newRole }).eq('id', userId);
 
-      if (error) throw error;
+          if (error) throw error;
 
-      showToast('役割を更新しました', 'success');
-      fetchUsers();
-    } catch (err) {
-      console.error('Role update error:', err);
-      showToast('更新に失敗しました', 'error');
-    } finally {
-      setProcessingId(null);
-    }
+          showToast('役割を更新しました', 'success');
+          fetchUsers();
+        } catch (err) {
+          console.error('Role update error:', err);
+          showToast('更新に失敗しました', 'error');
+          // Refetch to restore original value on error
+          fetchUsers();
+        } finally {
+          setProcessingId(null);
+        }
+      },
+      onCancel: () => {
+        setConfirmDialog(null);
+        // Force re-render to reset select value
+        fetchUsers();
+      }
+    });
   };
 
   const formatDate = (dateString) => {
@@ -131,6 +153,17 @@ export default function AdminUsersPage() {
 
   return (
     <AdminGuard>
+      {confirmDialog && (
+        <ConfirmDialog
+          isOpen={confirmDialog.isOpen}
+          title={confirmDialog.title}
+          message={confirmDialog.message}
+          onConfirm={confirmDialog.onConfirm}
+          onCancel={confirmDialog.onCancel}
+          confirmText="変更"
+          cancelText="キャンセル"
+        />
+      )}
       <div className="container mx-auto px-4 py-8">
         <div className="mb-6">
           <div className="mb-6 flex items-center justify-between">
@@ -144,10 +177,9 @@ export default function AdminUsersPage() {
           </div>
 
           {toast && (
-            <div
-              className={`mb-4 rounded-lg p-4 ${toast.type === 'success' ? 'border border-green-200 bg-green-50 text-green-800' : 'border border-red-200 bg-red-50 text-red-800'}`}
-            >
-              {toast.message}
+            <div className={`alert ${toast.type === 'success' ? 'alert-success' : 'alert-danger'}`} role="alert">
+              <i className={`ph ${toast.type === 'success' ? 'ph-check-circle' : 'ph-x-circle'}`}></i>
+              <div>{toast.message}</div>
             </div>
           )}
 
@@ -248,9 +280,16 @@ export default function AdminUsersPage() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <select
+                          key={`role-${user.id}-${user.role}`}
                           value={user.role}
-                          onChange={(e) => handleRoleChange(user.id, e.target.value)}
-                          disabled={processingId === user.id}
+                          onChange={(e) => {
+                            const newRole = e.target.value;
+                            // Only proceed if role actually changed and not currently processing
+                            if (newRole !== user.role && processingId !== user.id) {
+                              handleRoleChange(user.id, newRole, user.role);
+                            }
+                          }}
+                          disabled={processingId === user.id || confirmDialog?.isOpen}
                           className="rounded border px-2 py-1 text-sm disabled:opacity-50"
                         >
                           <option value="nurse">看護師</option>

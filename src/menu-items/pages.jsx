@@ -2,12 +2,12 @@
 
 const pages = {
   id: 'pages',
-  title: 'Pages',
+  title: 'ページ',
   type: 'group',
   children: [
     {
       id: 'login',
-      title: 'Login',
+      title: 'ログイン',
       type: 'item',
       icon: 'ph ph-lock-key',
       url: '/login',
@@ -15,7 +15,7 @@ const pages = {
     },
     {
       id: 'register',
-      title: 'Register',
+      title: '登録',
       type: 'item',
       icon: 'ph ph-user-circle-plus',
       url: '/register',

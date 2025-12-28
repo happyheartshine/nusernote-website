@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useEffect, useRef } from 'react';
+import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import Landing from '@/views/Landing';
 
@@ -10,13 +10,21 @@ import Landing from '@/views/Landing';
 export default function HomePage() {
   const { user, loading } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
+  const redirectInitiated = useRef(false);
 
   useEffect(() => {
+    // Prevent redirect loops
+    if (loading || redirectInitiated.current) {
+      return;
+    }
+
     // If user is authenticated, redirect to dashboard
-    if (!loading && user) {
+    if (user && pathname !== '/dashboard/default') {
+      redirectInitiated.current = true;
       router.push('/dashboard/default');
     }
-  }, [user, loading, router]);
+  }, [user, loading, pathname]);
 
   // Show loading state while checking authentication
   if (loading) {

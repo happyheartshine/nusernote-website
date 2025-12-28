@@ -8,7 +8,7 @@ import uiComponents from './ui-components';
 // ==============================|| MENU ITEMS ||============================== //
 
 const menuItems = {
-  items: [dashboard, admin, uiComponents, pages, other]
+  items: [dashboard, admin, pages]
 };
 
 export default menuItems;

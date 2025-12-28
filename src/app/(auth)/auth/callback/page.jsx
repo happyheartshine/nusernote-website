@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useEffect, useRef } from 'react';
+import { useRouter, usePathname } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 
 // Force dynamic rendering to prevent static generation
@@ -9,16 +9,26 @@ export const dynamic = 'force-dynamic';
 
 export default function AuthCallbackPage() {
   const router = useRouter();
+  const pathname = usePathname();
+  const redirectInitiated = useRef(false);
 
   useEffect(() => {
     const handleCallback = async () => {
+      // Prevent multiple redirects
+      if (redirectInitiated.current) {
+        return;
+      }
+
       try {
         const {
           data: { session }
         } = await supabase.auth.getSession();
 
         if (!session) {
-          router.push('/login');
+          if (pathname !== '/login') {
+            redirectInitiated.current = true;
+            router.push('/login');
+          }
           return;
         }
 
@@ -26,31 +36,55 @@ export default function AuthCallbackPage() {
           const { data: profile } = await supabase.from('profiles').select('*').eq('id', session.user.id).single();
 
           if (!profile) {
-            router.push('/dashboard/default');
-          } else if (profile.status === 'pending') {
-            router.push('/pending-approval');
-          } else if (profile.status === 'rejected') {
-            await supabase.auth.signOut();
-            router.push('/login?error=rejected');
-          } else if (profile.status === 'approved') {
-            if (profile.role === 'admin') {
-              router.push('/admin/approvals');
-            } else {
+            if (pathname !== '/dashboard/default') {
+              redirectInitiated.current = true;
               router.push('/dashboard/default');
             }
+          } else if (profile.status === 'pending') {
+            if (pathname !== '/pending-approval') {
+              redirectInitiated.current = true;
+              router.push('/pending-approval');
+            }
+          } else if (profile.status === 'rejected') {
+            await supabase.auth.signOut();
+            if (pathname !== '/login') {
+              redirectInitiated.current = true;
+              router.push('/login?error=rejected');
+            }
+          } else if (profile.status === 'approved') {
+            if (profile.role === 'admin') {
+              if (pathname !== '/admin/approvals') {
+                redirectInitiated.current = true;
+                router.push('/admin/approvals');
+              }
+            } else {
+              if (pathname !== '/dashboard/default') {
+                redirectInitiated.current = true;
+                router.push('/dashboard/default');
+              }
+            }
           } else {
-            router.push('/dashboard/default');
+            if (pathname !== '/dashboard/default') {
+              redirectInitiated.current = true;
+              router.push('/dashboard/default');
+            }
           }
         } else {
-          router.push('/login');
+          if (pathname !== '/login') {
+            redirectInitiated.current = true;
+            router.push('/login');
+          }
         }
       } catch {
-        router.push('/login');
+        if (pathname !== '/login') {
+          redirectInitiated.current = true;
+          router.push('/login');
+        }
       }
     };
 
     handleCallback();
-  }, [router]);
+  }, [pathname]);
 
   return (
     <div className="flex min-h-screen items-center justify-center">

@@ -1,19 +1,27 @@
 'use client';
 
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useEffect, useRef } from 'react';
+import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 
 export default function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
+  const redirectInitiated = useRef(false);
 
   useEffect(() => {
-    if (!loading && !user) {
+    // Prevent redirect loops
+    if (loading || redirectInitiated.current) {
+      return;
+    }
+
+    if (!user && pathname !== '/login') {
       // Redirect to login if not authenticated
+      redirectInitiated.current = true;
       router.push('/login');
     }
-  }, [user, loading, router]);
+  }, [user, loading, pathname]);
 
   // Show loading state while checking authentication
   if (loading) {

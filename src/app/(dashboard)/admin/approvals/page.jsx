@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import AdminGuard from '@/components/auth/AdminGuard';
+import ConfirmDialog from '@/components/ConfirmDialog';
 import { supabase } from '@/lib/supabase';
 
 export default function AdminApprovalsPage() {
@@ -11,6 +12,7 @@ export default function AdminApprovalsPage() {
   const [loading, setLoading] = useState(true);
   const [processingId, setProcessingId] = useState(null);
   const [toast, setToast] = useState(null);
+  const [confirmDialog, setConfirmDialog] = useState(null);
 
   const fetchPendingUsers = useCallback(async () => {
     setLoading(true);
@@ -59,29 +61,39 @@ export default function AdminApprovalsPage() {
     }
   };
 
-  const handleReject = async (userId) => {
-    if (!confirm('本当にこのユーザーを却下しますか？')) return;
+  const handleReject = (userId) => {
+    setConfirmDialog({
+      isOpen: true,
+      title: 'ユーザーの却下',
+      message: '本当にこのユーザーを却下しますか？',
+      onConfirm: async () => {
+        setConfirmDialog(null);
+        setProcessingId(userId);
+        try {
+          // Direct database update (temporary workaround until Edge Function is deployed)
+          const { error } = await supabase
+            .from('profiles')
+            .update({ status: 'rejected', updated_at: new Date().toISOString() })
+            .eq('id', userId)
+            .select()
+            .single();
 
-    setProcessingId(userId);
-    try {
-      // Direct database update (temporary workaround until Edge Function is deployed)
-      const { error } = await supabase
-        .from('profiles')
-        .update({ status: 'rejected', updated_at: new Date().toISOString() })
-        .eq('id', userId)
-        .select()
-        .single();
+          if (error) throw error;
 
-      if (error) throw error;
-
-      showToast('ユーザーを却下しました', 'success');
-      fetchPendingUsers();
-    } catch (error) {
-      console.error('Rejection error:', error);
-      showToast('却下に失敗しました: ' + (error.message || '不明なエラー'), 'error');
-    } finally {
-      setProcessingId(null);
-    }
+          showToast('ユーザーを却下しました', 'success');
+          fetchPendingUsers();
+        } catch (error) {
+          console.error('Rejection error:', error);
+          showToast('却下に失敗しました: ' + (error.message || '不明なエラー'), 'error');
+        } finally {
+          setProcessingId(null);
+        }
+      },
+      onCancel: () => {
+        setConfirmDialog(null);
+      },
+      type: 'danger'
+    });
   };
 
   const formatDate = (dateString) => {
@@ -96,6 +108,18 @@ export default function AdminApprovalsPage() {
 
   return (
     <AdminGuard>
+      {confirmDialog && (
+        <ConfirmDialog
+          isOpen={confirmDialog.isOpen}
+          title={confirmDialog.title}
+          message={confirmDialog.message}
+          onConfirm={confirmDialog.onConfirm}
+          onCancel={confirmDialog.onCancel}
+          confirmText="却下"
+          cancelText="キャンセル"
+          type={confirmDialog.type || 'warning'}
+        />
+      )}
       <div className="container mx-auto px-4 py-8">
         <div className="mb-6">
           <div className="flex items-center justify-between">
@@ -110,10 +134,9 @@ export default function AdminApprovalsPage() {
         </div>
 
         {toast && (
-          <div
-            className={`mb-4 rounded-lg p-4 ${toast.type === 'success' ? 'border border-green-200 bg-green-50 text-green-800' : 'border border-red-200 bg-red-50 text-red-800'}`}
-          >
-            {toast.message}
+          <div className={`alert ${toast.type === 'success' ? 'alert-success' : 'alert-danger'}`} role="alert">
+            <i className={`ph ${toast.type === 'success' ? 'ph-check-circle' : 'ph-x-circle'}`}></i>
+            <div>{toast.message}</div>
           </div>
         )}
 

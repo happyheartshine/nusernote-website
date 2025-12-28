@@ -1,31 +1,70 @@
 'use client';
 
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useEffect, useRef } from 'react';
+import { useRouter, usePathname } from 'next/navigation';
 import Image from 'next/image';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAuthProfile } from '@/hooks/useAuthProfile';
+import { supabase } from '@/lib/supabase';
 
 const logo = '/assets/images/logo-dark.svg';
 
 export default function PendingApprovalPage() {
   const router = useRouter();
+  const pathname = usePathname();
   const { signOut } = useAuth();
   const { session, profile, loading } = useAuthProfile();
+  const redirectInitiated = useRef(false);
 
   useEffect(() => {
-    if (!loading) {
-      if (!session) {
+    // Prevent redirect loops
+    if (loading || redirectInitiated.current) {
+      return;
+    }
+
+    if (!session) {
+      // Only redirect if not already on login page
+      if (pathname !== '/login') {
+        redirectInitiated.current = true;
         router.push('/login');
-      } else if (profile && profile.status === 'approved') {
+      }
+    } else if (profile && profile.status === 'approved') {
+      // Only redirect if not already on dashboard
+      if (pathname !== '/dashboard/default') {
+        redirectInitiated.current = true;
         router.push('/dashboard/default');
       }
     }
-  }, [session, profile, loading, router]);
+  }, [session, profile, loading, pathname]);
 
   const handleLogout = async () => {
-    await signOut();
-    router.push('/login');
+    try {
+      await signOut();
+      
+      // Wait for auth state to clear
+      let attempts = 0;
+      const maxAttempts = 10;
+      
+      while (attempts < maxAttempts) {
+        const { data: { session: currentSession } } = await supabase.auth.getSession();
+        if (!currentSession) {
+          break;
+        }
+        await new Promise(resolve => setTimeout(resolve, 100));
+        attempts++;
+      }
+
+      if (pathname !== '/login') {
+        router.push('/login');
+        window.location.href = '/login';
+      }
+    } catch (error) {
+      console.error('Logout error:', error);
+      if (pathname !== '/login') {
+        router.push('/login');
+        window.location.href = '/login';
+      }
+    }
   };
 
   if (loading) {
