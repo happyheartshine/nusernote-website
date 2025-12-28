@@ -74,33 +74,49 @@ export const landingContent = {
     {
       icon: 'ti ti-writing',
       title: '記録の自動要約',
-      description: '訪問内容を入力すると、AIが看護記録の下書きを自動生成します。'
+      description: '訪問内容を入力すると、AIが看護記録の下書きを自動生成します。',
+      image: '/assets/images/landing/service01.jpg',
+      headline: 'AIが訪問内容を自動で要約\n記録時間を最大60%削減',
+      href: '/dashboard/default',
+      tag: 'AI'
     },
     {
       icon: 'ti ti-file-text',
       title: 'SOAPテンプレート',
-      description: 'SOAP形式や問題志向記録など、施設に合わせたフォーマットで記録できます。'
+      description: 'SOAP形式や問題志向記録など、施設に合わせたフォーマットで記録できます。',
+      image: '/assets/images/landing/service02.jpg',
+      headline: '標準化された記録フォーマット\n施設に合わせてカスタマイズ可能',
+      href: '/dashboard/default',
+      tag: 'SOAP'
     },
     {
       icon: 'ti ti-microphone',
       title: '音声・テキスト入力',
-      description: '音声入力またはテキスト入力、どちらでも自由に記録を作成できます。'
+      description: '音声入力またはテキスト入力、どちらでも自由に記録を作成できます。',
+      image: '/assets/images/landing/service03.jpg',
+      headline: '訪問直後に音声で記録\n記憶が鮮明なうちに記録を残す',
+      href: '/dashboard/default',
+      tag: '音声入力'
     },
     {
       icon: 'ti ti-checklist',
       title: 'チェックリスト',
-      description: '必須項目の抜け漏れを検知し、記録品質を担保します。'
+      description: '必須項目の抜け漏れを検知し、記録品質を担保します。',
+      image: '/assets/images/landing/service04.jpg',
+      headline: '抜け漏れを自動検知\n記録品質を標準化',
+      href: '/dashboard/default',
+      tag: '品質管理'
     },
     {
       icon: 'ti ti-shield-lock',
       title: '監査ログ・権限管理',
-      description: '誰がいつ何を編集したか、すべての操作履歴を記録します。'
+      description: '誰がいつ何を編集したか、すべての操作履歴を記録します。',
+      image: '/assets/images/landing/service05.jpg',
+      headline: 'すべての操作を記録\n監査対応とセキュリティを両立',
+      href: '/dashboard/default',
+      tag: 'セキュリティ'
     },
-    {
-      icon: 'ti ti-arrow-right-circle',
-      title: 'データ連携',
-      description: 'CSVエクスポート対応。将来的にOdoo等との連携も予定しています。'
-    }
+
   ],
 
   // ===== HOW IT WORKS SECTION =====

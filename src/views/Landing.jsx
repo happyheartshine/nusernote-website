@@ -7,6 +7,7 @@ import { landingContent } from '@/data/landingContent';
 import LandingNavbar from '@/components/landing/LandingNavbar';
 import Section from '@/components/landing/Section';
 import FeatureCard from '@/components/landing/FeatureCard';
+import HorizontalFeatureScroll from '@/components/landing/HorizontalFeatureScroll';
 import PricingCard from '@/components/landing/PricingCard';
 import Counter from '@/components/landing/Counter';
 import FAQAccordion from '@/components/landing/FAQAccordion';
@@ -73,7 +74,7 @@ export default function Landing() {
           <div className="grid items-center gap-12 lg:grid-cols-2">
             {/* Left: Content */}
             <div className="text-center lg:text-left">
-              <h1 className="mb-6 text-4xl leading-tight font-bold text-white sm:text-5xl lg:text-6xl">{hero.headline}</h1>
+              <h1 className="mb-6 text-4xl  leading-tight font-bold text-white sm:text-5xl lg:text-6xl">{hero.headline}</h1>
               <p className="mb-8 text-lg leading-relaxed text-blue-100 sm:text-xl">{hero.subhead}</p>
 
               {/* CTA Buttons */}
@@ -174,11 +175,7 @@ export default function Landing() {
           <p className="mx-auto max-w-2xl text-slate-600">訪問看護の現場で本当に必要な機能を、使いやすく実装しました。</p>
         </div>
 
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {features.map((feature, index) => (
-            <FeatureCard key={index} icon={feature.icon} title={feature.title} description={feature.description} />
-          ))}
-        </div>
+        <HorizontalFeatureScroll features={features} />
       </Section>
 
       {/* ===== HOW IT WORKS SECTION ===== */}
