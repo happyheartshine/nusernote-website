@@ -14,6 +14,11 @@ export default function AuthCallbackPage() {
 
   useEffect(() => {
     const handleCallback = async () => {
+      // Only run on callback page
+      if (pathname !== '/auth/callback') {
+        return;
+      }
+
       // Prevent multiple redirects
       if (redirectInitiated.current) {
         return;
@@ -25,10 +30,8 @@ export default function AuthCallbackPage() {
         } = await supabase.auth.getSession();
 
         if (!session) {
-          if (pathname !== '/login') {
-            redirectInitiated.current = true;
-            router.push('/login');
-          }
+          redirectInitiated.current = true;
+          router.replace('/login');
           return;
         }
 
@@ -36,55 +39,39 @@ export default function AuthCallbackPage() {
           const { data: profile } = await supabase.from('profiles').select('*').eq('id', session.user.id).single();
 
           if (!profile) {
-            if (pathname !== '/dashboard/default') {
-              redirectInitiated.current = true;
-              router.push('/dashboard/default');
-            }
+            redirectInitiated.current = true;
+            router.replace('/dashboard/default');
           } else if (profile.status === 'pending') {
-            if (pathname !== '/pending-approval') {
-              redirectInitiated.current = true;
-              router.push('/pending-approval');
-            }
+            redirectInitiated.current = true;
+            router.replace('/pending-approval');
           } else if (profile.status === 'rejected') {
             await supabase.auth.signOut();
-            if (pathname !== '/login') {
-              redirectInitiated.current = true;
-              router.push('/login?error=rejected');
-            }
+            redirectInitiated.current = true;
+            router.replace('/login?error=rejected');
           } else if (profile.status === 'approved') {
             if (profile.role === 'admin') {
-              if (pathname !== '/admin/approvals') {
-                redirectInitiated.current = true;
-                router.push('/admin/approvals');
-              }
+              redirectInitiated.current = true;
+              router.replace('/admin/approvals');
             } else {
-              if (pathname !== '/dashboard/default') {
-                redirectInitiated.current = true;
-                router.push('/dashboard/default');
-              }
+              redirectInitiated.current = true;
+              router.replace('/dashboard/default');
             }
           } else {
-            if (pathname !== '/dashboard/default') {
-              redirectInitiated.current = true;
-              router.push('/dashboard/default');
-            }
+            redirectInitiated.current = true;
+            router.replace('/dashboard/default');
           }
         } else {
-          if (pathname !== '/login') {
-            redirectInitiated.current = true;
-            router.push('/login');
-          }
+          redirectInitiated.current = true;
+          router.replace('/login');
         }
       } catch {
-        if (pathname !== '/login') {
-          redirectInitiated.current = true;
-          router.push('/login');
-        }
+        redirectInitiated.current = true;
+        router.replace('/login');
       }
     };
 
     handleCallback();
-  }, [pathname]);
+  }, [pathname, router]);
 
   return (
     <div className="flex min-h-screen items-center justify-center">

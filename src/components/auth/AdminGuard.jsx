@@ -18,18 +18,21 @@ export default function AdminGuard({ children }) {
 
     if (!session) {
       // Only redirect if not already on login page
-      if (pathname !== '/login') {
+      if (pathname !== '/login' && !pathname.startsWith('/auth/callback')) {
         redirectInitiated.current = true;
-        router.push('/login');
+        router.replace('/login');
       }
     } else if (!profile || profile.status !== 'approved' || profile.role !== 'admin') {
       // Only redirect if not already on dashboard
-      if (pathname !== '/dashboard/default') {
+      if (pathname !== '/dashboard/default' && !pathname.startsWith('/admin')) {
         redirectInitiated.current = true;
-        router.push('/dashboard/default');
+        router.replace('/dashboard/default');
       }
+    } else {
+      // Reset flag when conditions are met (user is admin)
+      redirectInitiated.current = false;
     }
-  }, [session, profile, loading, pathname]);
+  }, [session, profile, loading, pathname, router]);
 
   if (loading) {
     return (

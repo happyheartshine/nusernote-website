@@ -24,18 +24,21 @@ export default function PendingApprovalPage() {
 
     if (!session) {
       // Only redirect if not already on login page
-      if (pathname !== '/login') {
+      if (pathname === '/pending-approval') {
         redirectInitiated.current = true;
-        router.push('/login');
+        router.replace('/login');
       }
     } else if (profile && profile.status === 'approved') {
       // Only redirect if not already on dashboard
-      if (pathname !== '/dashboard/default') {
+      if (pathname === '/pending-approval') {
         redirectInitiated.current = true;
-        router.push('/dashboard/default');
+        router.replace('/dashboard/default');
       }
+    } else {
+      // Reset flag when conditions are met
+      redirectInitiated.current = false;
     }
-  }, [session, profile, loading, pathname]);
+  }, [session, profile, loading, pathname, router]);
 
   const handleLogout = async () => {
     try {

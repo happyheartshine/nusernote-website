@@ -20,11 +20,14 @@ export default function LoginPage() {
     }
 
     // If user is already authenticated, redirect to dashboard
-    if (user && pathname !== '/dashboard/default') {
+    if (user && pathname === '/login') {
       redirectInitiated.current = true;
-      router.push('/dashboard/default');
+      router.replace('/dashboard/default');
+    } else if (!user) {
+      // Reset flag when user is not authenticated
+      redirectInitiated.current = false;
     }
-  }, [user, loading, pathname]);
+  }, [user, loading, pathname, router]);
 
   // Show loading state while checking authentication
   if (loading) {

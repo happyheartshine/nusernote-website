@@ -18,18 +18,21 @@ export default function AuthGuard({ children }) {
 
     if (!session) {
       // Only redirect if not already on login page
-      if (pathname !== '/login') {
+      if (pathname !== '/login' && !pathname.startsWith('/auth/callback')) {
         redirectInitiated.current = true;
-        router.push('/login');
+        router.replace('/login');
       }
     } else if (profile && profile.status !== 'approved') {
       // Only redirect if not already on pending-approval page
       if (pathname !== '/pending-approval') {
         redirectInitiated.current = true;
-        router.push('/pending-approval');
+        router.replace('/pending-approval');
       }
+    } else {
+      // Reset flag when conditions are met (user is approved)
+      redirectInitiated.current = false;
     }
-  }, [session, profile, loading, pathname]);
+  }, [session, profile, loading, pathname, router]);
 
   if (loading) {
     return (

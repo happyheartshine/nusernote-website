@@ -16,12 +16,15 @@ export default function ProtectedRoute({ children }) {
       return;
     }
 
-    if (!user && pathname !== '/login') {
+    if (!user && pathname !== '/login' && !pathname.startsWith('/auth/callback')) {
       // Redirect to login if not authenticated
       redirectInitiated.current = true;
-      router.push('/login');
+      router.replace('/login');
+    } else if (user) {
+      // Reset flag when user is authenticated
+      redirectInitiated.current = false;
     }
-  }, [user, loading, pathname]);
+  }, [user, loading, pathname, router]);
 
   // Show loading state while checking authentication
   if (loading) {
