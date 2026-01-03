@@ -107,7 +107,6 @@ async def generate_note(
         
         # Parse the output to structured format
         parsed_data = parse_soap_response(output)
-        print(parsed_data)
         # Save to database after successful generation
         try:
             save_soap_record(

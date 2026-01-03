@@ -11,6 +11,13 @@ const dashboard = {
       type: 'item',
       icon: 'ph ph-house-line',
       url: '/dashboard/default'
+    },
+    {
+      id: 'ai',
+      title: 'AI記録支援',
+      type: 'item',
+      icon: 'ph ph-robot',
+      url: '/ai'
     }
   ]
 };
