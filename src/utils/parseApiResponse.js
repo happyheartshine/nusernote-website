@@ -11,18 +11,18 @@ export function parseApiResponse(text) {
       症状推移: '',
       リスク評価: '',
       背景要因: '',
-      次回観察ポイント: '',
+      次回観察ポイント: ''
     },
     p: {
       本日実施した援助: '',
-      次回以降の方針: '',
-    },
+      次回以降の方針: ''
+    }
   };
 
   const initialPlan = {
     長期目標: '',
     短期目標: '',
-    看護援助の方針: '',
+    看護援助の方針: ''
   };
 
   if (!text) {
@@ -90,7 +90,9 @@ export function parseApiResponse(text) {
       initialSoap.a.背景要因 = backgroundMatch[1].trim();
     }
 
-    const observationMatch = aContent.match(/【次回観察ポイント】\s*[:：]?\s*\n+([\s\S]+?)(?=\n\s*###\s*P[（(]計画[）)]|\n\s*\*\*P[（(]計画[）)]\*\*|$)/);
+    const observationMatch = aContent.match(
+      /【次回観察ポイント】\s*[:：]?\s*\n+([\s\S]+?)(?=\n\s*###\s*P[（(]計画[）)]|\n\s*\*\*P[（(]計画[）)]\*\*|$)/
+    );
     if (observationMatch) {
       initialSoap.a.次回観察ポイント = observationMatch[1].trim();
     }
@@ -156,8 +158,12 @@ export function parseApiResponse(text) {
 
   const shortTermMatch =
     planContent.match(/【短期目標】\s*\n+([\s\S]+?)(?=\n\s*【看護援助の方針】|\n\s*\*\*看護援助の方針|\n\s*看護援助の方針\s*[:：]|$)/i) ||
-    planContent.match(/短期目標\s*[:：]\s*\n+([\s\S]+?)(?=\n\s*【看護援助の方針】|\n\s*\*\*看護援助の方針|\n\s*看護援助の方針\s*[:：]|$)/) ||
-    planContent.match(/\*\*短期目標\s*[:：]\*\*\s*\n+([\s\S]+?)(?=\n\s*【看護援助の方針】|\n\s*\*\*看護援助の方針|\n\s*看護援助の方針\s*[:：]|$)/i);
+    planContent.match(
+      /短期目標\s*[:：]\s*\n+([\s\S]+?)(?=\n\s*【看護援助の方針】|\n\s*\*\*看護援助の方針|\n\s*看護援助の方針\s*[:：]|$)/
+    ) ||
+    planContent.match(
+      /\*\*短期目標\s*[:：]\*\*\s*\n+([\s\S]+?)(?=\n\s*【看護援助の方針】|\n\s*\*\*看護援助の方針|\n\s*看護援助の方針\s*[:：]|$)/i
+    );
   if (shortTermMatch) {
     initialPlan.短期目標 = cleanContent(shortTermMatch[1]);
   }
@@ -172,5 +178,4 @@ export function parseApiResponse(text) {
 
   return { soap: initialSoap, plan: initialPlan };
 }
-
 

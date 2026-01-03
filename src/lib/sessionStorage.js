@@ -10,7 +10,7 @@ const SESSION_STORAGE_KEY = 'nursenote_session';
  */
 export const saveSessionToStorage = (session) => {
   if (typeof window === 'undefined') return;
-  
+
   try {
     if (session) {
       localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(session));
@@ -28,7 +28,7 @@ export const saveSessionToStorage = (session) => {
  */
 export const getSessionFromStorage = () => {
   if (typeof window === 'undefined') return null;
-  
+
   try {
     const sessionStr = localStorage.getItem(SESSION_STORAGE_KEY);
     if (sessionStr) {
@@ -46,11 +46,10 @@ export const getSessionFromStorage = () => {
  */
 export const removeSessionFromStorage = () => {
   if (typeof window === 'undefined') return;
-  
+
   try {
     localStorage.removeItem(SESSION_STORAGE_KEY);
   } catch (error) {
     console.error('Error removing session from localStorage:', error);
   }
 };
-
