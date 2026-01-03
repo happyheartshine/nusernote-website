@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import PropTypes from 'prop-types';
 import { supabase } from '@/lib/supabase';
+import { getSessionFromStorage } from '@/lib/sessionStorage';
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || '';
 
@@ -34,7 +35,7 @@ export default function PDFDownloadButton({ label, endpoint, queryParams, filena
     setError(null);
 
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      const session = getSessionFromStorage();
       if (!session) {
         setError('認証が必要です。再度ログインしてください。');
         setLoading(false);

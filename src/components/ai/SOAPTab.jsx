@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, useMemo } from 'react';
 import { parseApiResponse } from '@/utils/parseApiResponse';
 import { copyToClipboard } from '@/lib/copyToClipboard';
 import { supabase } from '@/lib/supabase';
+import { getSessionFromStorage } from '@/lib/sessionStorage';
 import VoiceInputButton from './VoiceInputButton';
 import SOAPOutput from './SOAPOutput';
 import { DIAGNOSIS_OPTIONS, NURSE_OPTIONS } from './types';
@@ -97,7 +98,7 @@ export default function SOAPTab() {
 
     const defaults = getDefaultValues();
 
-    const { data: { session } } = await supabase.auth.getSession();
+    const session = getSessionFromStorage();
     if (!session) {
       setError('認証が必要です。再度ログインしてください。');
       setLoading(false);

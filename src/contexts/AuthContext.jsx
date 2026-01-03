@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
+import { saveSessionToStorage, getSessionFromStorage, removeSessionFromStorage } from '@/lib/sessionStorage';
 
 const AuthContext = createContext({});
 
@@ -19,17 +20,27 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
+    // Get initial session from localStorage
+    const storedSession = getSessionFromStorage();
+    if (storedSession) {
+      setSession(storedSession);
+      setUser(storedSession?.user ?? null);
       setLoading(false);
-    });
+    } else {
+      setLoading(false);
+    }
 
-    // Listen for auth changes
+    // Listen for auth changes (for OAuth callbacks and real-time updates)
     const {
       data: { subscription }
     } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session) {
+        // Save session to localStorage when auth state changes
+        saveSessionToStorage(session);
+      } else {
+        // Remove session from localStorage when signed out
+        removeSessionFromStorage();
+      }
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
@@ -51,11 +62,21 @@ export const AuthProvider = ({ children }) => {
       email,
       password
     });
+    
+    // Save session to localStorage on successful sign in
+    if (data?.session) {
+      saveSessionToStorage(data.session);
+    }
+    
     return { data, error };
   };
 
   const signOut = async () => {
     const { error } = await supabase.auth.signOut();
+    
+    // Remove session from localStorage on sign out
+    removeSessionFromStorage();
+    
     return { error };
   };
 

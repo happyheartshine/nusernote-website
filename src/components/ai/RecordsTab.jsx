@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/lib/supabase';
+import { getSessionFromStorage } from '@/lib/sessionStorage';
 import RecordModal from './RecordModal';
 import MonthlyReportPDF from './MonthlyReportPDF';
 
@@ -46,7 +47,7 @@ export default function RecordsTab() {
       }
 
       try {
-        const { data: { session } } = await supabase.auth.getSession();
+        const session = getSessionFromStorage();
         if (!session) {
           setError('認証が必要です。再度ログインしてください。');
           setLoading(false);

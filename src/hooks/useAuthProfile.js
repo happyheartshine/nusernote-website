@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
+import { getSessionFromStorage, saveSessionToStorage, removeSessionFromStorage } from '@/lib/sessionStorage';
 
 export function useAuthProfile() {
   const [session, setSession] = useState(null);
@@ -31,9 +32,8 @@ export function useAuthProfile() {
 
     const initialize = async () => {
       try {
-        const {
-          data: { session: initialSession }
-        } = await supabase.auth.getSession();
+        // Get session from localStorage instead of Supabase
+        const initialSession = getSessionFromStorage();
 
         if (mounted) {
           setSession(initialSession);
@@ -59,6 +59,14 @@ export function useAuthProfile() {
       data: { subscription }
     } = supabase.auth.onAuthStateChange(async (_event, newSession) => {
       if (mounted) {
+        if (newSession) {
+          // Save session to localStorage when auth state changes
+          saveSessionToStorage(newSession);
+        } else {
+          // Remove session from localStorage when signed out
+          removeSessionFromStorage();
+        }
+        
         setSession(newSession);
         setUser(newSession?.user ?? null);
 

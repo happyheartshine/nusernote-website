@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { supabase } from '@/lib/supabase';
+import { getSessionFromStorage } from '@/lib/sessionStorage';
 import SOAPOutput from './SOAPOutput';
 import PDFDownloadButton from './PDFDownloadButton';
 import PDFPreviewButton from './PDFPreviewButton';
@@ -33,7 +34,7 @@ export default function RecordModal({ recordId, onClose }) {
       setError(null);
 
       try {
-        const { data: { session } } = await supabase.auth.getSession();
+        const session = getSessionFromStorage();
         if (!session) {
           setError('認証が必要です。再度ログインしてください。');
           setLoading(false);

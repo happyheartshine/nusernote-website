@@ -3,6 +3,7 @@
 import { useEffect, useRef } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
+import { saveSessionToStorage } from '@/lib/sessionStorage';
 
 // Force dynamic rendering to prevent static generation
 export const dynamic = 'force-dynamic';
@@ -34,6 +35,9 @@ export default function AuthCallbackPage() {
           router.replace('/login');
           return;
         }
+
+        // Save session to localStorage
+        saveSessionToStorage(session);
 
         if (session?.user) {
           const { data: profile } = await supabase.from('profiles').select('*').eq('id', session.user.id).single();
