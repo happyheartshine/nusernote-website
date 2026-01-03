@@ -22,7 +22,7 @@ export async function copyToClipboard(text) {
         document.execCommand('copy');
         textArea.remove();
         return true;
-      } catch (err) {
+      } catch {
         textArea.remove();
         return false;
       }
