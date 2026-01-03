@@ -3,7 +3,6 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
 import { parseApiResponse } from '@/utils/parseApiResponse';
 import { copyToClipboard } from '@/lib/copyToClipboard';
-import { supabase } from '@/lib/supabase';
 import { getSessionFromStorage } from '@/lib/sessionStorage';
 import VoiceInputButton from './VoiceInputButton';
 import SOAPOutput from './SOAPOutput';

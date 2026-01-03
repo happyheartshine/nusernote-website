@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
-import { supabase } from '@/lib/supabase';
 import { getSessionFromStorage } from '@/lib/sessionStorage';
 import SOAPOutput from './SOAPOutput';
 import PDFDownloadButton from './PDFDownloadButton';

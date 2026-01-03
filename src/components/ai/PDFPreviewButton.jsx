@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import PropTypes from 'prop-types';
-import { supabase } from '@/lib/supabase';
 import { getSessionFromStorage } from '@/lib/sessionStorage';
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || '';

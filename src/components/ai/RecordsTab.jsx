@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { supabase } from '@/lib/supabase';
 import { getSessionFromStorage } from '@/lib/sessionStorage';
 import RecordModal from './RecordModal';
 import MonthlyReportPDF from './MonthlyReportPDF';
