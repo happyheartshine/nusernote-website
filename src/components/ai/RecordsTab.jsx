@@ -82,10 +82,10 @@ export default function RecordsTab() {
     return Array.from(nurses).sort();
   }, [allRecords]);
 
-  const patientNames = useMemo(() => {
-    const uniqueNames = Array.from(new Set(records.map((r) => r.patient_name)));
-    return uniqueNames.sort();
-  }, [records]);
+  // const patientNames = useMemo(() => {
+  //   const uniqueNames = Array.from(new Set(records.map((r) => r.patient_name)));
+  //   return uniqueNames.sort();
+  // }, [records]);
 
   const fetchRecords = useCallback(async (filterParams = {}) => {
     if (!BACKEND_URL) {
