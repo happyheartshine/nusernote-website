@@ -115,13 +115,22 @@ def save_soap_record(
         raise DatabaseServiceError(f"Failed to save record: {str(e)}") from e
 
 
-def get_soap_records(user_id: str, limit: int = 100) -> list[Dict[str, Any]]:
+def get_soap_records(
+    user_id: str, 
+    limit: int = 100,
+    date_from: Optional[str] = None,
+    date_to: Optional[str] = None,
+    nurse_name: Optional[str] = None,
+) -> list[Dict[str, Any]]:
     """
     Fetch SOAP records for a specific user from Supabase database.
     
     Args:
         user_id: Authenticated user ID
         limit: Maximum number of records to return (default: 100)
+        date_from: Start date for filtering (YYYY-MM-DD format, inclusive)
+        date_to: End date for filtering (YYYY-MM-DD format, inclusive)
+        nurse_name: Nurse name for filtering (exact match in nurses array)
         
     Returns:
         List of dictionaries containing SOAP record data, ordered by visit_date DESC.
@@ -132,12 +141,26 @@ def get_soap_records(user_id: str, limit: int = 100) -> list[Dict[str, Any]]:
     try:
         supabase = get_supabase_client()
         
-        logger.info(f"Fetching SOAP records for user {user_id}")
+        logger.info(f"Fetching SOAP records for user {user_id} with filters: date_from={date_from}, date_to={date_to}, nurse_name={nurse_name}")
         
-        response = (
+        query = (
             supabase.table("soap_records")
             .select("*")
             .eq("user_id", user_id)
+        )
+        
+        # Apply date range filters
+        if date_from:
+            query = query.gte("visit_date", date_from)
+        if date_to:
+            query = query.lte("visit_date", date_to)
+        
+        # Apply nurse filter (check if nurse_name is in the nurses array)
+        if nurse_name:
+            query = query.contains("nurses", [nurse_name])
+        
+        response = (
+            query
             .order("visit_date", desc=True)
             .order("created_at", desc=True)
             .limit(limit)

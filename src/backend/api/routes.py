@@ -151,20 +151,33 @@ async def generate_note(
     },
     tags=["records"],
     summary="Get SOAP records",
-    description="Fetch all SOAP records for the authenticated user.",
+    description="Fetch all SOAP records for the authenticated user with optional filters.",
 )
 async def get_records(
     current_user: dict = Depends(get_current_user),
+    date_from: str | None = None,
+    date_to: str | None = None,
+    nurse_name: str | None = None,
 ) -> RecordsListResponse:
     """
-    Fetch SOAP records for the authenticated user.
+    Fetch SOAP records for the authenticated user with optional filtering.
     
     Requires authentication via Supabase JWT token.
+    
+    Optional query parameters:
+    - date_from: Filter records from this date (YYYY-MM-DD format, inclusive)
+    - date_to: Filter records to this date (YYYY-MM-DD format, inclusive)
+    - nurse_name: Filter records by assigned nurse (exact match)
     
     Returns list of SOAP records ordered by visit_date DESC.
     """
     try:
-        records_data = get_soap_records(user_id=current_user["user_id"])
+        records_data = get_soap_records(
+            user_id=current_user["user_id"],
+            date_from=date_from,
+            date_to=date_to,
+            nurse_name=nurse_name,
+        )
         
         # Convert database records to response format
         records = [

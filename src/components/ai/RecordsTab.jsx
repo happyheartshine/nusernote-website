@@ -1,14 +1,20 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { getSessionFromStorage } from '@/lib/sessionStorage';
 import RecordModal from './RecordModal';
-import MonthlyReportPDF from './MonthlyReportPDF';
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || '';
+const FILTERS_STORAGE_KEY = 'nursenote_records_filters';
 
 function formatDate(dateString) {
   try {
+    // Handle YYYY-MM-DD format directly to avoid timezone issues
+    if (typeof dateString === 'string' && /^\d{4}-\d{2}-\d{2}/.test(dateString)) {
+      const [year, month, day] = dateString.split('T')[0].split('-');
+      return `${year}/${month}/${day}`;
+    }
+    // Fallback for other formats
     const date = new Date(dateString);
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -19,12 +25,56 @@ function formatDate(dateString) {
   }
 }
 
+// Load filters from localStorage
+function loadFiltersFromStorage() {
+  if (typeof window === 'undefined') return { dateFrom: '', dateTo: '', assignedNurse: '' };
+  
+  try {
+    const saved = localStorage.getItem(FILTERS_STORAGE_KEY);
+    if (saved) {
+      return JSON.parse(saved);
+    }
+  } catch (error) {
+    console.error('Error loading filters from localStorage:', error);
+  }
+  return { dateFrom: '', dateTo: '', assignedNurse: '' };
+}
+
+// Save filters to localStorage
+function saveFiltersToStorage(filters) {
+  if (typeof window === 'undefined') return;
+  
+  try {
+    localStorage.setItem(FILTERS_STORAGE_KEY, JSON.stringify(filters));
+  } catch (error) {
+    console.error('Error saving filters to localStorage:', error);
+  }
+}
+
 export default function RecordsTab() {
   const [records, setRecords] = useState([]);
+  const [allRecords, setAllRecords] = useState([]); // Store all records to extract unique nurses
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedRecordId, setSelectedRecordId] = useState(null);
   const [selectedPatientId, setSelectedPatientId] = useState('');
+  
+  // Filter states - load from localStorage on mount
+  const savedFilters = useMemo(() => loadFiltersFromStorage(), []);
+  const [dateFrom, setDateFrom] = useState(savedFilters.dateFrom);
+  const [dateTo, setDateTo] = useState(savedFilters.dateTo);
+  const [assignedNurse, setAssignedNurse] = useState(savedFilters.assignedNurse);
+
+  // Extract unique nurse names from all records
+  const nurseNames = useMemo(() => {
+    const nurses = new Set();
+    allRecords.forEach((record) => {
+      if (record.nurses && Array.isArray(record.nurses)) {
+        record.nurses.forEach((nurse) => nurses.add(nurse));
+      }
+    });
+    return Array.from(nurses).sort();
+  }, [allRecords]);
 
   const patientNames = useMemo(() => {
     const uniqueNames = Array.from(new Set(records.map((r) => r.patient_name)));
@@ -37,21 +87,83 @@ export default function RecordsTab() {
     }
   }, [patientNames, selectedPatientId]);
 
-  useEffect(() => {
-    const fetchRecords = async () => {
-      if (!BACKEND_URL) {
-        setError('バックエンドURLが設定されていません');
+  const fetchRecords = useCallback(async (filterParams = {}) => {
+    if (!BACKEND_URL) {
+      setError('バックエンドURLが設定されていません');
+      setLoading(false);
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const session = getSessionFromStorage();
+      if (!session) {
+        setError('認証が必要です。再度ログインしてください。');
         setLoading(false);
         return;
       }
 
+      // Build query parameters
+      const params = new URLSearchParams();
+      if (filterParams.dateFrom) {
+        params.append('date_from', filterParams.dateFrom);
+      }
+      if (filterParams.dateTo) {
+        params.append('date_to', filterParams.dateTo);
+      }
+      if (filterParams.assignedNurse) {
+        params.append('nurse_name', filterParams.assignedNurse);
+      }
+
+      const url = `${BACKEND_URL}/records${params.toString() ? `?${params.toString()}` : ''}`;
+
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+          'ngrok-skip-browser-warning': 'true',
+        },
+      });
+
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        const text = await response.text();
+        console.error('Non-JSON response received:', {
+          url,
+          status: response.status,
+          contentType,
+          preview: text.substring(0, 200),
+        });
+        throw new Error(
+          `バックエンドサーバーに接続できません。URLを確認してください: ${BACKEND_URL || '未設定'}`
+        );
+      }
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'エラーが発生しました' }));
+        throw new Error(errorData.error || errorData.detail || `APIエラー: ${response.status}`);
+      }
+
+      const data = await response.json();
+      setRecords(data.records || []);
+      setError(null);
+    } catch (err) {
+      console.error('Error fetching records:', err);
+      setError(err instanceof Error ? err.message : '記録の取得中にエラーが発生しました。');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  // Fetch all records on initial mount (to populate nurse filter dropdown)
+  useEffect(() => {
+    const fetchAllRecords = async () => {
+      if (!BACKEND_URL) return;
+
       try {
         const session = getSessionFromStorage();
-        if (!session) {
-          setError('認証が必要です。再度ログインしてください。');
-          setLoading(false);
-          return;
-        }
+        if (!session) return;
 
         const response = await fetch(`${BACKEND_URL}/records`, {
           method: 'GET',
@@ -62,42 +174,43 @@ export default function RecordsTab() {
           },
         });
 
-        const contentType = response.headers.get('content-type');
-        if (!contentType || !contentType.includes('application/json')) {
-          const text = await response.text();
-          console.error('Non-JSON response received:', {
-            url: `${BACKEND_URL}/records`,
-            status: response.status,
-            contentType,
-            preview: text.substring(0, 200),
-          });
-          throw new Error(
-            `バックエンドサーバーに接続できません。URLを確認してください: ${BACKEND_URL || '未設定'}`
-          );
+        if (response.ok) {
+          const data = await response.json();
+          setAllRecords(data.records || []);
         }
-
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => ({ error: 'エラーが発生しました' }));
-          throw new Error(errorData.error || errorData.detail || `APIエラー: ${response.status}`);
-        }
-
-        const data = await response.json();
-        setRecords(data.records || []);
-        setError(null);
       } catch (err) {
-        console.error('Error fetching records:', err);
-        setError(err instanceof Error ? err.message : '記録の取得中にエラーが発生しました。');
-      } finally {
-        setLoading(false);
+        console.error('Error fetching all records for nurse list:', err);
       }
     };
 
-    fetchRecords();
+    fetchAllRecords();
   }, []);
+
+  // Fetch records with current filters on mount and when returning from detail view
+  useEffect(() => {
+    const filters = { dateFrom, dateTo, assignedNurse };
+    fetchRecords(filters);
+  }, [fetchRecords, dateFrom, dateTo, assignedNurse]);
+
+  // Handle filter changes
+  const handleApplyFilters = () => {
+    const filters = { dateFrom, dateTo, assignedNurse };
+    saveFiltersToStorage(filters);
+    fetchRecords(filters);
+  };
+
+  const handleClearFilters = () => {
+    setDateFrom('');
+    setDateTo('');
+    setAssignedNurse('');
+    const emptyFilters = { dateFrom: '', dateTo: '', assignedNurse: '' };
+    saveFiltersToStorage(emptyFilters);
+    fetchRecords(emptyFilters);
+  };
 
   return (
     <div className="space-y-6">
-      {!loading && !error && patientNames.length > 0 && (
+      {/* {!loading && !error && patientNames.length > 0 && (
         <div className="card">
           <div className="card-header">
             <h5>月次レポートPDF生成</h5>
@@ -124,13 +237,84 @@ export default function RecordsTab() {
             {selectedPatientId && <MonthlyReportPDF patientId={selectedPatientId} />}
           </div>
         </div>
-      )}
+      )} */}
 
       <div className="card">
         <div className="card-header">
           <h5>記録一覧</h5>
         </div>
         <div className="card-body">
+          {/* Filter Controls */}
+          <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+              <div>
+                <label htmlFor="filter-date-from" className="mb-2 block text-sm font-medium">
+                  訪問日（開始）
+                </label>
+                <input
+                  type="date"
+                  id="filter-date-from"
+                  value={dateFrom}
+                  onChange={(e) => setDateFrom(e.target.value)}
+                  className="form-control"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="filter-date-to" className="mb-2 block text-sm font-medium">
+                  訪問日（終了）
+                </label>
+                <input
+                  type="date"
+                  id="filter-date-to"
+                  value={dateTo}
+                  onChange={(e) => setDateTo(e.target.value)}
+                  className="form-control"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="filter-nurse" className="mb-2 block text-sm font-medium">
+                  担当看護師
+                </label>
+                <select
+                  id="filter-nurse"
+                  value={assignedNurse}
+                  onChange={(e) => setAssignedNurse(e.target.value)}
+                  className="form-control"
+                >
+                  <option value="">すべて</option>
+                  {nurseNames.map((nurse) => (
+                    <option key={nurse} value={nurse}>
+                      {nurse}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={handleApplyFilters}
+                className="btn btn-primary"
+                disabled={loading}
+              >
+                <i className="ph ph-funnel me-2"></i>
+                フィルター適用
+              </button>
+              <button
+                type="button"
+                onClick={handleClearFilters}
+                className="btn btn-outline-secondary"
+                disabled={loading}
+              >
+                <i className="ph ph-x me-2"></i>
+                クリア
+              </button>
+            </div>
+          </div>
+
           {loading && (
             <div className="flex items-center justify-center py-12">
               <div className="text-center">
@@ -188,5 +372,4 @@ export default function RecordsTab() {
     </div>
   );
 }
-
 
