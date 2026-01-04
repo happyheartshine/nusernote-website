@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { getSessionFromStorage } from '@/lib/sessionStorage';
-import RecordModal from './RecordModal';
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || '';
 const FILTERS_STORAGE_KEY = 'nursenote_records_filters';
@@ -52,18 +52,24 @@ function saveFiltersToStorage(filters) {
 }
 
 export default function RecordsTab() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [records, setRecords] = useState([]);
   const [allRecords, setAllRecords] = useState([]); // Store all records to extract unique nurses
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [selectedRecordId, setSelectedRecordId] = useState(null);
-  const [selectedPatientId, setSelectedPatientId] = useState('');
   
-  // Filter states - load from localStorage on mount
+  // Initialize filters from URL params or localStorage
   const savedFilters = useMemo(() => loadFiltersFromStorage(), []);
-  const [dateFrom, setDateFrom] = useState(savedFilters.dateFrom);
-  const [dateTo, setDateTo] = useState(savedFilters.dateTo);
-  const [assignedNurse, setAssignedNurse] = useState(savedFilters.assignedNurse);
+  const [dateFrom, setDateFrom] = useState(() => {
+    return searchParams.get('dateFrom') || savedFilters.dateFrom;
+  });
+  const [dateTo, setDateTo] = useState(() => {
+    return searchParams.get('dateTo') || savedFilters.dateTo;
+  });
+  const [assignedNurse, setAssignedNurse] = useState(() => {
+    return searchParams.get('assignedNurse') || savedFilters.assignedNurse;
+  });
 
   // Extract unique nurse names from all records
   const nurseNames = useMemo(() => {
@@ -80,12 +86,6 @@ export default function RecordsTab() {
     const uniqueNames = Array.from(new Set(records.map((r) => r.patient_name)));
     return uniqueNames.sort();
   }, [records]);
-
-  useEffect(() => {
-    if (patientNames.length > 0 && !selectedPatientId) {
-      setSelectedPatientId(patientNames[0]);
-    }
-  }, [patientNames, selectedPatientId]);
 
   const fetchRecords = useCallback(async (filterParams = {}) => {
     if (!BACKEND_URL) {
@@ -196,6 +196,10 @@ export default function RecordsTab() {
   const handleApplyFilters = () => {
     const filters = { dateFrom, dateTo, assignedNurse };
     saveFiltersToStorage(filters);
+    
+    // Update URL with filter params
+    updateURLWithFilters(filters);
+    
     fetchRecords(filters);
   };
 
@@ -205,7 +209,48 @@ export default function RecordsTab() {
     setAssignedNurse('');
     const emptyFilters = { dateFrom: '', dateTo: '', assignedNurse: '' };
     saveFiltersToStorage(emptyFilters);
+    
+    // Clear URL params
+    updateURLWithFilters(emptyFilters);
+    
     fetchRecords(emptyFilters);
+  };
+
+  // Update URL with current filter state
+  const updateURLWithFilters = (filters) => {
+    const params = new URLSearchParams(searchParams);
+    params.set('tab', 'records');
+    
+    if (filters.dateFrom) {
+      params.set('dateFrom', filters.dateFrom);
+    } else {
+      params.delete('dateFrom');
+    }
+    
+    if (filters.dateTo) {
+      params.set('dateTo', filters.dateTo);
+    } else {
+      params.delete('dateTo');
+    }
+    
+    if (filters.assignedNurse) {
+      params.set('assignedNurse', filters.assignedNurse);
+    } else {
+      params.delete('assignedNurse');
+    }
+    
+    router.push(`/ai?${params.toString()}`, { scroll: false });
+  };
+
+  // Handle record click - navigate to detail page with filter state
+  const handleRecordClick = (recordId) => {
+    const params = new URLSearchParams();
+    if (dateFrom) params.set('dateFrom', dateFrom);
+    if (dateTo) params.set('dateTo', dateTo);
+    if (assignedNurse) params.set('assignedNurse', assignedNurse);
+    
+    const queryString = params.toString();
+    router.push(`/ai/records/${recordId}${queryString ? `?${queryString}` : ''}`);
   };
 
   return (
@@ -342,7 +387,7 @@ export default function RecordsTab() {
               {records.map((record) => (
                 <div
                   key={record.id}
-                  onClick={() => setSelectedRecordId(record.id)}
+                  onClick={() => handleRecordClick(record.id)}
                   className="card cursor-pointer hover:shadow-md transition-shadow"
                 >
                   <div className="card-body">
@@ -367,8 +412,6 @@ export default function RecordsTab() {
           )}
         </div>
       </div>
-
-      <RecordModal recordId={selectedRecordId} onClose={() => setSelectedRecordId(null)} />
     </div>
   );
 }
