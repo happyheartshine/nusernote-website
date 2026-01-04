@@ -65,6 +65,7 @@ class SOAPRecordResponse(BaseModel):
     diagnosis: str | None = Field(None, description="主疾患")
     start_time: str | None = Field(None, description="訪問開始時間")
     end_time: str | None = Field(None, description="訪問終了時間")
+    status: str = Field(default="draft", description="記録ステータス (draft/confirmed)")
 
 
 class RecordsListResponse(BaseModel):
@@ -87,6 +88,7 @@ class FullSOAPRecordResponse(BaseModel):
     nurses: list[str] = Field(default_factory=list, description="看護師名リスト")
     soap_output: dict = Field(..., description="SOAP出力データ (JSON)")
     plan_output: dict | None = Field(None, description="看護計画出力データ (JSON)")
+    status: str = Field(default="draft", description="記録ステータス (draft/confirmed)")
 
 
 class PDFGenerationResponse(BaseModel):
@@ -94,3 +96,11 @@ class PDFGenerationResponse(BaseModel):
 
     pdf_url: str = Field(..., description="Presigned URL to download the generated PDF")
     s3_key: str = Field(..., description="S3 key where the PDF was uploaded")
+
+
+class UpdateRecordRequest(BaseModel):
+    """Request body for updating a SOAP record."""
+
+    soap_output: dict | None = Field(None, description="Updated SOAP output data")
+    plan_output: dict | None = Field(None, description="Updated plan output data")
+    status: str | None = Field(None, description="Record status (draft/confirmed)")

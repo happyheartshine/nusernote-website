@@ -6,10 +6,10 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import PlainTextResponse, Response
 
 from api.dependencies import get_ai_service_dependency, get_current_user
-from models import ErrorResponse, FullSOAPRecordResponse, GenerateRequest, PDFGenerationResponse, RecordsListResponse, SOAPRecordResponse
+from models import ErrorResponse, FullSOAPRecordResponse, GenerateRequest, PDFGenerationResponse, RecordsListResponse, SOAPRecordResponse, UpdateRecordRequest
 from prompt_builder import build_prompt
 from services.ai_service import AIService, AIServiceError
-from services.database_service import DatabaseServiceError, get_soap_record_by_id, get_soap_records, get_visits_by_patient_and_month, save_soap_record
+from services.database_service import DatabaseServiceError, get_soap_record_by_id, get_soap_records, get_visits_by_patient_and_month, save_soap_record, update_soap_record
 from services.pdf_service import PDFServiceError, generate_monthly_report_pdf, generate_visit_report_pdf
 from services.s3_service import S3ServiceError, generate_presigned_url, upload_pdf_to_s3
 from utils.response_parser import parse_soap_response
@@ -190,6 +190,7 @@ async def get_records(
                 diagnosis=record.get("diagnosis"),
                 start_time=str(record["start_time"]) if record.get("start_time") else None,
                 end_time=str(record["end_time"]) if record.get("end_time") else None,
+                status=record.get("status", "draft"),
             )
             for record in records_data
         ]
@@ -249,6 +250,7 @@ async def get_record(
             nurses=record_data.get("nurses", []),
             soap_output=record_data.get("soap_output", {}),
             plan_output=record_data.get("plan_output"),
+            status=record_data.get("status", "draft"),
         )
         
         return record
@@ -271,6 +273,86 @@ async def get_record(
         raise HTTPException(
             status_code=500,
             detail="記録の取得中にエラーが発生しました。",
+        ) from exc
+
+
+@router.patch(
+    "/records/{record_id}",
+    response_model=FullSOAPRecordResponse,
+    responses={
+        401: {"model": ErrorResponse, "description": "Authentication error"},
+        404: {"model": ErrorResponse, "description": "Record not found"},
+        400: {"model": ErrorResponse, "description": "Validation error"},
+        500: {"model": ErrorResponse, "description": "Internal server error"},
+    },
+    tags=["records"],
+    summary="Update SOAP record",
+    description="Update SOAP output, plan output, or status of a SOAP record.",
+)
+async def update_record(
+    record_id: str,
+    request: UpdateRecordRequest,
+    current_user: dict = Depends(get_current_user),
+) -> FullSOAPRecordResponse:
+    """
+    Update a SOAP record for the authenticated user.
+    
+    Requires authentication via Supabase JWT token.
+    
+    Returns updated SOAP record with soap_output and plan_output.
+    """
+    try:
+        # Update the record
+        updated_record = update_soap_record(
+            record_id=record_id,
+            user_id=current_user["user_id"],
+            soap_output=request.soap_output,
+            plan_output=request.plan_output,
+            status=request.status,
+        )
+        
+        # Convert database record to response format
+        record = FullSOAPRecordResponse(
+            id=str(updated_record["id"]),
+            patient_name=updated_record["patient_name"],
+            visit_date=str(updated_record["visit_date"]),
+            chief_complaint=updated_record.get("chief_complaint"),
+            created_at=str(updated_record["created_at"]),
+            diagnosis=updated_record.get("diagnosis"),
+            start_time=str(updated_record["start_time"]) if updated_record.get("start_time") else None,
+            end_time=str(updated_record["end_time"]) if updated_record.get("end_time") else None,
+            nurses=updated_record.get("nurses", []),
+            soap_output=updated_record.get("soap_output", {}),
+            plan_output=updated_record.get("plan_output"),
+            status=updated_record.get("status", "draft"),
+        )
+        
+        return record
+        
+    except DatabaseServiceError as db_exc:
+        error_msg = str(db_exc)
+        if "not found" in error_msg.lower():
+            logger.warning(f"Record {record_id} not found for user {current_user['user_id']}")
+            raise HTTPException(
+                status_code=404,
+                detail="記録が見つかりませんでした。",
+            ) from db_exc
+        if "Invalid status" in error_msg:
+            logger.warning(f"Invalid status provided: {request.status}")
+            raise HTTPException(
+                status_code=400,
+                detail=error_msg,
+            ) from db_exc
+        logger.error(f"Database error updating record: {db_exc}")
+        raise HTTPException(
+            status_code=500,
+            detail="記録の更新中にエラーが発生しました。",
+        ) from db_exc
+    except Exception as exc:  # pragma: no cover - defensive
+        logger.error(f"Unexpected error updating record: {exc}")
+        raise HTTPException(
+            status_code=500,
+            detail="記録の更新中にエラーが発生しました。",
         ) from exc
 
 

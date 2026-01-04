@@ -17,6 +17,7 @@ export default function RecordDetailPage({ recordId }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [pdfPreviewUrl, setPdfPreviewUrl] = useState(null);
+  const [updating, setUpdating] = useState(false);
 
   useEffect(() => {
     if (!recordId) {
@@ -101,6 +102,82 @@ export default function RecordDetailPage({ recordId }) {
     router.push(`/ai?tab=records${queryString ? `&${queryString}` : ''}`);
   };
 
+  const handleSoapUpdate = async (updatedSoapOutput) => {
+    if (!record) return;
+
+    setUpdating(true);
+    try {
+      const session = getSessionFromStorage();
+      if (!session) {
+        setError('認証が必要です。再度ログインしてください。');
+        return;
+      }
+
+      const response = await fetch(`${BACKEND_URL}/records/${recordId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+          'ngrok-skip-browser-warning': 'true',
+        },
+        body: JSON.stringify({
+          soap_output: updatedSoapOutput,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: '更新に失敗しました' }));
+        throw new Error(errorData.error || errorData.detail || `APIエラー: ${response.status}`);
+      }
+
+      const updatedRecord = await response.json();
+      setRecord(updatedRecord);
+    } catch (err) {
+      console.error('Error updating SOAP output:', err);
+      setError(err instanceof Error ? err.message : '更新中にエラーが発生しました。');
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  const handlePlanUpdate = async (updatedPlanOutput) => {
+    if (!record) return;
+
+    setUpdating(true);
+    try {
+      const session = getSessionFromStorage();
+      if (!session) {
+        setError('認証が必要です。再度ログインしてください。');
+        return;
+      }
+
+      const response = await fetch(`${BACKEND_URL}/records/${recordId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+          'ngrok-skip-browser-warning': 'true',
+        },
+        body: JSON.stringify({
+          plan_output: updatedPlanOutput,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: '更新に失敗しました' }));
+        throw new Error(errorData.error || errorData.detail || `APIエラー: ${response.status}`);
+      }
+
+      const updatedRecord = await response.json();
+      setRecord(updatedRecord);
+    } catch (err) {
+      console.error('Error updating plan output:', err);
+      setError(err instanceof Error ? err.message : '更新中にエラーが発生しました。');
+    } finally {
+      setUpdating(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Back Button */}
@@ -143,6 +220,13 @@ export default function RecordDetailPage({ recordId }) {
 
           {!loading && !error && record && (
             <>
+              {updating && (
+                <div className="alert alert-info mb-4">
+                  <i className="ph ph-circle-notch animate-spin me-2"></i>
+                  更新中...
+                </div>
+              )}
+              
               <div className="mb-6 space-y-3">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   <PDFDownloadButton
@@ -187,6 +271,9 @@ export default function RecordDetailPage({ recordId }) {
                 endTime={record.end_time || ''}
                 selectedNurses={record.nurses}
                 diagnosis={record.diagnosis || ''}
+                status={record.status || 'draft'}
+                onSoapUpdate={handleSoapUpdate}
+                onPlanUpdate={handlePlanUpdate}
               />
             </>
           )}

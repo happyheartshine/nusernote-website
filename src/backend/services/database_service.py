@@ -277,3 +277,66 @@ def get_visits_by_patient_and_month(
     except Exception as e:
         logger.error(f"Error fetching visits by patient and month from database: {e}")
         raise DatabaseServiceError(f"Failed to fetch visits: {str(e)}") from e
+
+
+def update_soap_record(
+    record_id: str,
+    user_id: str,
+    soap_output: Optional[Dict[str, Any]] = None,
+    plan_output: Optional[Dict[str, Any]] = None,
+    status: Optional[str] = None,
+) -> Dict[str, Any]:
+    """
+    Update a SOAP record in Supabase database.
+    
+    Args:
+        record_id: Record ID (UUID)
+        user_id: Authenticated user ID (for security check)
+        soap_output: Updated SOAP output structure (optional)
+        plan_output: Updated Plan output structure (optional)
+        status: Updated record status (optional, "draft" or "confirmed")
+        
+    Returns:
+        Dictionary containing the updated record data.
+        
+    Raises:
+        DatabaseServiceError: If update operation fails.
+    """
+    try:
+        supabase = get_supabase_client()
+        
+        # Build update data
+        update_data = {}
+        if soap_output is not None:
+            update_data["soap_output"] = soap_output
+        if plan_output is not None:
+            update_data["plan_output"] = plan_output
+        if status is not None:
+            if status not in ["draft", "confirmed"]:
+                raise DatabaseServiceError(f"Invalid status: {status}. Must be 'draft' or 'confirmed'.")
+            update_data["status"] = status
+        
+        if not update_data:
+            raise DatabaseServiceError("No update data provided")
+        
+        logger.info(f"Updating SOAP record {record_id} for user {user_id}")
+        
+        response = (
+            supabase.table("soap_records")
+            .update(update_data)
+            .eq("id", record_id)
+            .eq("user_id", user_id)
+            .execute()
+        )
+        
+        if not response.data:
+            raise DatabaseServiceError(f"Record {record_id} not found or update failed")
+        
+        logger.info(f"Successfully updated SOAP record {record_id}")
+        return response.data[0]
+        
+    except DatabaseServiceError:
+        raise
+    except Exception as e:
+        logger.error(f"Error updating SOAP record in database: {e}")
+        raise DatabaseServiceError(f"Failed to update record: {str(e)}") from e

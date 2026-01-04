@@ -15,9 +15,12 @@ export default function SOAPOutput({
   diagnosis,
   onSoapUpdate,
   onPlanUpdate,
+  status = 'draft',
 }) {
   const [editingField, setEditingField] = useState(null);
   const [editValue, setEditValue] = useState('');
+  
+  const isEditable = status === 'draft';
 
   const formatDate = (dateStr) => {
     if (!dateStr) return '';
@@ -68,7 +71,7 @@ export default function SOAPOutput({
     setEditValue('');
   };
 
-  const EditableContent = ({ field, value, className = '' }) => {
+  const renderEditableContent = (field, value, className = '') => {
     const isEditing = editingField === field;
     const displayValue = value || '（未入力）';
 
@@ -96,23 +99,19 @@ export default function SOAPOutput({
 
     return (
       <div className="relative">
-        <p className={`whitespace-pre-wrap leading-7 pr-7 ${className}`}>{displayValue}</p>
-        <button
-          onClick={() => handleEdit(field, value)}
-          className="absolute bottom-1 right-1 p-1"
-          title="編集"
-          type="button"
-        >
-          <i className="ph ph-pencil text-muted"></i>
-        </button>
+        <p className={`whitespace-pre-wrap leading-7 ${isEditable ? 'pr-7' : ''} ${className}`}>{displayValue}</p>
+        {isEditable && (
+          <button
+            onClick={() => handleEdit(field, value)}
+            className="absolute bottom-1 right-1 p-1"
+            title="編集"
+            type="button"
+          >
+            <i className="ph ph-pencil text-muted"></i>
+          </button>
+        )}
       </div>
     );
-  };
-
-  EditableContent.propTypes = {
-    field: PropTypes.string.isRequired,
-    value: PropTypes.string.isRequired,
-    className: PropTypes.string,
   };
 
   return (
@@ -124,7 +123,7 @@ export default function SOAPOutput({
               <span className="badge bg-primary me-2">S</span>主観
             </h5>
             <div className="ms-4">
-              <EditableContent field="s" value={soapOutput.s} />
+              {renderEditableContent('s', soapOutput.s)}
             </div>
           </div>
 
@@ -133,7 +132,7 @@ export default function SOAPOutput({
               <span className="badge bg-success me-2">O</span>客観
             </h5>
             <div className="ms-4">
-              <EditableContent field="o" value={soapOutput.o} />
+              {renderEditableContent('o', soapOutput.o)}
             </div>
           </div>
 
@@ -145,25 +144,25 @@ export default function SOAPOutput({
               <div className="card">
                 <div className="card-body">
                   <h6 className="mb-2">【症状推移】</h6>
-                  <EditableContent field="a.症状推移" value={soapOutput.a.症状推移} />
+                  {renderEditableContent('a.症状推移', soapOutput.a.症状推移)}
                 </div>
               </div>
               <div className="card">
                 <div className="card-body">
                   <h6 className="mb-2">【リスク評価（自殺・他害・服薬）】</h6>
-                  <EditableContent field="a.リスク評価" value={soapOutput.a.リスク評価} />
+                  {renderEditableContent('a.リスク評価', soapOutput.a.リスク評価)}
                 </div>
               </div>
               <div className="card">
                 <div className="card-body">
                   <h6 className="mb-2">【背景要因】</h6>
-                  <EditableContent field="a.背景要因" value={soapOutput.a.背景要因} />
+                  {renderEditableContent('a.背景要因', soapOutput.a.背景要因)}
                 </div>
               </div>
               <div className="card">
                 <div className="card-body">
                   <h6 className="mb-2">【次回観察ポイント】</h6>
-                  <EditableContent field="a.次回観察ポイント" value={soapOutput.a.次回観察ポイント} />
+                  {renderEditableContent('a.次回観察ポイント', soapOutput.a.次回観察ポイント)}
                 </div>
               </div>
             </div>
@@ -177,13 +176,13 @@ export default function SOAPOutput({
               <div className="card">
                 <div className="card-body">
                   <h6 className="mb-2">【本日実施した援助】</h6>
-                  <EditableContent field="p.本日実施した援助" value={soapOutput.p.本日実施した援助} />
+                  {renderEditableContent('p.本日実施した援助', soapOutput.p.本日実施した援助)}
                 </div>
               </div>
               <div className="card">
                 <div className="card-body">
                   <h6 className="mb-2">【次回以降の方針】</h6>
-                  <EditableContent field="p.次回以降の方針" value={soapOutput.p.次回以降の方針} />
+                  {renderEditableContent('p.次回以降の方針', soapOutput.p.次回以降の方針)}
                 </div>
               </div>
             </div>
@@ -196,19 +195,19 @@ export default function SOAPOutput({
                 <div className="card">
                   <div className="card-body">
                     <h6 className="mb-2">【長期目標】</h6>
-                    <EditableContent field="plan.長期目標" value={planOutput.長期目標} />
+                    {renderEditableContent('plan.長期目標', planOutput.長期目標)}
                   </div>
                 </div>
                 <div className="card">
                   <div className="card-body">
                     <h6 className="mb-2">【短期目標】</h6>
-                    <EditableContent field="plan.短期目標" value={planOutput.短期目標} />
+                    {renderEditableContent('plan.短期目標', planOutput.短期目標)}
                   </div>
                 </div>
                 <div className="card">
                   <div className="card-body">
                     <h6 className="mb-2">【看護援助の方針】</h6>
-                    <EditableContent field="plan.看護援助の方針" value={planOutput.看護援助の方針} />
+                    {renderEditableContent('plan.看護援助の方針', planOutput.看護援助の方針)}
                   </div>
                 </div>
               </div>
@@ -258,6 +257,7 @@ SOAPOutput.propTypes = {
   diagnosis: PropTypes.string.isRequired,
   onSoapUpdate: PropTypes.func,
   onPlanUpdate: PropTypes.func,
+  status: PropTypes.oneOf(['draft', 'confirmed']),
 };
 
 
