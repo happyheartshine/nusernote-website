@@ -188,7 +188,7 @@ export default function SOAPOutput({
             </div>
           </div>
 
-          {planOutput && (
+          {/* {planOutput && (
             <div className="border-t pt-4">
               <h5 className="mb-4">訪問看護計画書</h5>
               <div className="space-y-4">
@@ -212,7 +212,7 @@ export default function SOAPOutput({
                 </div>
               </div>
             </div>
-          )}
+          )} */}
 
           <div className="border-t pt-4">
             <h6 className="mb-3">【訪問情報】</h6>

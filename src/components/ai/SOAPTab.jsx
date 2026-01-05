@@ -452,10 +452,10 @@ export default function SOAPTab() {
             {copyState === 'copied' ? (
               <span className="flex items-center justify-center gap-2">
                 <i className="ph ph-check"></i>
-                コピーしました
+                記録確定しました
               </span>
             ) : (
-              'すべてをコピー'
+              '記録確定'
             )}
           </button>
         </div>
