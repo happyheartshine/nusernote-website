@@ -35,7 +35,7 @@ export default function UsersMap({ height }) {
     // Only run on client
     const loadMap = async () => {
       if (typeof window === 'undefined') return;
-      
+
       // Wait for the DOM element to be available
       const mapElement = document.getElementById('basic-map');
       if (!mapElement) return;
@@ -48,7 +48,7 @@ export default function UsersMap({ height }) {
         if (mapInstanceRef.current) {
           try {
             mapInstanceRef.current.destroy?.();
-          } catch (error) {
+          } catch {
             // Ignore cleanup errors
           }
         }
@@ -86,7 +86,7 @@ export default function UsersMap({ height }) {
       if (mapInstanceRef.current) {
         try {
           mapInstanceRef.current.destroy?.();
-        } catch (error) {
+        } catch {
           // Ignore cleanup errors
         }
         mapInstanceRef.current = null;
