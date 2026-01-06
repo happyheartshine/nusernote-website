@@ -1,0 +1,73 @@
+-- Migration: Patient Entity Implementation
+-- This migration documents the Patient (利用者) core entity implementation
+--
+-- The patients table already exists (created in 20240105000001_create_patients_table.sql)
+-- This migration documents the relationship structure and future cleanup steps
+
+-- ============================================================================
+-- Schema Overview
+-- ============================================================================
+--
+-- 1. patients table (利用者)
+--    - Core entity storing fixed baseline patient information
+--    - Fields: id, user_id, name, age, gender, primary_diagnosis, individual_notes, status
+--    - One patient can have multiple care plans and visit records
+--
+-- 2. care_plans table
+--    - References patients via patient_id (foreign key)
+--    - One patient can have multiple care plans over time
+--
+-- 3. soap_records table (visit records)
+--    - References patients via patient_id (foreign key, nullable for backward compatibility)
+--    - Currently still contains patient_name and diagnosis for backward compatibility
+--    - These embedded fields should be removed after data migration
+--
+-- ============================================================================
+-- Current State
+-- ============================================================================
+--
+-- The soap_records table currently has:
+--   - patient_id UUID (nullable) - Foreign key to patients table
+--   - patient_name TEXT (for backward compatibility)
+--   - diagnosis TEXT (for backward compatibility)
+--
+-- ============================================================================
+-- Future Cleanup Steps (DO NOT RUN YET - Requires data migration first)
+-- ============================================================================
+--
+-- After migrating all existing records to use patient_id:
+--
+-- 1. Make patient_id NOT NULL:
+--    ALTER TABLE public.soap_records
+--    ALTER COLUMN patient_id SET NOT NULL;
+--
+-- 2. Remove embedded patient attributes:
+--    ALTER TABLE public.soap_records
+--    DROP COLUMN patient_name,
+--    DROP COLUMN diagnosis;
+--
+-- 3. Update RLS policies if needed (currently user_id check is sufficient)
+--
+-- ============================================================================
+-- Data Migration Script (Run before cleanup)
+-- ============================================================================
+--
+-- For each unique (user_id, patient_name, diagnosis) combination in soap_records:
+--   1. Create or find matching patient record
+--   2. Update soap_records.patient_id to reference the patient
+--
+-- Example migration script (pseudo-code):
+--   FOR EACH DISTINCT (user_id, patient_name, diagnosis) IN soap_records:
+--     patient = FIND_OR_CREATE patient WHERE user_id AND name = patient_name
+--     UPDATE soap_records SET patient_id = patient.id 
+--       WHERE user_id = patient.user_id 
+--       AND patient_name = patient.name
+--       AND diagnosis = patient.primary_diagnosis
+--
+-- ============================================================================
+-- Comments
+-- ============================================================================
+
+COMMENT ON TABLE public.patients IS 'Core entity for patient (利用者) baseline information. Fixed data that does not change per visit.';
+COMMENT ON COLUMN public.soap_records.patient_id IS 'Foreign key to patients table. Preferred way to reference patient. patient_name and diagnosis are kept for backward compatibility only.';
+
