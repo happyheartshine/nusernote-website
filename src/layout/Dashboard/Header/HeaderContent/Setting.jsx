@@ -1,15 +1,23 @@
 'use client';
 
 // project import
+import { useRouter } from 'next/navigation';
 import { useDetectOutsideClick } from '@/components/useDetectOutsideClick';
 
 // ==============================|| HEADER - SETTING ||============================== //
 
 export default function HeaderSetting() {
+  const router = useRouter();
   const { ref, isOpen, setIsOpen } = useDetectOutsideClick(false);
 
   const toggleDropdown = () => {
     setIsOpen(!isOpen);
+  };
+
+  const handleMyAccountClick = (e) => {
+    e.preventDefault();
+    setIsOpen(false);
+    router.push('/profile');
   };
 
   return (
@@ -19,7 +27,7 @@ export default function HeaderSetting() {
       </a>
       {isOpen && (
         <div className="dropdown-menu dropdown-menu-end pc-h-dropdown">
-          <a href="#!" className="dropdown-item">
+          <a href="#!" className="dropdown-item" onClick={handleMyAccountClick}>
             <i className="ph ph-user"></i>
             <span>My Account</span>
           </a>

@@ -6,6 +6,13 @@ const pages = {
   type: 'group',
   children: [
     {
+      id: 'profile',
+      title: 'プロフィール',
+      type: 'item',
+      icon: 'ph ph-user',
+      url: '/profile'
+    },
+    {
       id: 'login',
       title: 'ログイン',
       type: 'item',
