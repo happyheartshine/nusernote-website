@@ -1,12 +1,15 @@
 'use client';
 
-import { useState, useRef, useEffect, useMemo } from 'react';
+import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { parseApiResponse } from '@/utils/parseApiResponse';
 import { copyToClipboard } from '@/lib/copyToClipboard';
 import { getSessionFromStorage } from '@/lib/sessionStorage';
+import { useAuthProfile } from '@/hooks/useAuthProfile';
+import { supabase } from '@/lib/supabase';
 import VoiceInputButton from './VoiceInputButton';
 import SOAPOutput from './SOAPOutput';
-import { DIAGNOSIS_OPTIONS, NURSE_OPTIONS } from './types';
+
+const NURSE_OPTIONS = ['吉村', 'A子', 'B子', 'C子'];
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || '';
 const MAX_TEXTAREA_HEIGHT = 200;
@@ -19,8 +22,9 @@ const getDefaultValues = () => {
   const todayStr = `${year}-${month}-${day}`;
 
   return {
-    userName: '利用者',
-    diagnosis: DIAGNOSIS_OPTIONS[0] || '',
+    patientId: '',
+    patientName: '',
+    diagnosis: '',
     selectedNurses: NURSE_OPTIONS[0] ? [NURSE_OPTIONS[0]] : [],
     visitDate: todayStr,
     startTime: '09:00',
@@ -30,7 +34,9 @@ const getDefaultValues = () => {
 };
 
 export default function SOAPTab() {
-  const [userName, setUserName] = useState('');
+  const { user } = useAuthProfile();
+  const [patients, setPatients] = useState([]);
+  const [selectedPatientId, setSelectedPatientId] = useState('');
   const [diagnosis, setDiagnosis] = useState('');
   const [selectedNurses, setSelectedNurses] = useState([]);
   const [visitDate, setVisitDate] = useState('');
@@ -49,6 +55,56 @@ export default function SOAPTab() {
   const resultsRef = useRef(null);
   const sTextareaRef = useRef(null);
   const oTextareaRef = useRef(null);
+
+  const fetchPatients = useCallback(async () => {
+    if (!user?.id) return;
+    try {
+      const { data, error } = await supabase
+        .from('patients')
+        .select(`
+          id,
+          name,
+          main_disease:main_disease_id (
+            id,
+            name
+          )
+        `)
+        .eq('user_id', user.id)
+        .eq('status', 'active')
+        .order('name', { ascending: true });
+
+      if (error) throw error;
+      setPatients(data || []);
+    } catch (error) {
+      console.error('Fetch patients error:', error);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    fetchPatients();
+  }, [fetchPatients]);
+
+  const handlePatientChange = (e) => {
+    const patientId = e.target.value;
+    setSelectedPatientId(patientId);
+    
+    if (patientId) {
+      const selectedPatient = patients.find((p) => p.id === patientId);
+      if (selectedPatient?.main_disease?.name) {
+        setDiagnosis(selectedPatient.main_disease.name);
+      } else {
+        setDiagnosis('');
+      }
+    } else {
+      setDiagnosis('');
+    }
+  };
+
+  const getSelectedPatientName = () => {
+    if (!selectedPatientId) return '';
+    const patient = patients.find((p) => p.id === selectedPatientId);
+    return patient?.name || '';
+  };
 
   useEffect(() => {
     if (sTextareaRef.current) {
@@ -112,7 +168,7 @@ export default function SOAPTab() {
           'ngrok-skip-browser-warning': 'true',
         },
         body: JSON.stringify({
-          userName: userName.trim() || defaults.userName,
+          userName: getSelectedPatientName() || defaults.patientName,
           diagnosis: diagnosis || defaults.diagnosis,
           nurses: selectedNurses.length > 0 ? selectedNurses : defaults.selectedNurses,
           visitDate: visitDate || defaults.visitDate,
@@ -152,7 +208,7 @@ export default function SOAPTab() {
   };
 
   const handleClear = () => {
-    setUserName('');
+    setSelectedPatientId('');
     setDiagnosis('');
     setSelectedNurses([]);
     setVisitDate('');
@@ -220,6 +276,7 @@ export default function SOAPTab() {
     const finalEndTime = endTime || defaults.endTime;
     const finalSelectedNurses = selectedNurses.length > 0 ? selectedNurses : defaults.selectedNurses;
     const finalDiagnosis = diagnosis || defaults.diagnosis;
+    const finalPatientName = getSelectedPatientName() || defaults.patientName;
 
     lines.push('【訪問情報】');
     if (finalVisitDate) {
@@ -231,6 +288,9 @@ export default function SOAPTab() {
     }
     if (finalStartTime && finalEndTime) {
       lines.push(`訪問時間：${finalStartTime}〜${finalEndTime}`);
+    }
+    if (finalPatientName) {
+      lines.push(`利用者名：${finalPatientName}`);
     }
     if (finalSelectedNurses.length > 0) {
       lines.push(`担当看護師：${finalSelectedNurses.join('・')}`);
@@ -268,33 +328,44 @@ export default function SOAPTab() {
         </div>
         <div className="card-body">
           <div className="space-y-4">
-            <div>
-              <label className="mb-2 block text-sm font-medium">利用者名</label>
-              <input
-                type="text"
-                value={userName}
-                onChange={(e) => setUserName(e.target.value)}
-                className="form-control"
-                placeholder="利用者名を入力"
-                disabled={loading}
-              />
-            </div>
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div>
+                <label className="mb-2 block text-sm font-medium">利用者名</label>
+                <select
+                  value={selectedPatientId}
+                  onChange={handlePatientChange}
+                  className="form-select"
+                  disabled={loading}
+                >
+                  <option value="">選択してください</option>
+                  {patients.map((patient) => (
+                    <option key={patient.id} value={patient.id}>
+                      {patient.name}
+                    </option>
+                  ))}
+                </select>
+                {patients.length === 0 && (
+                  <p className="mt-1 text-xs text-gray-500">
+                    患者が登録されていません。
+                    <a href="/patients" className="text-blue-600 hover:underline ml-1">
+                      患者を登録
+                    </a>
+                  </p>
+                )}
+              </div>
 
-            <div>
-              <label className="mb-2 block text-sm font-medium">主疾患</label>
-              <select
-                value={diagnosis}
-                onChange={(e) => setDiagnosis(e.target.value)}
-                className="form-control"
-                disabled={loading}
-              >
-                <option value="">選択してください</option>
-                {DIAGNOSIS_OPTIONS.map((option) => (
-                  <option key={option} value={option}>
-                    {option}
-                  </option>
-                ))}
-              </select>
+              <div>
+                <label className="mb-2 block text-sm font-medium">主疾患</label>
+                <input
+                  type="text"
+                  value={diagnosis}
+                  onChange={(e) => setDiagnosis(e.target.value)}
+                  className="form-control"
+                  placeholder="主疾患（患者を選択すると自動入力）"
+                  disabled={loading || !!selectedPatientId}
+                  readOnly={!!selectedPatientId}
+                />
+              </div>
             </div>
 
             <div>
@@ -440,6 +511,7 @@ export default function SOAPTab() {
             endTime={endTime || getDefaultValues().endTime}
             selectedNurses={selectedNurses.length > 0 ? selectedNurses : getDefaultValues().selectedNurses}
             diagnosis={diagnosis || getDefaultValues().diagnosis}
+            patientName={getSelectedPatientName() || getDefaultValues().patientName}
             onSoapUpdate={setSoapOutput}
             onPlanUpdate={setPlanOutput}
           />
