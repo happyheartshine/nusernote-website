@@ -1,0 +1,444 @@
+'use client';
+
+import { useState, useEffect, useCallback } from 'react';
+import { useAuthProfile } from '@/hooks/useAuthProfile';
+import ConfirmDialog from '@/components/ConfirmDialog';
+import { supabase } from '@/lib/supabase';
+
+// ==============================|| MAIN DISEASE PAGE ||============================== //
+
+export default function MainDiseasePage() {
+  const { user } = useAuthProfile();
+  const [diseases, setDiseases] = useState([]);
+  const [filteredDiseases, setFilteredDiseases] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [processingId, setProcessingId] = useState(null);
+  const [toast, setToast] = useState(null);
+  const [confirmDialog, setConfirmDialog] = useState(null);
+  const [editingDisease, setEditingDisease] = useState(null);
+  const [showForm, setShowForm] = useState(false);
+  const [formData, setFormData] = useState({
+    name: '',
+    description: '',
+    status: 'active'
+  });
+
+  const fetchDiseases = useCallback(async () => {
+    if (!user?.id) return;
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('main_disease')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setDiseases(data || []);
+    } catch (error) {
+      console.error('Fetch diseases error:', error);
+      showToast('主疾患の取得に失敗しました', 'error');
+    } finally {
+      setLoading(false);
+    }
+  }, [user]);
+
+  const filterDiseases = useCallback(() => {
+    let filtered = [...diseases];
+
+    if (statusFilter !== 'all') {
+      filtered = filtered.filter((disease) => disease.status === statusFilter);
+    }
+
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(
+        (disease) =>
+          disease.name.toLowerCase().includes(query) ||
+          (disease.description && disease.description.toLowerCase().includes(query))
+      );
+    }
+
+    setFilteredDiseases(filtered);
+  }, [diseases, statusFilter, searchQuery]);
+
+  useEffect(() => {
+    fetchDiseases();
+  }, [fetchDiseases]);
+
+  useEffect(() => {
+    filterDiseases();
+  }, [filterDiseases]);
+
+  const showToast = (message, type = 'success') => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 3000);
+  };
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleCreate = () => {
+    setEditingDisease(null);
+    setFormData({
+      name: '',
+      description: '',
+      status: 'active'
+    });
+    setShowForm(true);
+  };
+
+  const handleEdit = (disease) => {
+    setEditingDisease(disease);
+    setFormData({
+      name: disease.name || '',
+      description: disease.description || '',
+      status: disease.status || 'active'
+    });
+    setShowForm(true);
+  };
+
+  const handleCancel = () => {
+    setShowForm(false);
+    setEditingDisease(null);
+    setFormData({
+      name: '',
+      description: '',
+      status: 'active'
+    });
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!user?.id) return;
+
+    setProcessingId(editingDisease?.id || 'new');
+    try {
+      if (editingDisease) {
+        // Update existing disease
+        const { error } = await supabase
+          .from('main_disease')
+          .update({
+            name: formData.name.trim(),
+            description: formData.description.trim() || null,
+            status: formData.status
+          })
+          .eq('id', editingDisease.id)
+          .eq('user_id', user.id);
+
+        if (error) throw error;
+        showToast('主疾患を更新しました', 'success');
+      } else {
+        // Create new disease
+        const { error } = await supabase.from('main_disease').insert({
+          user_id: user.id,
+          name: formData.name.trim(),
+          description: formData.description.trim() || null,
+          status: formData.status
+        });
+
+        if (error) throw error;
+        showToast('主疾患を作成しました', 'success');
+      }
+
+      handleCancel();
+      fetchDiseases();
+    } catch (error) {
+      console.error('Save disease error:', error);
+      showToast('保存に失敗しました: ' + (error.message || '不明なエラー'), 'error');
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
+  const handleDelete = (disease) => {
+    setConfirmDialog({
+      isOpen: true,
+      title: '主疾患の削除',
+      message: `「${disease.name}」を削除しますか？この操作は取り消せません。`,
+      onConfirm: async () => {
+        setConfirmDialog(null);
+        setProcessingId(disease.id);
+        try {
+          const { error } = await supabase
+            .from('main_disease')
+            .delete()
+            .eq('id', disease.id)
+            .eq('user_id', user.id);
+
+          if (error) throw error;
+          showToast('主疾患を削除しました', 'success');
+          fetchDiseases();
+        } catch (error) {
+          console.error('Delete disease error:', error);
+          showToast('削除に失敗しました: ' + (error.message || '不明なエラー'), 'error');
+        } finally {
+          setProcessingId(null);
+        }
+      },
+      onCancel: () => {
+        setConfirmDialog(null);
+      }
+    });
+  };
+
+  const formatDate = (dateString) => {
+    return new Date(dateString).toLocaleDateString('ja-JP', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  };
+
+  const getStatusBadge = (status) => {
+    const badges = {
+      active: 'bg-green-100 text-green-800',
+      inactive: 'bg-gray-100 text-gray-800',
+      archived: 'bg-yellow-100 text-yellow-800'
+    };
+    const labels = {
+      active: '有効',
+      inactive: '無効',
+      archived: 'アーカイブ'
+    };
+    return (
+      <span className={`inline-flex rounded-full px-2 text-xs leading-5 font-semibold ${badges[status]}`}>
+        {labels[status]}
+      </span>
+    );
+  };
+
+  if (!user) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="h-12 w-12 animate-spin rounded-full border-4 border-blue-500 border-t-transparent"></div>
+      </div>
+    );
+  }
+
+  return (
+    <>
+      {confirmDialog && (
+        <ConfirmDialog
+          isOpen={confirmDialog.isOpen}
+          title={confirmDialog.title}
+          message={confirmDialog.message}
+          onConfirm={confirmDialog.onConfirm}
+          onCancel={confirmDialog.onCancel}
+          confirmText="削除"
+          cancelText="キャンセル"
+        />
+      )}
+      <div className="container mx-auto px-4 py-8">
+        <div className="mb-6">
+          <div className="mb-6 flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">主疾患管理</h1>
+              <p className="mt-2 text-gray-600">主疾患の作成、編集、削除</p>
+            </div>
+            {!showForm && (
+              <button onClick={handleCreate} className="btn btn-primary">
+                <i className="ph ph-plus me-2"></i>
+                新規作成
+              </button>
+            )}
+          </div>
+
+          {toast && (
+            <div className={`alert mb-6 ${toast.type === 'success' ? 'alert-success' : 'alert-danger'}`} role="alert">
+              <i className={`ph ${toast.type === 'success' ? 'ph-check-circle' : 'ph-x-circle'}`}></i>
+              <div>{toast.message}</div>
+            </div>
+          )}
+
+          {showForm ? (
+            <div className="mb-6 rounded-lg bg-white p-6 shadow">
+              <h2 className="mb-4 text-xl font-semibold text-gray-900">
+                {editingDisease ? '主疾患の編集' : '新規主疾患の作成'}
+              </h2>
+              <form onSubmit={handleSubmit}>
+                <div className="space-y-4">
+                  <div>
+                    <label htmlFor="name" className="mb-2 block text-sm font-medium text-gray-700">
+                      疾患名 <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      id="name"
+                      type="text"
+                      name="name"
+                      value={formData.name}
+                      onChange={handleInputChange}
+                      className="form-control"
+                      placeholder="疾患名を入力してください"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label htmlFor="description" className="mb-2 block text-sm font-medium text-gray-700">
+                      説明
+                    </label>
+                    <textarea
+                      id="description"
+                      name="description"
+                      value={formData.description}
+                      onChange={handleInputChange}
+                      rows={3}
+                      className="form-control"
+                      placeholder="説明を入力してください（任意）"
+                    />
+                  </div>
+
+                  <div>
+                    <label htmlFor="status" className="mb-2 block text-sm font-medium text-gray-700">
+                      ステータス
+                    </label>
+                    <select
+                      id="status"
+                      name="status"
+                      value={formData.status}
+                      onChange={handleInputChange}
+                      className="form-select"
+                    >
+                      <option value="active">有効</option>
+                      <option value="inactive">無効</option>
+                      <option value="archived">アーカイブ</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="mt-6 flex justify-end gap-3">
+                  <button type="button" onClick={handleCancel} className="btn btn-secondary" disabled={processingId}>
+                    キャンセル
+                  </button>
+                  <button type="submit" className="btn btn-primary" disabled={processingId}>
+                    {processingId ? (
+                      <span className="flex items-center">
+                        <span className="me-2 inline-block h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></span>
+                        保存中...
+                      </span>
+                    ) : (
+                      <span className="flex items-center">
+                        <i className="ph ph-check me-2"></i>
+                        {editingDisease ? '更新' : '作成'}
+                      </span>
+                    )}
+                  </button>
+                </div>
+              </form>
+            </div>
+          ) : (
+            <div className="mb-6 rounded-lg bg-white p-6 shadow">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div>
+                  <label htmlFor="search" className="mb-2 block text-sm font-medium text-gray-700">
+                    検索
+                  </label>
+                  <input
+                    id="search"
+                    type="text"
+                    placeholder="疾患名または説明で検索"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="form-control w-full"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="status-filter" className="mb-2 block text-sm font-medium text-gray-700">
+                    ステータス
+                  </label>
+                  <select
+                    id="status-filter"
+                    value={statusFilter}
+                    onChange={(e) => setStatusFilter(e.target.value)}
+                    className="form-select w-full"
+                  >
+                    <option value="all">すべて</option>
+                    <option value="active">有効</option>
+                    <option value="inactive">無効</option>
+                    <option value="archived">アーカイブ</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {loading ? (
+          <div className="flex items-center justify-center py-12">
+            <div className="h-12 w-12 animate-spin rounded-full border-4 border-blue-500 border-t-transparent"></div>
+          </div>
+        ) : filteredDiseases.length === 0 ? (
+          <div className="rounded-lg bg-white p-12 text-center shadow">
+            <div className="mb-4 inline-flex h-16 w-16 items-center justify-center rounded-full bg-gray-100">
+              <i className="ph ph-heartbeat text-4xl text-gray-400"></i>
+            </div>
+            <h3 className="mb-2 text-lg font-semibold text-gray-900">主疾患が見つかりません</h3>
+            <p className="text-gray-600">
+              {searchQuery || statusFilter !== 'all' ? '検索条件に一致する主疾患がいません。' : '主疾患を作成してください。'}
+            </p>
+          </div>
+        ) : (
+          <div className="overflow-hidden rounded-lg bg-white shadow">
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">疾患名</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">説明</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">ステータス</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">作成日</th>
+                    <th className="px-6 py-3 text-right text-xs font-medium tracking-wider text-gray-500 uppercase">操作</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200 bg-white">
+                  {filteredDiseases.map((disease) => (
+                    <tr key={disease.id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4">
+                        <div className="text-sm font-medium text-gray-900">{disease.name}</div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="max-w-md text-sm text-gray-500">{disease.description || '—'}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">{getStatusBadge(disease.status)}</td>
+                      <td className="px-6 py-4 text-sm whitespace-nowrap text-gray-500">{formatDate(disease.created_at)}</td>
+                      <td className="px-6 py-4 text-right text-sm font-medium whitespace-nowrap">
+                        <div className="flex items-center justify-end gap-2">
+                          <button
+                            onClick={() => handleEdit(disease)}
+                            disabled={processingId === disease.id}
+                            className="text-blue-600 hover:text-blue-900 disabled:opacity-50"
+                            title="編集"
+                          >
+                            <i className="ph ph-pencil"></i>
+                          </button>
+                          <button
+                            onClick={() => handleDelete(disease)}
+                            disabled={processingId === disease.id}
+                            className="text-red-600 hover:text-red-900 disabled:opacity-50"
+                            title="削除"
+                          >
+                            <i className="ph ph-trash"></i>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div className="bg-gray-50 px-6 py-3 text-sm text-gray-500">全 {filteredDiseases.length} 件の主疾患</div>
+          </div>
+        )}
+      </div>
+    </>
+  );
+}
+

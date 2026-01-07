@@ -18,6 +18,20 @@ const dashboard = {
       type: 'item',
       icon: 'ph ph-robot',
       url: '/ai'
+    },
+    {
+      id: 'patients',
+      title: '患者',
+      type: 'item',
+      icon: 'ph ph-user',
+      url: '/patients'
+    },
+    {
+      id: 'main-disease',
+      title: '主疾患',
+      type: 'item',
+      icon: 'ph ph-heartbeat',
+      url: '/main-disease'
     }
   ]
 };
