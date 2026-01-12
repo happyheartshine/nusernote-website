@@ -183,3 +183,187 @@ class UpdateRecordRequest(BaseModel):
     soap_output: dict | None = Field(None, description="Updated SOAP output data")
     plan_output: dict | None = Field(None, description="Updated plan output data")
     status: str | None = Field(None, description="Record status (draft/confirmed)")
+
+
+class VisitRecordCreateRequest(BaseModel):
+    """Request body for creating a visit record."""
+
+    patient_id: str = Field(..., description="Patient ID")
+    patient_name: str = Field(..., description="患者名")
+    gender: str | None = Field(None, description="性別 (male/female)")
+    birth_date: str | None = Field(None, description="生年月日 (YYYY-MM-DD)")
+    birth_date_year: int | None = Field(None, description="生年月日(年)")
+    birth_date_month: int | None = Field(None, description="生年月日(月)")
+    birth_date_day: int | None = Field(None, description="生年月日(日)")
+    age: int | None = Field(None, description="年齢")
+    patient_address: str | None = Field(None, description="住所")
+    patient_contact: str | None = Field(None, description="連絡先")
+    
+    # Key Person
+    key_person_name: str | None = Field(None, description="キーパーソン氏名")
+    key_person_relationship: str | None = Field(None, description="キーパーソン続柄")
+    key_person_address: str | None = Field(None, description="キーパーソン住所")
+    key_person_contact1: str | None = Field(None, description="キーパーソン連絡先1")
+    key_person_contact2: str | None = Field(None, description="キーパーソン連絡先2")
+    
+    # Initial Visit Date
+    initial_visit_date: str | None = Field(None, description="初回訪問年月日 (YYYY-MM-DD)")
+    initial_visit_year: int | None = Field(None, description="初回訪問年")
+    initial_visit_month: int | None = Field(None, description="初回訪問月")
+    initial_visit_day: int | None = Field(None, description="初回訪問日")
+    initial_visit_day_of_week: str | None = Field(None, description="初回訪問曜日")
+    initial_visit_start_hour: int | None = Field(None, description="初回訪問開始時")
+    initial_visit_start_minute: int | None = Field(None, description="初回訪問開始分")
+    initial_visit_end_hour: int | None = Field(None, description="初回訪問終了時")
+    initial_visit_end_minute: int | None = Field(None, description="初回訪問終了分")
+    
+    # Medical Information
+    main_disease: str | None = Field(None, description="主たる傷病名")
+    medical_history: str | None = Field(None, description="既往歴")
+    current_illness_history: str | None = Field(None, description="現病歴")
+    family_structure: str | None = Field(None, description="家族構成")
+    
+    # Daily Life Status
+    daily_life_meal_nutrition: str | None = Field(None, description="食事・栄養")
+    daily_life_hygiene: str | None = Field(None, description="清潔・整容")
+    daily_life_medication: str | None = Field(None, description="服薬")
+    daily_life_sleep: str | None = Field(None, description="睡眠")
+    daily_life_living_environment: str | None = Field(None, description="生活環境")
+    daily_life_family_environment: str | None = Field(None, description="家族環境")
+    
+    # Primary Doctor
+    doctor_name: str | None = Field(None, description="主治医氏名")
+    hospital_name: str | None = Field(None, description="医療機関名")
+    hospital_address: str | None = Field(None, description="医療機関所在地")
+    hospital_phone: str | None = Field(None, description="医療機関電話番号")
+    
+    # Additional
+    notes: str | None = Field(None, description="備考")
+    recorder_name: str | None = Field(None, description="記載者")
+    status: str = Field(default="active", description="ステータス (active/inactive/archived)")
+
+
+class VisitRecordUpdateRequest(BaseModel):
+    """Request body for updating a visit record."""
+
+    patient_id: str | None = Field(None, description="Patient ID")
+    patient_name: str | None = Field(None, description="患者名")
+    gender: str | None = Field(None, description="性別 (male/female)")
+    birth_date: str | None = Field(None, description="生年月日 (YYYY-MM-DD)")
+    birth_date_year: int | None = Field(None, description="生年月日(年)")
+    birth_date_month: int | None = Field(None, description="生年月日(月)")
+    birth_date_day: int | None = Field(None, description="生年月日(日)")
+    age: int | None = Field(None, description="年齢")
+    patient_address: str | None = Field(None, description="住所")
+    patient_contact: str | None = Field(None, description="連絡先")
+    
+    # Key Person
+    key_person_name: str | None = Field(None, description="キーパーソン氏名")
+    key_person_relationship: str | None = Field(None, description="キーパーソン続柄")
+    key_person_address: str | None = Field(None, description="キーパーソン住所")
+    key_person_contact1: str | None = Field(None, description="キーパーソン連絡先1")
+    key_person_contact2: str | None = Field(None, description="キーパーソン連絡先2")
+    
+    # Initial Visit Date
+    initial_visit_date: str | None = Field(None, description="初回訪問年月日 (YYYY-MM-DD)")
+    initial_visit_year: int | None = Field(None, description="初回訪問年")
+    initial_visit_month: int | None = Field(None, description="初回訪問月")
+    initial_visit_day: int | None = Field(None, description="初回訪問日")
+    initial_visit_day_of_week: str | None = Field(None, description="初回訪問曜日")
+    initial_visit_start_hour: int | None = Field(None, description="初回訪問開始時")
+    initial_visit_start_minute: int | None = Field(None, description="初回訪問開始分")
+    initial_visit_end_hour: int | None = Field(None, description="初回訪問終了時")
+    initial_visit_end_minute: int | None = Field(None, description="初回訪問終了分")
+    
+    # Medical Information
+    main_disease: str | None = Field(None, description="主たる傷病名")
+    medical_history: str | None = Field(None, description="既往歴")
+    current_illness_history: str | None = Field(None, description="現病歴")
+    family_structure: str | None = Field(None, description="家族構成")
+    
+    # Daily Life Status
+    daily_life_meal_nutrition: str | None = Field(None, description="食事・栄養")
+    daily_life_hygiene: str | None = Field(None, description="清潔・整容")
+    daily_life_medication: str | None = Field(None, description="服薬")
+    daily_life_sleep: str | None = Field(None, description="睡眠")
+    daily_life_living_environment: str | None = Field(None, description="生活環境")
+    daily_life_family_environment: str | None = Field(None, description="家族環境")
+    
+    # Primary Doctor
+    doctor_name: str | None = Field(None, description="主治医氏名")
+    hospital_name: str | None = Field(None, description="医療機関名")
+    hospital_address: str | None = Field(None, description="医療機関所在地")
+    hospital_phone: str | None = Field(None, description="医療機関電話番号")
+    
+    # Additional
+    notes: str | None = Field(None, description="備考")
+    recorder_name: str | None = Field(None, description="記載者")
+    status: str | None = Field(None, description="ステータス (active/inactive/archived)")
+
+
+class VisitRecordResponse(BaseModel):
+    """Response model for a visit record."""
+
+    id: str = Field(..., description="Visit Record ID")
+    user_id: str = Field(..., description="User ID")
+    patient_id: str = Field(..., description="Patient ID")
+    patient_name: str = Field(..., description="患者名")
+    gender: str | None = Field(None, description="性別")
+    birth_date: str | None = Field(None, description="生年月日")
+    birth_date_year: int | None = Field(None, description="生年月日(年)")
+    birth_date_month: int | None = Field(None, description="生年月日(月)")
+    birth_date_day: int | None = Field(None, description="生年月日(日)")
+    age: int | None = Field(None, description="年齢")
+    patient_address: str | None = Field(None, description="住所")
+    patient_contact: str | None = Field(None, description="連絡先")
+    
+    # Key Person
+    key_person_name: str | None = Field(None, description="キーパーソン氏名")
+    key_person_relationship: str | None = Field(None, description="キーパーソン続柄")
+    key_person_address: str | None = Field(None, description="キーパーソン住所")
+    key_person_contact1: str | None = Field(None, description="キーパーソン連絡先1")
+    key_person_contact2: str | None = Field(None, description="キーパーソン連絡先2")
+    
+    # Initial Visit Date
+    initial_visit_date: str | None = Field(None, description="初回訪問年月日")
+    initial_visit_year: int | None = Field(None, description="初回訪問年")
+    initial_visit_month: int | None = Field(None, description="初回訪問月")
+    initial_visit_day: int | None = Field(None, description="初回訪問日")
+    initial_visit_day_of_week: str | None = Field(None, description="初回訪問曜日")
+    initial_visit_start_hour: int | None = Field(None, description="初回訪問開始時")
+    initial_visit_start_minute: int | None = Field(None, description="初回訪問開始分")
+    initial_visit_end_hour: int | None = Field(None, description="初回訪問終了時")
+    initial_visit_end_minute: int | None = Field(None, description="初回訪問終了分")
+    
+    # Medical Information
+    main_disease: str | None = Field(None, description="主たる傷病名")
+    medical_history: str | None = Field(None, description="既往歴")
+    current_illness_history: str | None = Field(None, description="現病歴")
+    family_structure: str | None = Field(None, description="家族構成")
+    
+    # Daily Life Status
+    daily_life_meal_nutrition: str | None = Field(None, description="食事・栄養")
+    daily_life_hygiene: str | None = Field(None, description="清潔・整容")
+    daily_life_medication: str | None = Field(None, description="服薬")
+    daily_life_sleep: str | None = Field(None, description="睡眠")
+    daily_life_living_environment: str | None = Field(None, description="生活環境")
+    daily_life_family_environment: str | None = Field(None, description="家族環境")
+    
+    # Primary Doctor
+    doctor_name: str | None = Field(None, description="主治医氏名")
+    hospital_name: str | None = Field(None, description="医療機関名")
+    hospital_address: str | None = Field(None, description="医療機関所在地")
+    hospital_phone: str | None = Field(None, description="医療機関電話番号")
+    
+    # Additional
+    notes: str | None = Field(None, description="備考")
+    recorder_name: str | None = Field(None, description="記載者")
+    status: str = Field(..., description="ステータス")
+    created_at: str = Field(..., description="作成日時")
+    updated_at: str = Field(..., description="更新日時")
+
+
+class VisitRecordsListResponse(BaseModel):
+    """Response model for list of visit records."""
+
+    visit_records: list[VisitRecordResponse] = Field(..., description="List of visit records")

@@ -760,3 +760,513 @@ def update_soap_record(
     except Exception as e:
         logger.error(f"Error updating SOAP record in database: {e}")
         raise DatabaseServiceError(f"Failed to update record: {str(e)}") from e
+
+
+# ============================================================================
+# Visit Records CRUD Operations
+# ============================================================================
+
+def create_visit_record(
+    user_id: str,
+    patient_id: str,
+    patient_name: str,
+    gender: Optional[str] = None,
+    birth_date: Optional[str] = None,
+    birth_date_year: Optional[int] = None,
+    birth_date_month: Optional[int] = None,
+    birth_date_day: Optional[int] = None,
+    age: Optional[int] = None,
+    patient_address: Optional[str] = None,
+    patient_contact: Optional[str] = None,
+    key_person_name: Optional[str] = None,
+    key_person_relationship: Optional[str] = None,
+    key_person_address: Optional[str] = None,
+    key_person_contact1: Optional[str] = None,
+    key_person_contact2: Optional[str] = None,
+    initial_visit_date: Optional[str] = None,
+    initial_visit_year: Optional[int] = None,
+    initial_visit_month: Optional[int] = None,
+    initial_visit_day: Optional[int] = None,
+    initial_visit_day_of_week: Optional[str] = None,
+    initial_visit_start_hour: Optional[int] = None,
+    initial_visit_start_minute: Optional[int] = None,
+    initial_visit_end_hour: Optional[int] = None,
+    initial_visit_end_minute: Optional[int] = None,
+    main_disease: Optional[str] = None,
+    medical_history: Optional[str] = None,
+    current_illness_history: Optional[str] = None,
+    family_structure: Optional[str] = None,
+    daily_life_meal_nutrition: Optional[str] = None,
+    daily_life_hygiene: Optional[str] = None,
+    daily_life_medication: Optional[str] = None,
+    daily_life_sleep: Optional[str] = None,
+    daily_life_living_environment: Optional[str] = None,
+    daily_life_family_environment: Optional[str] = None,
+    doctor_name: Optional[str] = None,
+    hospital_name: Optional[str] = None,
+    hospital_address: Optional[str] = None,
+    hospital_phone: Optional[str] = None,
+    notes: Optional[str] = None,
+    recorder_name: Optional[str] = None,
+    status: str = "active",
+) -> Dict[str, Any]:
+    """
+    Create a new visit record.
+    
+    Returns:
+        Dictionary containing the created visit record data.
+        
+    Raises:
+        DatabaseServiceError: If create operation fails.
+    """
+    try:
+        supabase = get_supabase_client()
+        
+        visit_record_data = {
+            "user_id": user_id,
+            "patient_id": patient_id,
+            "patient_name": patient_name.strip(),
+            "status": status,
+        }
+        
+        # Add all optional fields if provided
+        optional_fields = {
+            "gender": gender,
+            "birth_date": birth_date,
+            "birth_date_year": birth_date_year,
+            "birth_date_month": birth_date_month,
+            "birth_date_day": birth_date_day,
+            "age": age,
+            "patient_address": patient_address,
+            "patient_contact": patient_contact,
+            "key_person_name": key_person_name,
+            "key_person_relationship": key_person_relationship,
+            "key_person_address": key_person_address,
+            "key_person_contact1": key_person_contact1,
+            "key_person_contact2": key_person_contact2,
+            "initial_visit_date": initial_visit_date,
+            "initial_visit_year": initial_visit_year,
+            "initial_visit_month": initial_visit_month,
+            "initial_visit_day": initial_visit_day,
+            "initial_visit_day_of_week": initial_visit_day_of_week,
+            "initial_visit_start_hour": initial_visit_start_hour,
+            "initial_visit_start_minute": initial_visit_start_minute,
+            "initial_visit_end_hour": initial_visit_end_hour,
+            "initial_visit_end_minute": initial_visit_end_minute,
+            "main_disease": main_disease,
+            "medical_history": medical_history,
+            "current_illness_history": current_illness_history,
+            "family_structure": family_structure,
+            "daily_life_meal_nutrition": daily_life_meal_nutrition,
+            "daily_life_hygiene": daily_life_hygiene,
+            "daily_life_medication": daily_life_medication,
+            "daily_life_sleep": daily_life_sleep,
+            "daily_life_living_environment": daily_life_living_environment,
+            "daily_life_family_environment": daily_life_family_environment,
+            "doctor_name": doctor_name,
+            "hospital_name": hospital_name,
+            "hospital_address": hospital_address,
+            "hospital_phone": hospital_phone,
+            "notes": notes,
+            "recorder_name": recorder_name,
+        }
+        
+        for field, value in optional_fields.items():
+            if value is not None:
+                if isinstance(value, str):
+                    visit_record_data[field] = value.strip() if value else None
+                else:
+                    visit_record_data[field] = value
+        
+        logger.info(f"Creating visit record for user {user_id}, patient: {patient_name}")
+        
+        response = supabase.table("visit_records").insert(visit_record_data).execute()
+        
+        if not response.data:
+            raise DatabaseServiceError("Failed to create visit record")
+        
+        record = response.data[0]
+        logger.info(f"Successfully created visit record {record['id']}")
+        
+        # Convert all values to strings for response
+        return {
+            "id": str(record["id"]),
+            "user_id": str(record["user_id"]),
+            "patient_id": str(record["patient_id"]),
+            "patient_name": record["patient_name"],
+            "gender": record.get("gender"),
+            "birth_date": str(record["birth_date"]) if record.get("birth_date") else None,
+            "birth_date_year": record.get("birth_date_year"),
+            "birth_date_month": record.get("birth_date_month"),
+            "birth_date_day": record.get("birth_date_day"),
+            "age": record.get("age"),
+            "patient_address": record.get("patient_address"),
+            "patient_contact": record.get("patient_contact"),
+            "key_person_name": record.get("key_person_name"),
+            "key_person_relationship": record.get("key_person_relationship"),
+            "key_person_address": record.get("key_person_address"),
+            "key_person_contact1": record.get("key_person_contact1"),
+            "key_person_contact2": record.get("key_person_contact2"),
+            "initial_visit_date": str(record["initial_visit_date"]) if record.get("initial_visit_date") else None,
+            "initial_visit_year": record.get("initial_visit_year"),
+            "initial_visit_month": record.get("initial_visit_month"),
+            "initial_visit_day": record.get("initial_visit_day"),
+            "initial_visit_day_of_week": record.get("initial_visit_day_of_week"),
+            "initial_visit_start_hour": record.get("initial_visit_start_hour"),
+            "initial_visit_start_minute": record.get("initial_visit_start_minute"),
+            "initial_visit_end_hour": record.get("initial_visit_end_hour"),
+            "initial_visit_end_minute": record.get("initial_visit_end_minute"),
+            "main_disease": record.get("main_disease"),
+            "medical_history": record.get("medical_history"),
+            "current_illness_history": record.get("current_illness_history"),
+            "family_structure": record.get("family_structure"),
+            "daily_life_meal_nutrition": record.get("daily_life_meal_nutrition"),
+            "daily_life_hygiene": record.get("daily_life_hygiene"),
+            "daily_life_medication": record.get("daily_life_medication"),
+            "daily_life_sleep": record.get("daily_life_sleep"),
+            "daily_life_living_environment": record.get("daily_life_living_environment"),
+            "daily_life_family_environment": record.get("daily_life_family_environment"),
+            "doctor_name": record.get("doctor_name"),
+            "hospital_name": record.get("hospital_name"),
+            "hospital_address": record.get("hospital_address"),
+            "hospital_phone": record.get("hospital_phone"),
+            "notes": record.get("notes"),
+            "recorder_name": record.get("recorder_name"),
+            "status": record["status"],
+            "created_at": str(record["created_at"]),
+            "updated_at": str(record["updated_at"]),
+        }
+        
+    except DatabaseServiceError:
+        raise
+    except Exception as e:
+        logger.error(f"Error creating visit record in database: {e}")
+        raise DatabaseServiceError(f"Failed to create visit record: {str(e)}") from e
+
+
+def get_visit_records(
+    user_id: str,
+    patient_id: Optional[str] = None,
+    status: Optional[str] = None,
+) -> list[Dict[str, Any]]:
+    """
+    Fetch all visit records for a user with optional filters.
+    
+    Args:
+        user_id: Authenticated user ID
+        patient_id: Filter by patient ID (optional)
+        status: Filter by status (optional)
+        
+    Returns:
+        List of visit records ordered by creation date (newest first).
+        
+    Raises:
+        DatabaseServiceError: If query fails.
+    """
+    try:
+        supabase = get_supabase_client()
+        
+        query = supabase.table("visit_records").select("*").eq("user_id", user_id)
+        
+        if patient_id:
+            query = query.eq("patient_id", patient_id)
+        if status:
+            query = query.eq("status", status)
+        
+        query = query.order("created_at", desc=True)
+        
+        logger.info(f"Fetching visit records for user {user_id}")
+        
+        response = query.execute()
+        
+        if not response.data:
+            logger.info(f"No visit records found for user {user_id}")
+            return []
+        
+        logger.info(f"Found {len(response.data)} visit records for user {user_id}")
+        
+        # Convert all records
+        result = []
+        for record in response.data:
+            result.append({
+                "id": str(record["id"]),
+                "user_id": str(record["user_id"]),
+                "patient_id": str(record["patient_id"]),
+                "patient_name": record["patient_name"],
+                "gender": record.get("gender"),
+                "birth_date": str(record["birth_date"]) if record.get("birth_date") else None,
+                "birth_date_year": record.get("birth_date_year"),
+                "birth_date_month": record.get("birth_date_month"),
+                "birth_date_day": record.get("birth_date_day"),
+                "age": record.get("age"),
+                "patient_address": record.get("patient_address"),
+                "patient_contact": record.get("patient_contact"),
+                "key_person_name": record.get("key_person_name"),
+                "key_person_relationship": record.get("key_person_relationship"),
+                "key_person_address": record.get("key_person_address"),
+                "key_person_contact1": record.get("key_person_contact1"),
+                "key_person_contact2": record.get("key_person_contact2"),
+                "initial_visit_date": str(record["initial_visit_date"]) if record.get("initial_visit_date") else None,
+                "initial_visit_year": record.get("initial_visit_year"),
+                "initial_visit_month": record.get("initial_visit_month"),
+                "initial_visit_day": record.get("initial_visit_day"),
+                "initial_visit_day_of_week": record.get("initial_visit_day_of_week"),
+                "initial_visit_start_hour": record.get("initial_visit_start_hour"),
+                "initial_visit_start_minute": record.get("initial_visit_start_minute"),
+                "initial_visit_end_hour": record.get("initial_visit_end_hour"),
+                "initial_visit_end_minute": record.get("initial_visit_end_minute"),
+                "main_disease": record.get("main_disease"),
+                "medical_history": record.get("medical_history"),
+                "current_illness_history": record.get("current_illness_history"),
+                "family_structure": record.get("family_structure"),
+                "daily_life_meal_nutrition": record.get("daily_life_meal_nutrition"),
+                "daily_life_hygiene": record.get("daily_life_hygiene"),
+                "daily_life_medication": record.get("daily_life_medication"),
+                "daily_life_sleep": record.get("daily_life_sleep"),
+                "daily_life_living_environment": record.get("daily_life_living_environment"),
+                "daily_life_family_environment": record.get("daily_life_family_environment"),
+                "doctor_name": record.get("doctor_name"),
+                "hospital_name": record.get("hospital_name"),
+                "hospital_address": record.get("hospital_address"),
+                "hospital_phone": record.get("hospital_phone"),
+                "notes": record.get("notes"),
+                "recorder_name": record.get("recorder_name"),
+                "status": record["status"],
+                "created_at": str(record["created_at"]),
+                "updated_at": str(record["updated_at"]),
+            })
+        
+        return result
+        
+    except Exception as e:
+        logger.error(f"Error fetching visit records from database: {e}")
+        raise DatabaseServiceError(f"Failed to fetch visit records: {str(e)}") from e
+
+
+def get_visit_record_by_id(visit_record_id: str, user_id: str) -> Dict[str, Any]:
+    """
+    Fetch a single visit record by ID.
+    
+    Args:
+        visit_record_id: Visit record ID (UUID)
+        user_id: Authenticated user ID (for security check)
+        
+    Returns:
+        Dictionary containing the visit record data.
+        
+    Raises:
+        DatabaseServiceError: If query fails or record not found.
+    """
+    try:
+        supabase = get_supabase_client()
+        
+        logger.info(f"Fetching visit record {visit_record_id} for user {user_id}")
+        
+        response = (
+            supabase.table("visit_records")
+            .select("*")
+            .eq("id", visit_record_id)
+            .eq("user_id", user_id)
+            .execute()
+        )
+        
+        if not response.data:
+            raise DatabaseServiceError(f"Visit record {visit_record_id} not found")
+        
+        record = response.data[0]
+        logger.info(f"Successfully fetched visit record {visit_record_id}")
+        
+        return {
+            "id": str(record["id"]),
+            "user_id": str(record["user_id"]),
+            "patient_id": str(record["patient_id"]),
+            "patient_name": record["patient_name"],
+            "gender": record.get("gender"),
+            "birth_date": str(record["birth_date"]) if record.get("birth_date") else None,
+            "birth_date_year": record.get("birth_date_year"),
+            "birth_date_month": record.get("birth_date_month"),
+            "birth_date_day": record.get("birth_date_day"),
+            "age": record.get("age"),
+            "patient_address": record.get("patient_address"),
+            "patient_contact": record.get("patient_contact"),
+            "key_person_name": record.get("key_person_name"),
+            "key_person_relationship": record.get("key_person_relationship"),
+            "key_person_address": record.get("key_person_address"),
+            "key_person_contact1": record.get("key_person_contact1"),
+            "key_person_contact2": record.get("key_person_contact2"),
+            "initial_visit_date": str(record["initial_visit_date"]) if record.get("initial_visit_date") else None,
+            "initial_visit_year": record.get("initial_visit_year"),
+            "initial_visit_month": record.get("initial_visit_month"),
+            "initial_visit_day": record.get("initial_visit_day"),
+            "initial_visit_day_of_week": record.get("initial_visit_day_of_week"),
+            "initial_visit_start_hour": record.get("initial_visit_start_hour"),
+            "initial_visit_start_minute": record.get("initial_visit_start_minute"),
+            "initial_visit_end_hour": record.get("initial_visit_end_hour"),
+            "initial_visit_end_minute": record.get("initial_visit_end_minute"),
+            "main_disease": record.get("main_disease"),
+            "medical_history": record.get("medical_history"),
+            "current_illness_history": record.get("current_illness_history"),
+            "family_structure": record.get("family_structure"),
+            "daily_life_meal_nutrition": record.get("daily_life_meal_nutrition"),
+            "daily_life_hygiene": record.get("daily_life_hygiene"),
+            "daily_life_medication": record.get("daily_life_medication"),
+            "daily_life_sleep": record.get("daily_life_sleep"),
+            "daily_life_living_environment": record.get("daily_life_living_environment"),
+            "daily_life_family_environment": record.get("daily_life_family_environment"),
+            "doctor_name": record.get("doctor_name"),
+            "hospital_name": record.get("hospital_name"),
+            "hospital_address": record.get("hospital_address"),
+            "hospital_phone": record.get("hospital_phone"),
+            "notes": record.get("notes"),
+            "recorder_name": record.get("recorder_name"),
+            "status": record["status"],
+            "created_at": str(record["created_at"]),
+            "updated_at": str(record["updated_at"]),
+        }
+        
+    except DatabaseServiceError:
+        raise
+    except Exception as e:
+        logger.error(f"Error fetching visit record from database: {e}")
+        raise DatabaseServiceError(f"Failed to fetch visit record: {str(e)}") from e
+
+
+def update_visit_record(
+    visit_record_id: str,
+    user_id: str,
+    **kwargs
+) -> Dict[str, Any]:
+    """
+    Update a visit record.
+    
+    Args:
+        visit_record_id: Visit record ID (UUID)
+        user_id: Authenticated user ID (for security check)
+        **kwargs: Fields to update
+        
+    Returns:
+        Dictionary containing the updated visit record data.
+        
+    Raises:
+        DatabaseServiceError: If update operation fails.
+    """
+    try:
+        supabase = get_supabase_client()
+        
+        update_data = {}
+        
+        # Process all possible fields
+        for field, value in kwargs.items():
+            if value is not None:
+                if isinstance(value, str):
+                    update_data[field] = value.strip() if value else None
+                else:
+                    update_data[field] = value
+        
+        if not update_data:
+            raise DatabaseServiceError("No update data provided")
+        
+        # Validate status if provided
+        if "status" in update_data and update_data["status"] not in ["active", "inactive", "archived"]:
+            raise DatabaseServiceError(f"Invalid status: {update_data['status']}. Must be 'active', 'inactive', or 'archived'.")
+        
+        logger.info(f"Updating visit record {visit_record_id} for user {user_id}")
+        
+        response = (
+            supabase.table("visit_records")
+            .update(update_data)
+            .eq("id", visit_record_id)
+            .eq("user_id", user_id)
+            .execute()
+        )
+        
+        if not response.data:
+            raise DatabaseServiceError(f"Visit record {visit_record_id} not found or update failed")
+        
+        record = response.data[0]
+        logger.info(f"Successfully updated visit record {visit_record_id}")
+        
+        return {
+            "id": str(record["id"]),
+            "user_id": str(record["user_id"]),
+            "patient_id": str(record["patient_id"]),
+            "patient_name": record["patient_name"],
+            "gender": record.get("gender"),
+            "birth_date": str(record["birth_date"]) if record.get("birth_date") else None,
+            "birth_date_year": record.get("birth_date_year"),
+            "birth_date_month": record.get("birth_date_month"),
+            "birth_date_day": record.get("birth_date_day"),
+            "age": record.get("age"),
+            "patient_address": record.get("patient_address"),
+            "patient_contact": record.get("patient_contact"),
+            "key_person_name": record.get("key_person_name"),
+            "key_person_relationship": record.get("key_person_relationship"),
+            "key_person_address": record.get("key_person_address"),
+            "key_person_contact1": record.get("key_person_contact1"),
+            "key_person_contact2": record.get("key_person_contact2"),
+            "initial_visit_date": str(record["initial_visit_date"]) if record.get("initial_visit_date") else None,
+            "initial_visit_year": record.get("initial_visit_year"),
+            "initial_visit_month": record.get("initial_visit_month"),
+            "initial_visit_day": record.get("initial_visit_day"),
+            "initial_visit_day_of_week": record.get("initial_visit_day_of_week"),
+            "initial_visit_start_hour": record.get("initial_visit_start_hour"),
+            "initial_visit_start_minute": record.get("initial_visit_start_minute"),
+            "initial_visit_end_hour": record.get("initial_visit_end_hour"),
+            "initial_visit_end_minute": record.get("initial_visit_end_minute"),
+            "main_disease": record.get("main_disease"),
+            "medical_history": record.get("medical_history"),
+            "current_illness_history": record.get("current_illness_history"),
+            "family_structure": record.get("family_structure"),
+            "daily_life_meal_nutrition": record.get("daily_life_meal_nutrition"),
+            "daily_life_hygiene": record.get("daily_life_hygiene"),
+            "daily_life_medication": record.get("daily_life_medication"),
+            "daily_life_sleep": record.get("daily_life_sleep"),
+            "daily_life_living_environment": record.get("daily_life_living_environment"),
+            "daily_life_family_environment": record.get("daily_life_family_environment"),
+            "doctor_name": record.get("doctor_name"),
+            "hospital_name": record.get("hospital_name"),
+            "hospital_address": record.get("hospital_address"),
+            "hospital_phone": record.get("hospital_phone"),
+            "notes": record.get("notes"),
+            "recorder_name": record.get("recorder_name"),
+            "status": record["status"],
+            "created_at": str(record["created_at"]),
+            "updated_at": str(record["updated_at"]),
+        }
+        
+    except DatabaseServiceError:
+        raise
+    except Exception as e:
+        logger.error(f"Error updating visit record in database: {e}")
+        raise DatabaseServiceError(f"Failed to update visit record: {str(e)}") from e
+
+
+def delete_visit_record(visit_record_id: str, user_id: str) -> None:
+    """
+    Delete a visit record.
+    
+    Args:
+        visit_record_id: Visit record ID (UUID)
+        user_id: Authenticated user ID (for security check)
+        
+    Raises:
+        DatabaseServiceError: If delete operation fails.
+    """
+    try:
+        supabase = get_supabase_client()
+        
+        logger.info(f"Deleting visit record {visit_record_id} for user {user_id}")
+        
+        response = (
+            supabase.table("visit_records")
+            .delete()
+            .eq("id", visit_record_id)
+            .eq("user_id", user_id)
+            .execute()
+        )
+        
+        logger.info(f"Successfully deleted visit record {visit_record_id}")
+        
+    except Exception as e:
+        logger.error(f"Error deleting visit record from database: {e}")
+        raise DatabaseServiceError(f"Failed to delete visit record: {str(e)}") from e

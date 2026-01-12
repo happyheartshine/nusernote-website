@@ -487,3 +487,208 @@ def generate_monthly_report_pdf(patient_id: str, patient_name: str, month: str, 
         logger.error(f"Error generating monthly report PDF: {e}")
         raise PDFServiceError(f"Failed to generate monthly report PDF: {str(e)}") from e
 
+
+def generate_visit_record_pdf(record_data: Dict[str, Any]) -> bytes:
+    """
+    Generate visit record PDF (精神科訪問看護記録書Ⅰ).
+    
+    This function uses WeasyPrint with embedded Japanese fonts to ensure
+    proper rendering of Japanese medical text in the PDF.
+    
+    Args:
+        record_data: Full visit record dictionary from database
+        
+    Returns:
+        PDF file content as bytes with embedded Japanese fonts
+        
+    Raises:
+        PDFServiceError: If PDF generation fails
+    """
+    try:
+        # Verify font file exists (log warning if missing)
+        font_path = get_font_path()
+        if not os.path.exists(font_path):
+            logger.warning(
+                f"Japanese font not found at: {font_path}\n"
+                f"Japanese text will render as boxes (■■■) in the PDF.\n"
+                f"Please download IPAexGothic.ttf and place it in the fonts directory."
+            )
+        else:
+            logger.info(f"Japanese font verified at: {font_path}")
+        
+        template_env = get_template_env()
+        
+        # Helper function to format date components
+        def format_date_component(value, default=''):
+            return str(value) if value is not None else default
+        
+        # Extract birth date components
+        birth_date = record_data.get('birth_date')
+        birth_year = record_data.get('birth_date_year')
+        birth_month = record_data.get('birth_date_month')
+        birth_day = record_data.get('birth_date_day')
+        
+        # If birth_date exists but components don't, parse it
+        if birth_date and not birth_year:
+            try:
+                from datetime import datetime
+                if isinstance(birth_date, str):
+                    birth_dt = datetime.strptime(birth_date, '%Y-%m-%d')
+                else:
+                    birth_dt = birth_date
+                birth_year = birth_dt.year
+                birth_month = birth_dt.month
+                birth_day = birth_dt.day
+            except:
+                pass
+        
+        # Extract initial visit date components
+        initial_visit_date = record_data.get('initial_visit_date')
+        initial_year = record_data.get('initial_visit_year')
+        initial_month = record_data.get('initial_visit_month')
+        initial_day = record_data.get('initial_visit_day')
+        initial_day_of_week = record_data.get('initial_visit_day_of_week', '')
+        
+        # If initial_visit_date exists but components don't, parse it
+        if initial_visit_date and not initial_year:
+            try:
+                from datetime import datetime
+                if isinstance(initial_visit_date, str):
+                    visit_dt = datetime.strptime(initial_visit_date, '%Y-%m-%d')
+                else:
+                    visit_dt = initial_visit_date
+                initial_year = visit_dt.year
+                initial_month = visit_dt.month
+                initial_day = visit_dt.day
+                # Get day of week in Japanese
+                weekdays = ['月', '火', '水', '木', '金', '土', '日']
+                initial_day_of_week = weekdays[visit_dt.weekday()]
+            except:
+                pass
+        
+        # Format gender
+        gender = record_data.get('gender', '')
+        gender_display = ''
+        if gender == 'male':
+            gender_display = '男'
+        elif gender == 'female':
+            gender_display = '女'
+        
+        # Map visit record data to template format
+        template_data = {
+            # Patient basic info
+            'patient_name': record_data.get('patient_name', ''),
+            'gender': gender_display,
+            'birth_year': format_date_component(birth_year),
+            'birth_month': format_date_component(birth_month),
+            'birth_day': format_date_component(birth_day),
+            'age': format_date_component(record_data.get('age')),
+            'patient_address': record_data.get('patient_address', ''),
+            'patient_contact': record_data.get('patient_contact', ''),
+            
+            # Key person info
+            'key_person_name': record_data.get('key_person_name', ''),
+            'key_person_relationship': record_data.get('key_person_relationship', ''),
+            'key_person_address': record_data.get('key_person_address', ''),
+            'key_person_contact1': record_data.get('key_person_contact1', ''),
+            'key_person_contact2': record_data.get('key_person_contact2', ''),
+            
+            # Initial visit date
+            'initial_visit_year': format_date_component(initial_year),
+            'initial_visit_month': format_date_component(initial_month),
+            'initial_visit_day': format_date_component(initial_day),
+            'initial_visit_day_of_week': initial_day_of_week,
+            'initial_visit_start_hour': format_date_component(record_data.get('initial_visit_start_hour')),
+            'initial_visit_start_minute': format_date_component(record_data.get('initial_visit_start_minute')),
+            'initial_visit_end_hour': format_date_component(record_data.get('initial_visit_end_hour')),
+            'initial_visit_end_minute': format_date_component(record_data.get('initial_visit_end_minute')),
+            
+            # Medical info
+            'main_disease': record_data.get('main_disease', ''),
+            'medical_history': record_data.get('medical_history', ''),
+            'current_illness_history': record_data.get('current_illness_history', ''),
+            'family_structure': record_data.get('family_structure', ''),
+            
+            # Daily life status
+            'daily_life_meal_nutrition': record_data.get('daily_life_meal_nutrition', ''),
+            'daily_life_hygiene': record_data.get('daily_life_hygiene', ''),
+            'daily_life_medication': record_data.get('daily_life_medication', ''),
+            'daily_life_sleep': record_data.get('daily_life_sleep', ''),
+            'daily_life_living_environment': record_data.get('daily_life_living_environment', ''),
+            'daily_life_family_environment': record_data.get('daily_life_family_environment', ''),
+            
+            # Doctor info
+            'doctor_name': record_data.get('doctor_name', ''),
+            'hospital_name': record_data.get('hospital_name', ''),
+            'hospital_address': record_data.get('hospital_address', ''),
+            'hospital_phone': record_data.get('hospital_phone', ''),
+            
+            # Additional info
+            'notes': record_data.get('notes', ''),
+            'recorder_name': record_data.get('recorder_name', ''),
+        }
+        
+        # Render HTML template
+        try:
+            template = template_env.get_template('visit_record.html')
+            html_content = template.render(**template_data)
+        except TemplateNotFound:
+            raise PDFServiceError("Visit record template not found: visit_record.html")
+        
+        # Get CSS file path and read it
+        css_path = get_css_path()
+        
+        # Read CSS and inject font path dynamically
+        with open(css_path, 'r', encoding='utf-8') as f:
+            css_content = f.read()
+        
+        # Replace font path placeholder with actual absolute path
+        # Convert Windows path to file:// URL format for WeasyPrint
+        if os.name == 'nt':  # Windows
+            # Convert C:\path\to\font.ttf to file:///C:/path/to/font.ttf
+            font_url = font_path.replace('\\', '/')
+            if not font_url.startswith('/'):
+                font_url = '/' + font_url
+            font_url = 'file://' + font_url
+        else:  # Unix/Linux/Mac
+            font_url = 'file://' + font_path
+        
+        # Replace placeholder in CSS (if exists) or inject font-face rule
+        if '@font-face' in css_content and 'IPAexGothic.ttf' in css_content:
+            # Replace the font path in existing @font-face
+            css_content = re.sub(
+                r"url\('file://[^']+IPAexGothic\.ttf'\)",
+                f"url('{font_url}')",
+                css_content
+            )
+        else:
+            # Inject @font-face if not present
+            font_face_rule = f"""
+@font-face {{
+    font-family: 'IPAexGothic';
+    src: url('{font_url}') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}}
+"""
+            css_content = font_face_rule + css_content
+        
+        # Convert HTML to PDF using WeasyPrint with embedded fonts
+        logger.info("Converting HTML to PDF using WeasyPrint with Japanese font embedding")
+        
+        # Create HTML object from string
+        html_obj = HTML(string=html_content)
+        
+        # Generate PDF with CSS (contains @font-face for Japanese fonts)
+        # Use CSS(string=...) with dynamically generated CSS content
+        pdf_bytes = html_obj.write_pdf(
+            stylesheets=[CSS(string=css_content)]
+        )
+        
+        logger.info(f"Successfully generated visit record PDF ({len(pdf_bytes)} bytes)")
+        return pdf_bytes
+        
+    except Exception as e:
+        logger.error(f"Error generating visit record PDF: {e}")
+        raise PDFServiceError(f"Failed to generate visit record PDF: {str(e)}") from e
+

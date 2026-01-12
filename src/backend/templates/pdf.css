@@ -250,6 +250,58 @@ body {
 }
 
 /* ============================================
+   UNIFIED TABLE - Visit Report (Form I)
+   ============================================ */
+
+.unified-table {
+    width: 100%;
+    border-collapse: collapse;
+    border: 2pt solid #000;
+    margin-bottom: 8mm;
+}
+
+.unified-table td {
+    border: 1pt solid #000;
+    padding: 4pt 6pt;
+    vertical-align: middle;
+    min-height: 8mm;
+}
+
+.unified-table .label-cell {
+    font-weight: bold;
+    background-color: #f5f5f5;
+    text-align: center;
+    font-size: 9pt;
+    width: 10%;
+}
+
+.unified-table .value-cell {
+    text-align: left;
+    padding-left: 8pt;
+    font-size: 10pt;
+    min-height: 8mm;
+}
+
+/* Specific row heights for data entry sections */
+.unified-table tr:nth-child(1) td {
+    height: 8mm;
+}
+
+.unified-table tr:nth-child(2) td {
+    height: 8mm;
+}
+
+.unified-table tr:nth-child(8) td,
+.unified-table tr:nth-child(9) td {
+    height: 25mm; /* Current illness history & family structure */
+}
+
+.unified-table tr:nth-child(20) td,
+.unified-table tr:nth-child(21) td {
+    height: 20mm; /* Notes section */
+}
+
+/* ============================================
    UTILITY CLASSES
    ============================================ */
 

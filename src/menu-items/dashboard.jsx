@@ -13,18 +13,25 @@ const dashboard = {
       url: '/dashboard/default'
     },
     {
-      id: 'ai',
-      title: 'AI記録支援',
-      type: 'item',
-      icon: 'ph ph-robot',
-      url: '/ai'
-    },
-    {
       id: 'patients',
-      title: '患者',
+      title: '利用者基本情報',
       type: 'item',
       icon: 'ph ph-user',
       url: '/patients'
+    },
+    {
+      id: 'visit-records',
+      title: '訪問記録',
+      type: 'item',
+      icon: 'ph ph-notebook',
+      url: '/visit-records'
+    },
+    {
+      id: 'ai',
+      title: '計画書',
+      type: 'item',
+      icon: 'ph ph-user-circle-plus',
+      url: '/ai'
     },
     {
       id: 'main-disease',

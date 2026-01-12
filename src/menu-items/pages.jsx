@@ -11,23 +11,23 @@ const pages = {
       type: 'item',
       icon: 'ph ph-user',
       url: '/profile'
-    },
-    {
-      id: 'login',
-      title: 'ログイン',
-      type: 'item',
-      icon: 'ph ph-lock-key',
-      url: '/login',
-      target: true
-    },
-    {
-      id: 'register',
-      title: '登録',
-      type: 'item',
-      icon: 'ph ph-user-circle-plus',
-      url: '/register',
-      target: true
     }
+    // {
+    //   id: 'login',
+    //   title: 'ログイン',
+    //   type: 'item',
+    //   icon: 'ph ph-lock-key',
+    //   url: '/login',
+    //   target: true
+    // },
+    // {
+    //   id: 'register',
+    //   title: '登録',
+    //   type: 'item',
+    //   icon: 'ph ph-user-circle-plus',
+    //   url: '/register',
+    //   target: true
+    // }
   ]
 };
 
