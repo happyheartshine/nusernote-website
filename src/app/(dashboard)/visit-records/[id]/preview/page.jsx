@@ -180,9 +180,19 @@ export default function VisitRecordPreviewPage() {
               <i className="ph ph-arrow-left text-2xl"></i>
             </button>
             <div>
-              <h1 className="text-xl font-semibold text-gray-900">PDFプレビュー</h1>
+              <button
+                onClick={() => router.push('/visit-records')}
+                className="text-xl font-semibold text-gray-900 hover:text-blue-600 transition-colors"
+              >
+                PDFプレビュー
+              </button>
               {recordName && (
-                <p className="text-sm text-gray-600">{recordName}</p>
+                <button
+                  onClick={() => router.push('/visit-records')}
+                  className="block text-sm text-gray-600 hover:text-blue-600 transition-colors"
+                >
+                  {recordName}
+                </button>
               )}
             </div>
           </div>
