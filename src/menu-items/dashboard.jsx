@@ -32,14 +32,15 @@ const dashboard = {
       type: 'item',
       icon: 'ph ph-user-circle-plus',
       url: '/ai'
-    },
-    {
-      id: 'main-disease',
-      title: '主疾患',
-      type: 'item',
-      icon: 'ph ph-heartbeat',
-      url: '/main-disease'
     }
+    //,
+    // {
+    //   id: 'main-disease',
+    //   title: '主疾患',
+    //   type: 'item',
+    //   icon: 'ph ph-heartbeat',
+    //   url: '/main-disease'
+    // }
   ]
 };
 
