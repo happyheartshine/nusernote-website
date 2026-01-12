@@ -27,7 +27,12 @@ export default function VisitRecordPreviewPage() {
       setError(null);
 
       try {
-        const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+        const API_URL = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+        
+        if (!API_URL || API_URL === 'http://localhost:8000') {
+          throw new Error('API URLが設定されていません。環境変数 NEXT_PUBLIC_API_URL または NEXT_PUBLIC_BACKEND_URL を設定してください。');
+        }
+
         const { data: { session } } = await supabase.auth.getSession();
         
         if (!session) {
@@ -51,11 +56,19 @@ export default function VisitRecordPreviewPage() {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${session.access_token}`,
+            'Content-Type': 'application/json',
           },
         });
 
         if (!response.ok) {
-          throw new Error('PDF生成に失敗しました');
+          let errorMessage = 'PDF生成に失敗しました';
+          try {
+            const errorData = await response.json().catch(() => ({}));
+            errorMessage = errorData.detail || errorData.message || errorMessage;
+          } catch {
+            errorMessage = `PDF生成に失敗しました (HTTP ${response.status})`;
+          }
+          throw new Error(errorMessage);
         }
 
         const blob = await response.blob();
@@ -68,7 +81,11 @@ export default function VisitRecordPreviewPage() {
         setPdfUrl(url);
       } catch (err) {
         console.error('PDF preview error:', err);
-        setError(err instanceof Error ? err.message : 'PDFプレビューに失敗しました');
+        if (err instanceof TypeError && err.message.includes('fetch')) {
+          setError('ネットワークエラーが発生しました。APIサーバーに接続できません。API URLを確認してください。');
+        } else {
+          setError(err instanceof Error ? err.message : 'PDFプレビューに失敗しました');
+        }
       } finally {
         setLoading(false);
       }
@@ -89,22 +106,37 @@ export default function VisitRecordPreviewPage() {
     if (!pdfUrl || !recordId) return;
 
     try {
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+      
+      if (!API_URL || API_URL === 'http://localhost:8000') {
+        alert('API URLが設定されていません。環境変数を確認してください。');
+        return;
+      }
+
       const { data: { session } } = await supabase.auth.getSession();
       
       if (!session) {
-        throw new Error('認証が必要です');
+        alert('認証が必要です');
+        return;
       }
 
       const response = await fetch(`${API_URL}/pdf/visit-record/${recordId}`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json',
         },
       });
 
       if (!response.ok) {
-        throw new Error('PDF生成に失敗しました');
+        let errorMessage = 'PDF生成に失敗しました';
+        try {
+          const errorData = await response.json().catch(() => ({}));
+          errorMessage = errorData.detail || errorData.message || errorMessage;
+        } catch {
+          errorMessage = `PDF生成に失敗しました (HTTP ${response.status})`;
+        }
+        throw new Error(errorMessage);
       }
 
       const blob = await response.blob();
@@ -118,7 +150,11 @@ export default function VisitRecordPreviewPage() {
       document.body.removeChild(a);
     } catch (err) {
       console.error('PDF download error:', err);
-      alert('PDFダウンロードに失敗しました');
+      if (err instanceof TypeError && err.message.includes('fetch')) {
+        alert('ネットワークエラーが発生しました。APIサーバーに接続できません。');
+      } else {
+        alert(err instanceof Error ? err.message : 'PDFダウンロードに失敗しました');
+      }
     }
   };
 
