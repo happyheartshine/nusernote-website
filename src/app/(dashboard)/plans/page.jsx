@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
 import { getSessionFromStorage } from '@/lib/sessionStorage';
 import PlanOutput from '@/components/ai/PlanOutput';
 
@@ -26,12 +25,10 @@ function formatDate(dateString) {
 // ==============================|| PLANS PAGE ||============================== //
 
 export default function PlansPage() {
-  const router = useRouter();
   const [records, setRecords] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedRecord, setSelectedRecord] = useState(null);
-  const [updating, setUpdating] = useState(false);
 
   const fetchRecords = useCallback(async () => {
     if (!BACKEND_URL) {
@@ -101,7 +98,6 @@ export default function PlansPage() {
     if (!selectedRecord) return;
 
     try {
-      setUpdating(true);
       const session = getSessionFromStorage();
       if (!session) {
         throw new Error('認証が必要です。再度ログインしてください。');
@@ -136,8 +132,6 @@ export default function PlansPage() {
     } catch (err) {
       console.error('Error updating plan output:', err);
       alert(err instanceof Error ? err.message : '更新中にエラーが発生しました。');
-    } finally {
-      setUpdating(false);
     }
   };
 
