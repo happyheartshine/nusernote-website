@@ -2,9 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import TabNavigation from '@/components/ai/TabNavigation';
+// import TabNavigation from '@/components/ai/TabNavigation';
 import SOAPTab from '@/components/ai/SOAPTab';
-import PlanTab from '@/components/ai/PlanTab';
 import RecordsTab from '@/components/ai/RecordsTab';
 
 // ==============================|| AI PAGE CLIENT ||============================== //
@@ -17,7 +16,7 @@ export default function AIPageClient() {
   // Initialize tab from URL on mount
   useEffect(() => {
     const tabParam = searchParams.get('tab');
-    if (tabParam && ['soap', 'plan', 'records'].includes(tabParam)) {
+    if (tabParam && ['soap', 'records'].includes(tabParam)) {
       setActiveTab(tabParam);
     }
   }, [searchParams]);
@@ -33,11 +32,10 @@ export default function AIPageClient() {
   return (
     <div className="grid grid-cols-12 gap-6">
       <div className="col-span-12">
-        <TabNavigation activeTab={activeTab} onTabChange={handleTabChange} />
+        {/* <TabNavigation activeTab={activeTab} onTabChange={handleTabChange} /> */}
 
         <div className="mt-6">
           {activeTab === 'soap' && <SOAPTab />}
-          {activeTab === 'plan' && <PlanTab />}
           {activeTab === 'records' && <RecordsTab />}
         </div>
       </div>

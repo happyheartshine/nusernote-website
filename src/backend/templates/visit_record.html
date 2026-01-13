@@ -23,39 +23,29 @@
             <td class="label-cell">氏名</td>
             <td class="value-cell" colspan="2">{{ patient_name if patient_name else '　' }}</td>
             <td class="label-cell">男・女</td>
-            <td class="value-cell">{{ gender if gender else '　' }}</td>
             <td class="label-cell">生年月日</td>
-            <td class="value-cell" colspan="4">{{ birth_year if birth_year else '　' }}年{{ birth_month if birth_month else '　' }}月{{ birth_day if birth_day else '　' }}日（{{ age if age else '　' }}歳）</td>
+            <td class="value-cell" colspan="5">{{ birth_year if birth_year else '　' }}年{{ birth_month if birth_month else '　' }}月{{ birth_day if birth_day else '　' }}日（{{ age if age else '　' }}歳）</td>
         </tr>
         
         <!-- Row 2: Address and Contact -->
         <tr>
             <td class="label-cell">住所</td>
-            <td class="value-cell" colspan="5">{{ patient_address if patient_address else '　' }}</td>
+            <td class="value-cell" colspan="4">{{ patient_address if patient_address else '　' }}</td>
             <td class="label-cell">連絡先</td>
-            <td class="value-cell" colspan="3">{{ patient_contact if patient_contact else '　' }}</td>
+            <td class="value-cell" colspan="4">{{ patient_contact if patient_contact else '　' }}</td>
         </tr>
         
         <!-- Row 3-4: Key Person -->
-        <tr>
+        <tr class="key-person-row-1">
             <td class="label-cell" rowspan="2">キーパー<br>ソン</td>
-            <td class="label-cell">氏名</td>
-            <td class="value-cell" colspan="2">{{ key_person_name if key_person_name else '　' }}</td>
-            <td class="label-cell">続柄</td>
-            <td class="value-cell">（{{ key_person_relationship if key_person_relationship else '　' }}）</td>
-            <td class="label-cell">住所</td>
-            <td class="value-cell" colspan="3">{{ key_person_address if key_person_address else '　' }}</td>
-        </tr>
-        <tr>
-            <td class="label-cell">連絡先1</td>
-            <td class="value-cell" colspan="4">{{ key_person_contact1 if key_person_contact1 else '　' }}</td>
-            <td class="label-cell">連絡先2</td>
-            <td class="value-cell" colspan="3">{{ key_person_contact2 if key_person_contact2 else '　' }}</td>
+            <td class="value-cell" colspan="9">氏名&nbsp;&nbsp;&nbsp;{{ key_person_name if key_person_name else '　' }}&nbsp;&nbsp;&nbsp;&nbsp;続柄&nbsp;&nbsp;({{ key_person_relationship if key_person_relationship else '　' }})&nbsp;&nbsp;&nbsp;住所 &nbsp;&nbsp;&nbsp;{{ key_person_address if key_person_address else '　' }}</td>
+        </tr><tr class="key-person-row-2">
+            <td class="value-cell" colspan="9">連絡先1 &nbsp;&nbsp;&nbsp;{{ key_person_contact1 if key_person_contact1 else '　' }}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;連絡先2 &nbsp;&nbsp;&nbsp;{{ key_person_contact2 if key_person_contact2 else '　' }}</td>
         </tr>
         
         <!-- Row 5: Initial Visit Date -->
-        <tr>
-            <td class="label-cell" colspan="1">初訪問<br>年月日</td>
+        <tr class="initial-visit-row">
+            <td class="label-cell" colspan="1">初回訪問<br>年月日</td>
             <td class="value-cell" colspan="9">{{ initial_visit_year if initial_visit_year else '　' }}年{{ initial_visit_month if initial_visit_month else '　' }}月{{ initial_visit_day if initial_visit_day else '　' }}日（{{ initial_visit_day_of_week if initial_visit_day_of_week else '　' }}）{{ initial_visit_start_hour if initial_visit_start_hour else '　' }}時{{ initial_visit_start_minute if initial_visit_start_minute else '　' }}分～{{ initial_visit_end_hour if initial_visit_end_hour else '　' }}時{{ initial_visit_end_minute if initial_visit_end_minute else '　' }}分</td>
         </tr>
         
@@ -81,59 +71,44 @@
         <tr></tr>
         
         <!-- Row 10-15: Daily Life Status -->
-        <tr>
-            <td class="label-cell" rowspan="6">日常生<br>活状況</td>
-            <td class="label-cell" colspan="2">食事・栄養</td>
-            <td class="value-cell" colspan="7">{{ daily_life_meal_nutrition if daily_life_meal_nutrition else '　' }}</td>
-        </tr>
-        <tr>
-            <td class="label-cell" colspan="2">清潔・整容</td>
-            <td class="value-cell" colspan="7">{{ daily_life_hygiene if daily_life_hygiene else '　' }}</td>
-        </tr>
-        <tr>
-            <td class="label-cell" colspan="2">服薬</td>
-            <td class="value-cell" colspan="7">{{ daily_life_medication if daily_life_medication else '　' }}</td>
-        </tr>
-        <tr>
-            <td class="label-cell" colspan="2">睡眠</td>
-            <td class="value-cell" colspan="7">{{ daily_life_sleep if daily_life_sleep else '　' }}</td>
-        </tr>
-        <tr>
-            <td class="label-cell" colspan="2">生活環境</td>
-            <td class="value-cell" colspan="7">{{ daily_life_living_environment if daily_life_living_environment else '　' }}</td>
-        </tr>
-        <tr>
-            <td class="label-cell" colspan="2">家族環境</td>
-            <td class="value-cell" colspan="7">{{ daily_life_family_environment if daily_life_family_environment else '　' }}</td>
+        <tr class="daily-life-row-1">
+            <td class="label-cell" rowspan="6">日常生活<br>状況</td>
+            <td class="value-cell" colspan="9">食事・栄養 ({{ daily_life_meal_nutrition if daily_life_meal_nutrition else '　' }})</td>
+        </tr><tr class="daily-life-row-2">
+            <td class="value-cell" colspan="9">清潔・整容 ({{ daily_life_hygiene if daily_life_hygiene else '　' }})</td>
+        </tr><tr class="daily-life-row-3">
+            <td class="value-cell" colspan="9"> &nbsp;&nbsp;&nbsp;服薬&nbsp;&nbsp;&nbsp;  ({{ daily_life_medication if daily_life_medication else '　' }})</td>
+        </tr><tr class="daily-life-row-4">
+            <td class="value-cell" colspan="9"> &nbsp;&nbsp;&nbsp;睡眠&nbsp;&nbsp;&nbsp;  ({{ daily_life_sleep if daily_life_sleep else '　' }})</td>
+        </tr><tr class="daily-life-row-5">
+            <td class="value-cell" colspan="9"> &nbsp;生活環境&nbsp; ({{ daily_life_living_environment if daily_life_living_environment else '　' }})</td>
+        </tr><tr class="daily-life-row-6">
+            <td class="value-cell" colspan="9"> &nbsp;家族環境&nbsp; ({{ daily_life_family_environment if daily_life_family_environment else '　' }})</td>
         </tr>
         
         <!-- Row 16-19: Primary Doctor Info -->
         <tr>
             <td class="label-cell" rowspan="4">主治医</td>
-            <td class="label-cell" colspan="2">氏名</td>
-            <td class="value-cell" colspan="7">{{ doctor_name if doctor_name else '　' }}</td>
+            <td class="value-cell" colspan="9">&nbsp;&nbsp;&nbsp;氏名&nbsp;&nbsp;&nbsp;&nbsp;{{ doctor_name if doctor_name else '　' }}</td>
         </tr>
         <tr>
-            <td class="label-cell" colspan="2">医療機関名</td>
-            <td class="value-cell" colspan="7">{{ hospital_name if hospital_name else '　' }}</td>
+            <td class="value-cell" colspan="9">医療機関名&nbsp;{{ hospital_name if hospital_name else '　' }}</td>
         </tr>
         <tr>
-            <td class="label-cell" colspan="2">所在地</td>
-            <td class="value-cell" colspan="7">{{ hospital_address if hospital_address else '　' }}</td>
+            <td class="value-cell" colspan="9">&nbsp;&nbsp;所在地&nbsp;&nbsp;&nbsp;{{ hospital_address if hospital_address else '　' }}</td>
         </tr>
         <tr>
-            <td class="label-cell" colspan="2">電話番号</td>
-            <td class="value-cell" colspan="7">{{ hospital_phone if hospital_phone else '　' }}</td>
+            <td class="value-cell" colspan="9">&nbsp;電話番号&nbsp;&nbsp;{{ hospital_phone if hospital_phone else '　' }}</td>
         </tr>
         
-        <!-- Row 20: Notes -->
-        <tr>
+        <!-- Row 20-21: Notes and Recorder -->
+        <tr class="notes-recorder-row-1">
             <td class="label-cell" rowspan="2">備考</td>
-            <td class="value-cell" colspan="8" rowspan="2">{{ notes if notes else '　' }}</td>
-            <td class="label-cell">記載者</td>
-        </tr>
-        <tr>
-            <td class="value-cell">{{ recorder_name if recorder_name else '　' }}</td>
+            <td class="value-cell notes-content" colspan="5" rowspan="2">{{ notes if notes else '　' }}</td>
+            <td class="value-cell" colspan="4"></td>
+        </tr><tr class="notes-recorder-row-2">
+            <td class="label-cell recorder-label">記載者</td>
+            <td class="value-cell recorder-value" colspan="3">{{ recorder_name if recorder_name else '　' }}</td>
         </tr>
     </table>
 </body>

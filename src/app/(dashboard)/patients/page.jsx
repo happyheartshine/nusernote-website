@@ -11,7 +11,6 @@ export default function PatientsPage() {
   const { user } = useAuthProfile();
   const [patients, setPatients] = useState([]);
   const [filteredPatients, setFilteredPatients] = useState([]);
-  const [mainDiseases, setMainDiseases] = useState([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -24,7 +23,7 @@ export default function PatientsPage() {
     name: '',
     age: '',
     gender: '',
-    main_disease_id: '',
+    primary_diagnosis: '',
     individual_notes: '',
     status: 'active'
   });
@@ -34,36 +33,13 @@ export default function PatientsPage() {
     setTimeout(() => setToast(null), 3000);
   };
 
-  const fetchMainDiseases = useCallback(async () => {
-    if (!user?.id) return;
-    try {
-      const { data, error } = await supabase
-        .from('main_disease')
-        .select('id, name')
-        .eq('user_id', user.id)
-        .eq('status', 'active')
-        .order('name', { ascending: true });
-
-      if (error) throw error;
-      setMainDiseases(data || []);
-    } catch (error) {
-      console.error('Fetch main diseases error:', error);
-    }
-  }, [user]);
-
   const fetchPatients = useCallback(async () => {
     if (!user?.id) return;
     setLoading(true);
     try {
       const { data, error } = await supabase
         .from('patients')
-        .select(`
-          *,
-          main_disease:main_disease_id (
-            id,
-            name
-          )
-        `)
+        .select('*')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
@@ -89,7 +65,7 @@ export default function PatientsPage() {
       filtered = filtered.filter(
         (patient) =>
           patient.name.toLowerCase().includes(query) ||
-          (patient.main_disease && patient.main_disease.name && patient.main_disease.name.toLowerCase().includes(query)) ||
+          (patient.primary_diagnosis && patient.primary_diagnosis.toLowerCase().includes(query)) ||
           (patient.individual_notes && patient.individual_notes.toLowerCase().includes(query))
       );
     }
@@ -98,9 +74,8 @@ export default function PatientsPage() {
   }, [patients, statusFilter, searchQuery]);
 
   useEffect(() => {
-    fetchMainDiseases();
     fetchPatients();
-  }, [fetchMainDiseases, fetchPatients]);
+  }, [fetchPatients]);
 
   useEffect(() => {
     filterPatients();
@@ -120,7 +95,7 @@ export default function PatientsPage() {
       name: '',
       age: '',
       gender: '',
-      main_disease_id: '',
+      primary_diagnosis: '',
       individual_notes: '',
       status: 'active'
     });
@@ -133,7 +108,7 @@ export default function PatientsPage() {
       name: patient.name || '',
       age: patient.age ? String(patient.age) : '',
       gender: patient.gender || '',
-      main_disease_id: patient.main_disease_id || '',
+      primary_diagnosis: patient.primary_diagnosis || '',
       individual_notes: patient.individual_notes || '',
       status: patient.status || 'active'
     });
@@ -147,7 +122,7 @@ export default function PatientsPage() {
       name: '',
       age: '',
       gender: '',
-      main_disease_id: '',
+      primary_diagnosis: '',
       individual_notes: '',
       status: 'active'
     });
@@ -163,7 +138,7 @@ export default function PatientsPage() {
         name: formData.name.trim(),
         age: formData.age ? parseInt(formData.age, 10) : null,
         gender: formData.gender || null,
-        main_disease_id: formData.main_disease_id || null,
+        primary_diagnosis: formData.primary_diagnosis.trim() || null,
         individual_notes: formData.individual_notes.trim() || null,
         status: formData.status
       };
@@ -360,31 +335,18 @@ export default function PatientsPage() {
                   </div>
 
                   <div>
-                    <label htmlFor="main_disease_id" className="mb-2 block text-sm font-medium text-gray-700">
+                    <label htmlFor="primary_diagnosis" className="mb-2 block text-sm font-medium text-gray-700">
                       主疾患
                     </label>
-                    <select
-                      id="main_disease_id"
-                      name="main_disease_id"
-                      value={formData.main_disease_id}
+                    <input
+                      id="primary_diagnosis"
+                      type="text"
+                      name="primary_diagnosis"
+                      value={formData.primary_diagnosis}
                       onChange={handleInputChange}
-                      className="form-select"
-                    >
-                      <option value="">選択してください</option>
-                      {mainDiseases.map((disease) => (
-                        <option key={disease.id} value={disease.id}>
-                          {disease.name}
-                        </option>
-                      ))}
-                    </select>
-                    {mainDiseases.length === 0 && (
-                      <p className="mt-1 text-xs text-gray-500">
-                        主疾患が登録されていません。
-                        <a href="/main-disease" className="text-blue-600 hover:underline ml-1">
-                          主疾患を登録
-                        </a>
-                      </p>
-                    )}
+                      className="form-control"
+                      placeholder="主疾患を入力してください"
+                    />
                   </div>
 
                   <div>
@@ -518,7 +480,7 @@ export default function PatientsPage() {
                       </td>
                       <td className="px-6 py-4">
                         <div className="max-w-xs text-sm text-gray-500">
-                          {patient.main_disease?.name || '—'}
+                          {patient.primary_diagnosis || '—'}
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">{getStatusBadge(patient.status)}</td>

@@ -265,30 +265,47 @@ body {
     padding: 4pt 6pt;
     vertical-align: middle;
     min-height: 8mm;
+    line-height: 1.4;
 }
 
 .unified-table .label-cell {
     font-weight: bold;
     background-color: #f5f5f5;
     text-align: center;
-    font-size: 9pt;
+    font-size: 8pt;
     width: 10%;
+    vertical-align: middle;
+    line-height: 1.4;
 }
 
 .unified-table .value-cell {
     text-align: left;
     padding-left: 8pt;
-    font-size: 10pt;
+    font-size: 8pt;
     min-height: 8mm;
+    vertical-align: middle;
+    line-height: 1.4;
 }
 
 /* Specific row heights for data entry sections */
-.unified-table tr:nth-child(1) td {
-    height: 8mm;
+.unified-table tr:nth-child(1) td,
+.unified-table tr:nth-child(2) td {
+    padding: 0pt 6pt; /* Reduced padding for doctor information rows */
 }
 
-.unified-table tr:nth-child(2) td {
-    height: 8mm;
+.unified-table tr:nth-child(5) td,
+.unified-table tr:nth-child(6) td {
+    padding: 0pt 6pt; /* Reduced padding for doctor information rows */
+}
+
+/* Center content vertically and horizontally in initial visit row */
+.unified-table tr.initial-visit-row td {
+    vertical-align: middle;
+}
+.unified-table tr.initial-visit-row .value-cell {
+    text-align: center;
+    padding-left: 0;
+    letter-spacing: 0.5pt;
 }
 
 .unified-table tr:nth-child(8) td,
@@ -296,9 +313,79 @@ body {
     height: 25mm; /* Current illness history & family structure */
 }
 
-.unified-table tr:nth-child(20) td,
+.unified-table tr:nth-child(16) td,
+.unified-table tr:nth-child(17) td,
+.unified-table tr:nth-child(18) td,
+.unified-table tr:nth-child(19) td {
+    padding: 0pt 6pt; /* Reduced padding for doctor information rows */
+}
+
+.unified-table tr:nth-child(20) td{
+    height: 15mm;
+}
 .unified-table tr:nth-child(21) td {
-    height: 20mm; /* Notes section */
+    padding: 0pt 6pt; /* Notes section */
+}
+
+/* Remove border between key person rows */
+.unified-table tr.key-person-row-1 td {
+    border-bottom: none;
+}
+.unified-table tr.key-person-row-2 td {
+    border-top: none;
+}
+
+/* Remove border between daily life status rows */
+.unified-table tr.daily-life-row-1 td,
+.unified-table tr.daily-life-row-2 td,
+.unified-table tr.daily-life-row-3 td,
+.unified-table tr.daily-life-row-4 td,
+.unified-table tr.daily-life-row-5 td {
+    border-bottom: none;
+}
+.unified-table tr.daily-life-row-2 td,
+.unified-table tr.daily-life-row-3 td,
+.unified-table tr.daily-life-row-4 td,
+.unified-table tr.daily-life-row-5 td,
+.unified-table tr.daily-life-row-6 td {
+    border-top: none;
+}
+
+/* Notes and Recorder section styling */
+.unified-table .notes-content {
+    vertical-align: middle;
+    border-right: none;
+}
+
+/* Remove right border from empty cells in row 1 to eliminate vertical line above row 2 */
+.unified-table tr.notes-recorder-row-1 td.value-cell:not(.notes-content) {
+    border-right: none;
+    border-bottom: none;
+    border-left: none;
+}
+
+.unified-table .recorder-label {
+    border-bottom: 1pt solid #000;
+    border-right: none;
+    border-left: none;
+    border-top: 1pt solid #000;
+    vertical-align: bottom;
+}
+
+.unified-table .recorder-value {
+    border-bottom: 1pt solid #000;
+    border-left: 1pt solid #000 !important;
+    vertical-align: bottom;
+    text-align: center;
+}
+
+/* Remove border between notes and recorder rows */
+.unified-table tr.notes-recorder-row-1 td {
+    border-bottom: none;
+}
+/* Keep top border on 2nd row */
+.unified-table tr.notes-recorder-row-2 td {
+    border-top: 1pt solid #000;
 }
 
 /* ============================================

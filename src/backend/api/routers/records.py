@@ -65,6 +65,7 @@ async def get_records(
                 diagnosis=record.get("diagnosis"),
                 start_time=str(record["start_time"]) if record.get("start_time") else None,
                 end_time=str(record["end_time"]) if record.get("end_time") else None,
+                plan_output=record.get("plan_output"),
                 status=record.get("status", "draft"),
             )
             for record in records_data

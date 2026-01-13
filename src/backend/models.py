@@ -143,6 +143,7 @@ class SOAPRecordResponse(BaseModel):
     diagnosis: str | None = Field(None, description="主疾患")
     start_time: str | None = Field(None, description="訪問開始時間")
     end_time: str | None = Field(None, description="訪問終了時間")
+    plan_output: dict | None = Field(None, description="看護計画出力データ (JSON)")
     status: str = Field(default="draft", description="記録ステータス (draft/confirmed)")
 
 

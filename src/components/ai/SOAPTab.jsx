@@ -61,14 +61,7 @@ export default function SOAPTab() {
     try {
       const { data, error } = await supabase
         .from('patients')
-        .select(`
-          id,
-          name,
-          main_disease:main_disease_id (
-            id,
-            name
-          )
-        `)
+        .select('id, name, primary_diagnosis')
         .eq('user_id', user.id)
         .eq('status', 'active')
         .order('name', { ascending: true });
@@ -90,8 +83,8 @@ export default function SOAPTab() {
     
     if (patientId) {
       const selectedPatient = patients.find((p) => p.id === patientId);
-      if (selectedPatient?.main_disease?.name) {
-        setDiagnosis(selectedPatient.main_disease.name);
+      if (selectedPatient?.primary_diagnosis) {
+        setDiagnosis(selectedPatient.primary_diagnosis);
       } else {
         setDiagnosis('');
       }
@@ -361,9 +354,8 @@ export default function SOAPTab() {
                   value={diagnosis}
                   onChange={(e) => setDiagnosis(e.target.value)}
                   className="form-control"
-                  placeholder="主疾患（患者を選択すると自動入力）"
-                  disabled={loading || !!selectedPatientId}
-                  readOnly={!!selectedPatientId}
+                  placeholder="主疾患（患者を選択すると自動入力、編集可能）"
+                  disabled={loading}
                 />
               </div>
             </div>

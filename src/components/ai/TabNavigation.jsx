@@ -4,7 +4,6 @@ import PropTypes from 'prop-types';
 
 const TABS = [
   { key: 'soap', label: 'SOAP作成（AI生成）' },
-  { key: 'plan', label: '訪問看護計画書（案）' },
   { key: 'records', label: '記録一覧' },
 ];
 

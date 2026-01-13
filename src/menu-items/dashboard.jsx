@@ -27,20 +27,40 @@ const dashboard = {
       url: '/visit-records'
     },
     {
-      id: 'ai',
+      id: 'plans',
       title: '計画書',
       type: 'item',
+      icon: 'ph ph-file-text',
+      url: '/plans'
+    },
+    {
+      id: 'ai',
+      title: '報告書',
+      type: 'collapse',
       icon: 'ph ph-user-circle-plus',
-      url: '/ai'
+      children: [
+        {
+          id: 'soap-tab',
+          title: 'SOAP作成（AI生成）',
+          type: 'item',
+          url: '/ai?tab=soap'
+        },
+        {
+          id: 'records-tab',
+          title: '記録一覧',
+          type: 'item',
+          url: '/ai?tab=records'
+        }
+      ]
+    },
+    {
+      id: 'calendar',
+      title: 'カレンダー',
+      type: 'item',
+      icon: 'ph ph-calendar',
+      url: '/calendar'
     }
-    //,
-    // {
-    //   id: 'main-disease',
-    //   title: '主疾患',
-    //   type: 'item',
-    //   icon: 'ph ph-heartbeat',
-    //   url: '/main-disease'
-    // }
+
   ]
 };
 
