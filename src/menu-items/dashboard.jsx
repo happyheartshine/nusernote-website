@@ -24,7 +24,7 @@ const dashboard = {
       title: '訪問記録',
       type: 'item',
       icon: 'ph ph-notebook',
-      url: '/visit-records'
+      url: '/ai?tab=soap'
     },
     {
       id: 'plans',
@@ -36,22 +36,9 @@ const dashboard = {
     {
       id: 'ai',
       title: '報告書',
-      type: 'collapse',
+      type: 'item',
       icon: 'ph ph-user-circle-plus',
-      children: [
-        {
-          id: 'soap-tab',
-          title: 'SOAP作成（AI生成）',
-          type: 'item',
-          url: '/ai?tab=soap'
-        },
-        {
-          id: 'records-tab',
-          title: '記録一覧',
-          type: 'item',
-          url: '/ai?tab=records'
-        }
-      ]
+      url: '/ai?tab=records'
     },
     {
       id: 'calendar',
