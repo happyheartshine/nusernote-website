@@ -13,6 +13,7 @@ export default function PatientsPage() {
   const router = useRouter();
   const [visitRecords, setVisitRecords] = useState([]);
   const [filteredVisitRecords, setFilteredVisitRecords] = useState([]);
+  const [displayedRecords, setDisplayedRecords] = useState([]); // Paginated records
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -21,6 +22,10 @@ export default function PatientsPage() {
   const [confirmDialog, setConfirmDialog] = useState(null);
   const [editingRecord, setEditingRecord] = useState(null);
   const [showForm, setShowForm] = useState(false);
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize] = useState(10);
   const [formData, setFormData] = useState({
     patient_name: '',
     gender: '',
@@ -66,6 +71,7 @@ export default function PatientsPage() {
     if (!user?.id) return;
     setLoading(true);
     try {
+      // Fetch visit records (patient information is stored in visit_records for display)
       const { data, error } = await supabase
         .from('visit_records')
         .select('*')
@@ -120,7 +126,19 @@ export default function PatientsPage() {
     }
 
     setFilteredVisitRecords(filtered);
-  }, [visitRecords, statusFilter, searchQuery]);
+    
+    // Apply pagination to filtered results
+    const totalPages = Math.ceil(filtered.length / pageSize) || 1;
+    const validPage = Math.min(Math.max(1, currentPage), totalPages);
+    const startIndex = (validPage - 1) * pageSize;
+    const endIndex = startIndex + pageSize;
+    setDisplayedRecords(filtered.slice(startIndex, endIndex));
+    
+    // Reset to page 1 if current page is out of bounds
+    if (currentPage > totalPages && totalPages > 0) {
+      setCurrentPage(1);
+    }
+  }, [visitRecords, statusFilter, searchQuery, currentPage, pageSize]);
 
   useEffect(() => {
     fetchVisitRecords();
@@ -224,19 +242,132 @@ export default function PatientsPage() {
     setEditingRecord(null);
   };
 
+  // Helper function to find or create a patient
+  const findOrCreatePatient = async (patientName, gender, age, primaryDiagnosis) => {
+    if (!user?.id) {
+      throw new Error('ユーザーが認証されていません');
+    }
+    
+    if (!patientName || !patientName.trim()) {
+      throw new Error('利用者名は必須です');
+    }
+
+    const trimmedName = patientName.trim();
+    const currentUserId = user.id; // Ensure we're using the authenticated user's ID
+
+    // First, try to find existing patient by name
+    const { data: existingPatients, error: searchError } = await supabase
+      .from('patients')
+      .select('id, name, age, gender, primary_diagnosis')
+      .eq('user_id', currentUserId) // Filter by authenticated user's ID
+      .eq('name', trimmedName)
+      .eq('status', 'active')
+      .limit(1);
+
+    if (searchError) {
+      console.error('Error searching for patient:', searchError);
+      throw searchError;
+    }
+
+    // If patient exists, update it if needed and return
+    if (existingPatients && existingPatients.length > 0) {
+      const existingPatient = existingPatients[0];
+      const updateData = {};
+      
+      // Update patient info if provided
+      if (age !== null && age !== undefined && age !== '') {
+        updateData.age = parseInt(age, 10);
+      }
+      if (gender) {
+        updateData.gender = gender;
+      }
+      if (primaryDiagnosis) {
+        updateData.primary_diagnosis = primaryDiagnosis.trim();
+      }
+
+      // Update patient if there are changes
+      if (Object.keys(updateData).length > 0) {
+        const { error: updateError } = await supabase
+          .from('patients')
+          .update(updateData)
+          .eq('id', existingPatient.id)
+          .eq('user_id', currentUserId); // Ensure we're updating only the authenticated user's patient
+
+        if (updateError) {
+          console.error('Error updating patient:', updateError);
+          // Don't throw, just log - we can still use the existing patient
+        }
+      }
+
+      return existingPatient.id;
+    }
+
+    // Patient doesn't exist, create new one
+    const patientData = {
+      user_id: currentUserId, // Use authenticated user's ID
+      name: trimmedName,
+      status: 'active'
+    };
+
+    if (age !== null && age !== undefined && age !== '') {
+      patientData.age = parseInt(age, 10);
+    }
+    if (gender) {
+      patientData.gender = gender;
+    }
+    if (primaryDiagnosis) {
+      patientData.primary_diagnosis = primaryDiagnosis.trim();
+    }
+
+    const { data: newPatient, error: createError } = await supabase
+      .from('patients')
+      .insert(patientData)
+      .select('id')
+      .single();
+
+    if (createError) {
+      console.error('Error creating patient:', createError);
+      throw createError;
+    }
+
+    if (!newPatient || !newPatient.id) {
+      throw new Error('患者の作成に失敗しました');
+    }
+
+    return newPatient.id;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!user?.id) return;
 
+    // Validate required fields
+    if (!formData.patient_name || !formData.patient_name.trim()) {
+      showToast('利用者名は必須です', 'error');
+      return;
+    }
+
     setProcessingId(editingRecord?.id || 'new');
     try {
-      const updateData = {
+      // Step 1: Find or create patient in patients table
+      const patientId = await findOrCreatePatient(
+        formData.patient_name,
+        formData.gender || null,
+        formData.age || null,
+        formData.main_disease || null
+      );
+
+      // Step 2: Prepare visit record data (visit-specific information)
+      const visitRecordData = {
+        patient_id: patientId,
+        // Keep patient fields for backward compatibility and display
         patient_name: formData.patient_name.trim(),
         gender: formData.gender || null,
         birth_date: formData.birth_date || null,
         age: formData.age ? parseInt(formData.age, 10) : null,
         patient_address: formData.patient_address.trim() || null,
         patient_contact: formData.patient_contact.trim() || null,
+        // Visit-specific information
         key_person_name: formData.key_person_name.trim() || null,
         key_person_relationship: formData.key_person_relationship.trim() || null,
         key_person_address: formData.key_person_address.trim() || null,
@@ -267,31 +398,100 @@ export default function PatientsPage() {
       };
 
       if (editingRecord) {
-        // Update existing record
-        const { error } = await supabase
+        // Update existing visit record - ensure we're updating only the authenticated user's record
+        if (!user?.id) {
+          throw { message: 'ユーザーが認証されていません' };
+        }
+        const { data, error } = await supabase
           .from('visit_records')
-          .update(updateData)
+          .update(visitRecordData)
           .eq('id', editingRecord.id)
-          .eq('user_id', user.id);
+          .eq('user_id', user.id) // Filter by authenticated user's ID
+          .select();
 
-        if (error) throw error;
+        if (error) {
+          const errorObj = {
+            message: error.message || '更新に失敗しました',
+            details: error.details || null,
+            hint: error.hint || null,
+            code: error.code || null,
+            originalError: error
+          };
+          throw errorObj;
+        }
+        if (!data || data.length === 0) {
+          throw { message: '更新されたデータが見つかりませんでした' };
+        }
         showToast('患者情報を更新しました', 'success');
       } else {
-        // Create new record
-        const { error } = await supabase.from('visit_records').insert({
-          user_id: user.id,
-          ...updateData
-        });
+        // Create new visit record - ensure we're using the authenticated user's ID
+        if (!user?.id) {
+          throw { message: 'ユーザーが認証されていません' };
+        }
+        const { data, error } = await supabase
+          .from('visit_records')
+          .insert({
+            user_id: user.id, // Use authenticated user's ID
+            ...visitRecordData
+          })
+          .select();
 
-        if (error) throw error;
+        if (error) {
+          const errorObj = {
+            message: error.message || '作成に失敗しました',
+            details: error.details || null,
+            hint: error.hint || null,
+            code: error.code || null,
+            originalError: error
+          };
+          throw errorObj;
+        }
+        if (!data || data.length === 0) {
+          throw { message: '作成されたデータが見つかりませんでした' };
+        }
         showToast('患者情報を作成しました', 'success');
       }
 
       handleCancel();
       fetchVisitRecords();
     } catch (error) {
+      // Log full error details for debugging
       console.error('Save patient error:', error);
-      showToast('保存に失敗しました: ' + (error.message || '不明なエラー'), 'error');
+      
+      // Extract error message from error object
+      let errorMessage = '不明なエラー';
+      if (error) {
+        if (typeof error === 'string') {
+          errorMessage = error;
+        } else if (error.message) {
+          errorMessage = error.message;
+          // Add additional context if available
+          if (error.details) {
+            errorMessage += ` (詳細: ${error.details})`;
+          } else if (error.hint) {
+            errorMessage += ` (ヒント: ${error.hint})`;
+          } else if (error.code) {
+            errorMessage += ` (コード: ${error.code})`;
+          }
+        } else if (error.details) {
+          errorMessage = error.details;
+        } else if (error.hint) {
+          errorMessage = error.hint;
+        } else if (error.code) {
+          errorMessage = `エラーコード: ${error.code}`;
+        } else {
+          // Try toString as last resort
+          try {
+            const errorStr = String(error);
+            if (errorStr !== '[object Object]') {
+              errorMessage = errorStr;
+            }
+          } catch (e) {
+            // If all else fails, use default
+          }
+        }
+      }
+      showToast('保存に失敗しました: ' + errorMessage, 'error');
     } finally {
       setProcessingId(null);
     }
@@ -306,11 +506,15 @@ export default function PatientsPage() {
         setConfirmDialog(null);
         setProcessingId(record.id);
         try {
+          if (!user?.id) {
+            showToast('ユーザーが認証されていません', 'error');
+            return;
+          }
           const { error } = await supabase
             .from('visit_records')
             .delete()
             .eq('id', record.id)
-            .eq('user_id', user.id);
+            .eq('user_id', user.id); // Ensure we're deleting only the authenticated user's record
 
           if (error) throw error;
           showToast('患者情報を削除しました', 'success');
@@ -998,7 +1202,10 @@ export default function PatientsPage() {
                     type="text"
                     placeholder="患者名、主疾患、メモで検索"
                     value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onChange={(e) => {
+                      setSearchQuery(e.target.value);
+                      setCurrentPage(1); // Reset to first page when search changes
+                    }}
                     className="form-control w-full"
                   />
                 </div>
@@ -1009,7 +1216,10 @@ export default function PatientsPage() {
                   <select
                     id="status-filter"
                     value={statusFilter}
-                    onChange={(e) => setStatusFilter(e.target.value)}
+                    onChange={(e) => {
+                      setStatusFilter(e.target.value);
+                      setCurrentPage(1); // Reset to first page when filter changes
+                    }}
                     className="form-select w-full"
                   >
                     <option value="all">すべて</option>
@@ -1066,7 +1276,7 @@ export default function PatientsPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200 bg-white">
-                  {filteredVisitRecords.map((record) => (
+                  {displayedRecords.map((record) => (
                     <tr key={record.id} className="hover:bg-gray-50">
                       <td className="px-6 py-4">
                         <div className="text-sm font-medium text-gray-900">{record.patient_name}</div>
@@ -1126,8 +1336,65 @@ export default function PatientsPage() {
                 </tbody>
               </table>
             </div>
-            <div className="bg-gray-50 px-6 py-3 text-sm text-gray-500">
-              全 {filteredVisitRecords.length} 件の患者情報
+            <div className="bg-gray-50 px-6 py-3">
+              <div className="flex items-center justify-between">
+                <div className="text-sm text-gray-500">
+                  全 {filteredVisitRecords.length} 件中 {((currentPage - 1) * pageSize) + 1} - {Math.min(currentPage * pageSize, filteredVisitRecords.length)} 件を表示
+                </div>
+                
+                {/* Pagination Controls */}
+                {Math.ceil(filteredVisitRecords.length / pageSize) > 1 && (
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                      disabled={currentPage === 1}
+                      className="btn btn-outline-secondary btn-sm"
+                    >
+                      <i className="ph ph-arrow-left me-1"></i>
+                      前へ
+                    </button>
+                    
+                    <div className="flex items-center gap-1">
+                      {Array.from({ length: Math.min(5, Math.ceil(filteredVisitRecords.length / pageSize)) }, (_, i) => {
+                        const totalPages = Math.ceil(filteredVisitRecords.length / pageSize);
+                        let pageNum;
+                        if (totalPages <= 5) {
+                          pageNum = i + 1;
+                        } else if (currentPage <= 3) {
+                          pageNum = i + 1;
+                        } else if (currentPage >= totalPages - 2) {
+                          pageNum = totalPages - 4 + i;
+                        } else {
+                          pageNum = currentPage - 2 + i;
+                        }
+                        
+                        return (
+                          <button
+                            key={pageNum}
+                            onClick={() => setCurrentPage(pageNum)}
+                            className={`btn btn-sm ${
+                              currentPage === pageNum
+                                ? 'btn-primary'
+                                : 'btn-outline-secondary'
+                            }`}
+                          >
+                            {pageNum}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    
+                    <button
+                      onClick={() => setCurrentPage(prev => Math.min(Math.ceil(filteredVisitRecords.length / pageSize), prev + 1))}
+                      disabled={currentPage >= Math.ceil(filteredVisitRecords.length / pageSize)}
+                      className="btn btn-outline-secondary btn-sm"
+                    >
+                      次へ
+                      <i className="ph ph-arrow-right ms-1"></i>
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         )}

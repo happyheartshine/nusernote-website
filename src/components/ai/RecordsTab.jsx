@@ -59,6 +59,15 @@ export default function RecordsTab() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(() => {
+    const page = parseInt(searchParams.get('page') || '1', 10);
+    return isNaN(page) || page < 1 ? 1 : page;
+  });
+  const [pageSize] = useState(10);
+  const [totalRecords, setTotalRecords] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+  
   // Initialize filters from URL params or localStorage
   const savedFilters = useMemo(() => loadFiltersFromStorage(), []);
   const [dateFrom, setDateFrom] = useState(() => {
@@ -114,8 +123,11 @@ export default function RecordsTab() {
       if (filterParams.assignedNurse) {
         params.append('nurse_name', filterParams.assignedNurse);
       }
+      // Add pagination parameters
+      params.append('page', String(filterParams.page || currentPage));
+      params.append('page_size', String(pageSize));
 
-      const url = `${BACKEND_URL}/records${params.toString() ? `?${params.toString()}` : ''}`;
+      const url = `${BACKEND_URL}/records?${params.toString()}`;
 
       const response = await fetch(url, {
         method: 'GET',
@@ -147,6 +159,9 @@ export default function RecordsTab() {
 
       const data = await response.json();
       setRecords(data.records || []);
+      setTotalRecords(data.total || 0);
+      setTotalPages(data.total_pages || 0);
+      setCurrentPage(data.page || 1);
       setError(null);
     } catch (err) {
       console.error('Error fetching records:', err);
@@ -188,17 +203,18 @@ export default function RecordsTab() {
 
   // Fetch records with current filters on mount and when returning from detail view
   useEffect(() => {
-    const filters = { dateFrom, dateTo, assignedNurse };
+    const filters = { dateFrom, dateTo, assignedNurse, page: currentPage };
     fetchRecords(filters);
-  }, [fetchRecords, dateFrom, dateTo, assignedNurse]);
+  }, [fetchRecords, dateFrom, dateTo, assignedNurse, currentPage]);
 
   // Handle filter changes
   const handleApplyFilters = () => {
-    const filters = { dateFrom, dateTo, assignedNurse };
-    saveFiltersToStorage(filters);
+    setCurrentPage(1); // Reset to first page when filters change
+    const filters = { dateFrom, dateTo, assignedNurse, page: 1 };
+    saveFiltersToStorage({ dateFrom, dateTo, assignedNurse });
     
     // Update URL with filter params
-    updateURLWithFilters(filters);
+    updateURLWithFilters({ dateFrom, dateTo, assignedNurse });
     
     fetchRecords(filters);
   };
@@ -207,13 +223,33 @@ export default function RecordsTab() {
     setDateFrom('');
     setDateTo('');
     setAssignedNurse('');
-    const emptyFilters = { dateFrom: '', dateTo: '', assignedNurse: '' };
-    saveFiltersToStorage(emptyFilters);
+    setCurrentPage(1);
+    const emptyFilters = { dateFrom: '', dateTo: '', assignedNurse: '', page: 1 };
+    saveFiltersToStorage({ dateFrom: '', dateTo: '', assignedNurse: '' });
     
     // Clear URL params
-    updateURLWithFilters(emptyFilters);
+    updateURLWithFilters({ dateFrom: '', dateTo: '', assignedNurse: '' });
     
     fetchRecords(emptyFilters);
+  };
+
+  // Handle page change
+  const handlePageChange = (newPage) => {
+    if (newPage >= 1 && newPage <= totalPages) {
+      setCurrentPage(newPage);
+      const filters = { dateFrom, dateTo, assignedNurse, page: newPage };
+      fetchRecords(filters);
+      
+      // Update URL with page
+      const params = new URLSearchParams(searchParams);
+      params.set('tab', 'records');
+      if (newPage > 1) {
+        params.set('page', String(newPage));
+      } else {
+        params.delete('page');
+      }
+      router.push(`/ai?${params.toString()}`, { scroll: false });
+    }
   };
 
   // Update URL with current filter state
@@ -383,32 +419,92 @@ export default function RecordsTab() {
           )}
 
           {!loading && !error && records.length > 0 && (
-            <div className="space-y-3">
-              {records.map((record) => (
-                <div
-                  key={record.id}
-                  onClick={() => handleRecordClick(record.id)}
-                  className="card cursor-pointer hover:shadow-md transition-shadow"
-                >
-                  <div className="card-body">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-2">
-                          <span className="badge bg-primary"></span>
-                          <p className="font-semibold">
-                            {formatDate(record.visit_date)}　{record.patient_name}
-                          </p>
+            <>
+              <div className="space-y-3">
+                {records.map((record) => (
+                  <div
+                    key={record.id}
+                    onClick={() => handleRecordClick(record.id)}
+                    className="card cursor-pointer hover:shadow-md transition-shadow"
+                  >
+                    <div className="card-body">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className="badge bg-primary"></span>
+                            <p className="font-semibold">
+                              {formatDate(record.visit_date)}　{record.patient_name}
+                            </p>
+                          </div>
+                          {record.chief_complaint && (
+                            <p className="text-sm text-muted ms-4">主訴：{record.chief_complaint}</p>
+                          )}
                         </div>
-                        {record.chief_complaint && (
-                          <p className="text-sm text-muted ms-4">主訴：{record.chief_complaint}</p>
-                        )}
+                        <i className="ph ph-arrow-right text-muted"></i>
                       </div>
-                      <i className="ph ph-arrow-right text-muted"></i>
                     </div>
                   </div>
+                ))}
+              </div>
+              
+              {/* Pagination Controls */}
+              {totalPages > 1 && (
+                <div className="mt-6 flex items-center justify-between border-t pt-4">
+                  <div className="text-sm text-muted">
+                    全 {totalRecords} 件中 {((currentPage - 1) * pageSize) + 1} - {Math.min(currentPage * pageSize, totalRecords)} 件を表示
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => handlePageChange(currentPage - 1)}
+                      disabled={currentPage === 1 || loading}
+                      className="btn btn-outline-secondary btn-sm"
+                    >
+                      <i className="ph ph-arrow-left me-1"></i>
+                      前へ
+                    </button>
+                    
+                    <div className="flex items-center gap-1">
+                      {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                        let pageNum;
+                        if (totalPages <= 5) {
+                          pageNum = i + 1;
+                        } else if (currentPage <= 3) {
+                          pageNum = i + 1;
+                        } else if (currentPage >= totalPages - 2) {
+                          pageNum = totalPages - 4 + i;
+                        } else {
+                          pageNum = currentPage - 2 + i;
+                        }
+                        
+                        return (
+                          <button
+                            key={pageNum}
+                            onClick={() => handlePageChange(pageNum)}
+                            disabled={loading}
+                            className={`btn btn-sm ${
+                              currentPage === pageNum
+                                ? 'btn-primary'
+                                : 'btn-outline-secondary'
+                            }`}
+                          >
+                            {pageNum}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    
+                    <button
+                      onClick={() => handlePageChange(currentPage + 1)}
+                      disabled={currentPage === totalPages || loading}
+                      className="btn btn-outline-secondary btn-sm"
+                    >
+                      次へ
+                      <i className="ph ph-arrow-right ms-1"></i>
+                    </button>
+                  </div>
                 </div>
-              ))}
-            </div>
+              )}
+            </>
           )}
         </div>
       </div>

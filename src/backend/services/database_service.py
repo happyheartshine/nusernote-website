@@ -518,22 +518,26 @@ def save_soap_record(
 
 def get_soap_records(
     user_id: str, 
-    limit: int = 100,
+    limit: Optional[int] = 100,
     date_from: Optional[str] = None,
     date_to: Optional[str] = None,
     nurse_name: Optional[str] = None,
     patient_id: Optional[str] = None,
+    page: Optional[int] = None,
+    page_size: Optional[int] = None,
 ) -> list[Dict[str, Any]]:
     """
     Fetch SOAP records for a specific user from Supabase database.
     
     Args:
         user_id: Authenticated user ID
-        limit: Maximum number of records to return (default: 100)
+        limit: Maximum number of records to return (default: 100, None for no limit)
         date_from: Start date for filtering (YYYY-MM-DD format, inclusive)
         date_to: End date for filtering (YYYY-MM-DD format, inclusive)
         nurse_name: Nurse name for filtering (exact match in nurses array)
         patient_id: Patient ID for filtering
+        page: Page number for pagination (1-based, requires page_size)
+        page_size: Number of records per page (requires page)
         
     Returns:
         List of dictionaries containing SOAP record data, ordered by visit_date DESC.
@@ -544,12 +548,16 @@ def get_soap_records(
     try:
         supabase = get_supabase_client()
         
-        logger.info(f"Fetching SOAP records for user {user_id} with filters: date_from={date_from}, date_to={date_to}, nurse_name={nurse_name}, patient_id={patient_id}")
+        logger.info(f"Fetching SOAP records for user_id={user_id} with filters: date_from={date_from}, date_to={date_to}, nurse_name={nurse_name}, patient_id={patient_id}, page={page}, page_size={page_size}")
+        
+        # Ensure we're filtering by the correct user_id
+        if not user_id:
+            raise DatabaseServiceError("user_id is required to fetch SOAP records")
         
         query = (
             supabase.table("soap_records")
             .select("*")
-            .eq("user_id", user_id)
+            .eq("user_id", user_id)  # Filter by authenticated user's ID
         )
         
         # Apply patient filter
@@ -566,11 +574,17 @@ def get_soap_records(
         if nurse_name:
             query = query.contains("nurses", [nurse_name])
         
+        # Apply pagination if provided
+        if page is not None and page_size is not None:
+            offset = (page - 1) * page_size
+            query = query.range(offset, offset + page_size - 1)
+        elif limit is not None:
+            query = query.limit(limit)
+        
         response = (
             query
             .order("visit_date", desc=True)
             .order("created_at", desc=True)
-            .limit(limit)
             .execute()
         )
         

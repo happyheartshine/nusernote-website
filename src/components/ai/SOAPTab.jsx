@@ -34,7 +34,7 @@ const getDefaultValues = () => {
 };
 
 export default function SOAPTab() {
-  const { user } = useAuthProfile();
+  const { user, loading: authLoading } = useAuthProfile();
   const [patients, setPatients] = useState([]);
   const [selectedPatientId, setSelectedPatientId] = useState('');
   const [diagnosis, setDiagnosis] = useState('');
@@ -57,12 +57,25 @@ export default function SOAPTab() {
   const oTextareaRef = useRef(null);
 
   const fetchPatients = useCallback(async () => {
-    if (!user?.id) return;
+    // Wait for authentication to complete
+    if (authLoading) {
+      return;
+    }
+    
+    if (!user?.id) {
+      // User is not authenticated, but don't show warning if still loading
+      if (!authLoading) {
+        console.warn('Cannot fetch patients: user not authenticated');
+      }
+      return;
+    }
+    
     try {
+      // Fetch patients filtered by authenticated user's ID
       const { data, error } = await supabase
         .from('patients')
-        .select('id, name, primary_diagnosis')
-        .eq('user_id', user.id)
+        .select('id, name')
+        .eq('user_id', user.id) // Filter by authenticated user's ID
         .eq('status', 'active')
         .order('name', { ascending: true });
 
@@ -71,7 +84,7 @@ export default function SOAPTab() {
     } catch (error) {
       console.error('Fetch patients error:', error);
     }
-  }, [user]);
+  }, [user, authLoading]);
 
   useEffect(() => {
     fetchPatients();
@@ -153,6 +166,28 @@ export default function SOAPTab() {
       return;
     }
     try {
+      // Build request body - prefer patient_id if available
+      const requestBody = {
+        nurses: selectedNurses.length > 0 ? selectedNurses : defaults.selectedNurses,
+        visitDate: visitDate || defaults.visitDate,
+        startTime: startTime || defaults.startTime,
+        endTime: endTime || defaults.endTime,
+        chiefComplaint: chiefComplaint.trim() || defaults.chiefComplaint,
+        sText,
+        oText,
+      };
+
+      // If patient is selected, send patient_id (backend will fetch patient data)
+      if (selectedPatientId && selectedPatientId.trim()) {
+        requestBody.patient_id = selectedPatientId;
+        // Still send diagnosis in case user wants to override patient's primary_diagnosis
+        requestBody.diagnosis = diagnosis || '';
+      } else {
+        // No patient selected - send userName and diagnosis (both required by backend)
+        requestBody.userName = getSelectedPatientName() || defaults.patientName;
+        requestBody.diagnosis = diagnosis || defaults.diagnosis;
+      }
+
       const response = await fetch(`${BACKEND_URL}/generate`, {
         method: 'POST',
         headers: {
@@ -160,17 +195,7 @@ export default function SOAPTab() {
           'Authorization': `Bearer ${session.access_token}`,
           'ngrok-skip-browser-warning': 'true',
         },
-        body: JSON.stringify({
-          userName: getSelectedPatientName() || defaults.patientName,
-          diagnosis: diagnosis || defaults.diagnosis,
-          nurses: selectedNurses.length > 0 ? selectedNurses : defaults.selectedNurses,
-          visitDate: visitDate || defaults.visitDate,
-          startTime: startTime || defaults.startTime,
-          endTime: endTime || defaults.endTime,
-          chiefComplaint: chiefComplaint.trim() || defaults.chiefComplaint,
-          sText,
-          oText,
-        }),
+        body: JSON.stringify(requestBody),
       });
 
       if (!response.ok) {

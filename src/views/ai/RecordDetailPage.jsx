@@ -41,7 +41,7 @@ export default function RecordDetailPage({ recordId }) {
           setLoading(false);
           return;
         }
-
+        console.log(recordId);
         const response = await fetch(`${BACKEND_URL}/records/${recordId}`, {
           method: 'GET',
           headers: {
@@ -150,7 +150,6 @@ export default function RecordDetailPage({ recordId }) {
         setError('認証が必要です。再度ログインしてください。');
         return;
       }
-
       const response = await fetch(`${BACKEND_URL}/records/${recordId}`, {
         method: 'PATCH',
         headers: {

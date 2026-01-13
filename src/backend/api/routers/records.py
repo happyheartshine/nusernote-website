@@ -30,9 +30,11 @@ async def get_records(
     date_to: str | None = None,
     nurse_name: str | None = None,
     patient_id: str | None = None,
+    page: int = 1,
+    page_size: int = 10,
 ) -> RecordsListResponse:
     """
-    Fetch SOAP records for the authenticated user with optional filtering.
+    Fetch SOAP records for the authenticated user with optional filtering and pagination.
     
     Requires authentication via Supabase JWT token.
     
@@ -41,37 +43,76 @@ async def get_records(
     - date_to: Filter records to this date (YYYY-MM-DD format, inclusive)
     - nurse_name: Filter records by assigned nurse (exact match)
     - patient_id: Filter records by patient ID
+    - page: Page number (1-based, default: 1)
+    - page_size: Number of records per page (default: 10, max: 100)
     
-    Returns list of SOAP records ordered by visit_date DESC.
+    Returns paginated list of SOAP records ordered by visit_date DESC.
     """
     try:
+        # Validate pagination parameters
+        page = max(1, page)  # Ensure page is at least 1
+        page_size = min(max(1, page_size), 100)  # Ensure page_size is between 1 and 100
+        
+        # Log user information for debugging
+        logger.info(f"Fetching records for user_id={current_user['user_id']}, email={current_user.get('email', 'N/A')}, page={page}, page_size={page_size}")
+        
+        # Get total count first (for pagination metadata) - fetch all matching records to count
+        all_records_data = get_soap_records(
+            user_id=current_user["user_id"],
+            date_from=date_from,
+            date_to=date_to,
+            nurse_name=nurse_name,
+            patient_id=patient_id,
+            limit=None,  # Get all for count
+        )
+        total = len(all_records_data)
+        
+        # Get paginated records
         records_data = get_soap_records(
             user_id=current_user["user_id"],
             date_from=date_from,
             date_to=date_to,
             nurse_name=nurse_name,
             patient_id=patient_id,
+            page=page,
+            page_size=page_size,
         )
         
         # Convert database records to response format
-        records = [
-            SOAPRecordResponse(
-                id=str(record["id"]),
-                patient_id=str(record["patient_id"]) if record.get("patient_id") else None,
-                patient_name=record["patient_name"],
-                visit_date=str(record["visit_date"]),
-                chief_complaint=record.get("chief_complaint"),
-                created_at=str(record["created_at"]),
-                diagnosis=record.get("diagnosis"),
-                start_time=str(record["start_time"]) if record.get("start_time") else None,
-                end_time=str(record["end_time"]) if record.get("end_time") else None,
-                plan_output=record.get("plan_output"),
-                status=record.get("status", "draft"),
-            )
-            for record in records_data
-        ]
+        records = []
+        for record in records_data:
+            try:
+                records.append(
+                    SOAPRecordResponse(
+                        id=str(record["id"]),
+                        patient_id=str(record["patient_id"]) if record.get("patient_id") else None,
+                        patient_name=record.get("patient_name") or "",
+                        visit_date=str(record["visit_date"]) if record.get("visit_date") else "",
+                        chief_complaint=record.get("chief_complaint"),
+                        created_at=str(record["created_at"]) if record.get("created_at") else "",
+                        diagnosis=record.get("diagnosis"),
+                        start_time=str(record["start_time"]) if record.get("start_time") else None,
+                        end_time=str(record["end_time"]) if record.get("end_time") else None,
+                        plan_output=record.get("plan_output"),
+                        status=record.get("status", "draft"),
+                    )
+                )
+            except Exception as e:
+                logger.error(f"Error converting record {record.get('id', 'unknown')} to response format: {e}")
+                logger.error(f"Record data: {record}")
+                # Skip this record but continue processing others
+                continue
         
-        return RecordsListResponse(records=records)
+        # Calculate pagination metadata
+        total_pages = (total + page_size - 1) // page_size if total > 0 else 0
+        
+        return RecordsListResponse(
+            records=records,
+            total=total,
+            page=page,
+            page_size=page_size,
+            total_pages=total_pages
+        )
         
     except DatabaseServiceError as db_exc:
         logger.error(f"Database error fetching records: {db_exc}")

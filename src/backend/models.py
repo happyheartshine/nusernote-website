@@ -151,6 +151,10 @@ class RecordsListResponse(BaseModel):
     """Response model for list of SOAP records."""
 
     records: list[SOAPRecordResponse] = Field(..., description="List of SOAP records")
+    total: int = Field(..., description="Total number of records")
+    page: int = Field(..., description="Current page number (1-based)")
+    page_size: int = Field(..., description="Number of records per page")
+    total_pages: int = Field(..., description="Total number of pages")
 
 
 class FullSOAPRecordResponse(BaseModel):

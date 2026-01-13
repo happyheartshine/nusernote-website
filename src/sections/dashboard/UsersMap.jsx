@@ -36,9 +36,12 @@ export default function UsersMap({ height }) {
     const loadMap = async () => {
       if (typeof window === 'undefined') return;
 
-      // Wait for the DOM element to be available
+      // Wait for the DOM element to be available using ref
+      if (!mapRef.current) return;
+
+      // Verify element is actually in the DOM
       const mapElement = document.getElementById('basic-map');
-      if (!mapElement) return;
+      if (!mapElement || !mapElement.classList) return;
 
       try {
         const { default: JsVectorMap } = await import('jsvectormap');
@@ -52,6 +55,10 @@ export default function UsersMap({ height }) {
             // Ignore cleanup errors
           }
         }
+
+        // Final check - verify element still exists and is in DOM
+        const finalCheck = document.getElementById('basic-map');
+        if (!finalCheck || !finalCheck.classList) return;
 
         mapInstanceRef.current = new JsVectorMap({
           selector: '#basic-map',
@@ -75,13 +82,20 @@ export default function UsersMap({ height }) {
       }
     };
 
-    // Small delay to ensure DOM is ready
-    const timer = setTimeout(() => {
-      loadMap();
-    }, 0);
+    // Use requestAnimationFrame to ensure DOM is ready
+    let rafId;
+    let timer;
+    
+    rafId = requestAnimationFrame(() => {
+      // Additional small delay to ensure element is fully rendered
+      timer = setTimeout(() => {
+        loadMap();
+      }, 100);
+    });
 
     return () => {
-      clearTimeout(timer);
+      if (rafId) cancelAnimationFrame(rafId);
+      if (timer) clearTimeout(timer);
       // Clean up map instance on unmount
       if (mapInstanceRef.current) {
         try {

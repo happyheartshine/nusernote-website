@@ -29,6 +29,12 @@ export default function PlansPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedRecord, setSelectedRecord] = useState(null);
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize] = useState(10);
+  const [totalRecords, setTotalRecords] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
 
   const fetchRecords = useCallback(async () => {
     if (!BACKEND_URL) {
@@ -46,7 +52,12 @@ export default function PlansPage() {
         return;
       }
 
-      const response = await fetch(`${BACKEND_URL}/records`, {
+      // Build query parameters with pagination
+      const params = new URLSearchParams();
+      params.append('page', String(currentPage));
+      params.append('page_size', String(pageSize));
+
+      const response = await fetch(`${BACKEND_URL}/records?${params.toString()}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -81,6 +92,9 @@ export default function PlansPage() {
         return planOutput && typeof planOutput === 'object' && Object.keys(planOutput).length > 0;
       });
       setRecords(recordsWithPlans);
+      // Note: total/totalPages from API may not reflect filtered count, but we'll use it for pagination
+      setTotalRecords(data.total || recordsWithPlans.length);
+      setTotalPages(data.total_pages || 1);
       setError(null);
     } catch (err) {
       console.error('Error fetching records:', err);
@@ -92,7 +106,14 @@ export default function PlansPage() {
 
   useEffect(() => {
     fetchRecords();
-  }, [fetchRecords]);
+  }, [fetchRecords, currentPage]);
+
+  // Handle page change
+  const handlePageChange = (newPage) => {
+    if (newPage >= 1 && newPage <= totalPages) {
+      setCurrentPage(newPage);
+    }
+  };
 
   const handlePlanUpdate = async (updatedPlanOutput) => {
     if (!selectedRecord) return;
@@ -196,6 +217,64 @@ export default function PlansPage() {
                       </div>
                     </div>
                   ))}
+                  
+                  {/* Pagination Controls */}
+                  {totalPages > 1 && (
+                    <div className="mt-4 pt-4 border-t flex items-center justify-between">
+                      <div className="text-sm text-muted">
+                        全 {totalRecords} 件中 {((currentPage - 1) * pageSize) + 1} - {Math.min(currentPage * pageSize, totalRecords)} 件を表示
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => handlePageChange(currentPage - 1)}
+                          disabled={currentPage === 1 || loading}
+                          className="btn btn-outline-secondary btn-sm"
+                        >
+                          <i className="ph ph-arrow-left me-1"></i>
+                          前へ
+                        </button>
+                        
+                        <div className="flex items-center gap-1">
+                          {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                            let pageNum;
+                            if (totalPages <= 5) {
+                              pageNum = i + 1;
+                            } else if (currentPage <= 3) {
+                              pageNum = i + 1;
+                            } else if (currentPage >= totalPages - 2) {
+                              pageNum = totalPages - 4 + i;
+                            } else {
+                              pageNum = currentPage - 2 + i;
+                            }
+                            
+                            return (
+                              <button
+                                key={pageNum}
+                                onClick={() => handlePageChange(pageNum)}
+                                disabled={loading}
+                                className={`btn btn-sm ${
+                                  currentPage === pageNum
+                                    ? 'btn-primary'
+                                    : 'btn-outline-secondary'
+                                }`}
+                              >
+                                {pageNum}
+                              </button>
+                            );
+                          })}
+                        </div>
+                        
+                        <button
+                          onClick={() => handlePageChange(currentPage + 1)}
+                          disabled={currentPage === totalPages || loading}
+                          className="btn btn-outline-secondary btn-sm"
+                        >
+                          次へ
+                          <i className="ph ph-arrow-right ms-1"></i>
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Plan Output Display */}
