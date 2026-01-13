@@ -22,7 +22,7 @@ export default function PatientsPage() {
   const [confirmDialog, setConfirmDialog] = useState(null);
   const [editingRecord, setEditingRecord] = useState(null);
   const [showForm, setShowForm] = useState(false);
-  
+
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize] = useState(10);
@@ -86,8 +86,15 @@ export default function PatientsPage() {
           code: error.code
         });
         // Check if table doesn't exist
-        if (error.code === '42P01' || error.message?.includes('does not exist') || error.message?.includes('relation') || error.hint?.includes('visit_records')) {
-          console.error('Table visit_records does not exist. Please run the migration: supabase/migrations/20260111000001_create_visit_records_table.sql');
+        if (
+          error.code === '42P01' ||
+          error.message?.includes('does not exist') ||
+          error.message?.includes('relation') ||
+          error.hint?.includes('visit_records')
+        ) {
+          console.error(
+            'Table visit_records does not exist. Please run the migration: supabase/migrations/20260111000001_create_visit_records_table.sql'
+          );
         }
         throw error;
       }
@@ -126,14 +133,14 @@ export default function PatientsPage() {
     }
 
     setFilteredVisitRecords(filtered);
-    
+
     // Apply pagination to filtered results
     const totalPages = Math.ceil(filtered.length / pageSize) || 1;
     const validPage = Math.min(Math.max(1, currentPage), totalPages);
     const startIndex = (validPage - 1) * pageSize;
     const endIndex = startIndex + pageSize;
     setDisplayedRecords(filtered.slice(startIndex, endIndex));
-    
+
     // Reset to page 1 if current page is out of bounds
     if (currentPage > totalPages && totalPages > 0) {
       setCurrentPage(1);
@@ -247,7 +254,7 @@ export default function PatientsPage() {
     if (!user?.id) {
       throw new Error('ユーザーが認証されていません');
     }
-    
+
     if (!patientName || !patientName.trim()) {
       throw new Error('利用者名は必須です');
     }
@@ -273,7 +280,7 @@ export default function PatientsPage() {
     if (existingPatients && existingPatients.length > 0) {
       const existingPatient = existingPatients[0];
       const updateData = {};
-      
+
       // Update patient info if provided
       if (age !== null && age !== undefined && age !== '') {
         updateData.age = parseInt(age, 10);
@@ -319,11 +326,7 @@ export default function PatientsPage() {
       patientData.primary_diagnosis = primaryDiagnosis.trim();
     }
 
-    const { data: newPatient, error: createError } = await supabase
-      .from('patients')
-      .insert(patientData)
-      .select('id')
-      .single();
+    const { data: newPatient, error: createError } = await supabase.from('patients').insert(patientData).select('id').single();
 
     if (createError) {
       console.error('Error creating patient:', createError);
@@ -457,7 +460,7 @@ export default function PatientsPage() {
     } catch (error) {
       // Log full error details for debugging
       console.error('Save patient error:', error);
-      
+
       // Extract error message from error object
       let errorMessage = '不明なエラー';
       if (error) {
@@ -486,7 +489,7 @@ export default function PatientsPage() {
             if (errorStr !== '[object Object]') {
               errorMessage = errorStr;
             }
-          } catch (e) {
+          } catch {
             // If all else fails, use default
           }
         }
