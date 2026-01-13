@@ -53,19 +53,36 @@ async def create_patient_endpoint(
             primary_diagnosis=request.primary_diagnosis,
             individual_notes=request.individual_notes,
             status=request.status,
+            birth_date=request.birth_date,
+            birth_date_year=request.birth_date_year,
+            birth_date_month=request.birth_date_month,
+            birth_date_day=request.birth_date_day,
+            address=request.address,
+            contact=request.contact,
+            key_person_name=request.key_person_name,
+            key_person_relationship=request.key_person_relationship,
+            key_person_address=request.key_person_address,
+            key_person_contact1=request.key_person_contact1,
+            key_person_contact2=request.key_person_contact2,
+            medical_history=request.medical_history,
+            current_illness_history=request.current_illness_history,
+            family_structure=request.family_structure,
+            doctor_name=request.doctor_name,
+            hospital_name=request.hospital_name,
+            hospital_address=request.hospital_address,
+            hospital_phone=request.hospital_phone,
+            initial_visit_date=request.initial_visit_date,
+            initial_visit_year=request.initial_visit_year,
+            initial_visit_month=request.initial_visit_month,
+            initial_visit_day=request.initial_visit_day,
+            initial_visit_day_of_week=request.initial_visit_day_of_week,
+            initial_visit_start_hour=request.initial_visit_start_hour,
+            initial_visit_start_minute=request.initial_visit_start_minute,
+            initial_visit_end_hour=request.initial_visit_end_hour,
+            initial_visit_end_minute=request.initial_visit_end_minute,
         )
         
-        return PatientResponse(
-            id=str(patient_data["id"]),
-            name=patient_data["name"],
-            age=patient_data.get("age"),
-            gender=patient_data.get("gender"),
-            primary_diagnosis=patient_data.get("primary_diagnosis"),
-            individual_notes=patient_data.get("individual_notes"),
-            status=patient_data["status"],
-            created_at=str(patient_data["created_at"]),
-            updated_at=str(patient_data["updated_at"]),
-        )
+        return PatientResponse(**{k: str(v) if k in ["id", "created_at", "updated_at"] or (k in ["birth_date", "initial_visit_date"] and v) else v for k, v in patient_data.items()})
         
     except DatabaseServiceError as db_exc:
         logger.error(f"Database error creating patient: {db_exc}")
@@ -113,17 +130,7 @@ async def get_patients_endpoint(
         )
         
         patients = [
-            PatientResponse(
-                id=str(patient["id"]),
-                name=patient["name"],
-                age=patient.get("age"),
-                gender=patient.get("gender"),
-                primary_diagnosis=patient.get("primary_diagnosis"),
-                individual_notes=patient.get("individual_notes"),
-                status=patient["status"],
-                created_at=str(patient["created_at"]),
-                updated_at=str(patient["updated_at"]),
-            )
+            PatientResponse(**{k: str(v) if k in ["id", "created_at", "updated_at"] or (k in ["birth_date", "initial_visit_date"] and v) else v for k, v in patient.items()})
             for patient in patients_data
         ]
         
@@ -169,17 +176,7 @@ async def get_patient_endpoint(
     try:
         patient_data = get_patient_by_id(patient_id=patient_id, user_id=current_user["user_id"])
         
-        return PatientResponse(
-            id=str(patient_data["id"]),
-            name=patient_data["name"],
-            age=patient_data.get("age"),
-            gender=patient_data.get("gender"),
-            primary_diagnosis=patient_data.get("primary_diagnosis"),
-            individual_notes=patient_data.get("individual_notes"),
-            status=patient_data["status"],
-            created_at=str(patient_data["created_at"]),
-            updated_at=str(patient_data["updated_at"]),
-        )
+        return PatientResponse(**{k: str(v) if k in ["id", "created_at", "updated_at"] or (k in ["birth_date", "initial_visit_date"] and v) else v for k, v in patient_data.items()})
         
     except DatabaseServiceError as db_exc:
         error_msg = str(db_exc)
@@ -237,19 +234,36 @@ async def update_patient_endpoint(
             primary_diagnosis=request.primary_diagnosis,
             individual_notes=request.individual_notes,
             status=request.status,
+            birth_date=request.birth_date,
+            birth_date_year=request.birth_date_year,
+            birth_date_month=request.birth_date_month,
+            birth_date_day=request.birth_date_day,
+            address=request.address,
+            contact=request.contact,
+            key_person_name=request.key_person_name,
+            key_person_relationship=request.key_person_relationship,
+            key_person_address=request.key_person_address,
+            key_person_contact1=request.key_person_contact1,
+            key_person_contact2=request.key_person_contact2,
+            medical_history=request.medical_history,
+            current_illness_history=request.current_illness_history,
+            family_structure=request.family_structure,
+            doctor_name=request.doctor_name,
+            hospital_name=request.hospital_name,
+            hospital_address=request.hospital_address,
+            hospital_phone=request.hospital_phone,
+            initial_visit_date=request.initial_visit_date,
+            initial_visit_year=request.initial_visit_year,
+            initial_visit_month=request.initial_visit_month,
+            initial_visit_day=request.initial_visit_day,
+            initial_visit_day_of_week=request.initial_visit_day_of_week,
+            initial_visit_start_hour=request.initial_visit_start_hour,
+            initial_visit_start_minute=request.initial_visit_start_minute,
+            initial_visit_end_hour=request.initial_visit_end_hour,
+            initial_visit_end_minute=request.initial_visit_end_minute,
         )
         
-        return PatientResponse(
-            id=str(updated_patient["id"]),
-            name=updated_patient["name"],
-            age=updated_patient.get("age"),
-            gender=updated_patient.get("gender"),
-            primary_diagnosis=updated_patient.get("primary_diagnosis"),
-            individual_notes=updated_patient.get("individual_notes"),
-            status=updated_patient["status"],
-            created_at=str(updated_patient["created_at"]),
-            updated_at=str(updated_patient["updated_at"]),
-        )
+        return PatientResponse(**{k: str(v) if k in ["id", "created_at", "updated_at"] or (k in ["birth_date", "initial_visit_date"] and v) else v for k, v in updated_patient.items()})
         
     except DatabaseServiceError as db_exc:
         error_msg = str(db_exc)

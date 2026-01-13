@@ -37,7 +37,7 @@ router = APIRouter()
     },
     tags=["visit-records"],
     summary="Create a new visit record",
-    description="Create a new visit record (訪問記録) with detailed patient information.",
+    description="Create a new visit record (訪問記録) with visit-specific information. Patient information is stored in the patients table.",
 )
 async def create_visit_record_endpoint(
     request: VisitRecordCreateRequest,
@@ -54,43 +54,17 @@ async def create_visit_record_endpoint(
         visit_record_data = create_visit_record(
             user_id=current_user["user_id"],
             patient_id=request.patient_id,
-            patient_name=request.patient_name,
-            gender=request.gender,
-            birth_date=request.birth_date,
-            birth_date_year=request.birth_date_year,
-            birth_date_month=request.birth_date_month,
-            birth_date_day=request.birth_date_day,
-            age=request.age,
-            patient_address=request.patient_address,
-            patient_contact=request.patient_contact,
-            key_person_name=request.key_person_name,
-            key_person_relationship=request.key_person_relationship,
-            key_person_address=request.key_person_address,
-            key_person_contact1=request.key_person_contact1,
-            key_person_contact2=request.key_person_contact2,
-            initial_visit_date=request.initial_visit_date,
-            initial_visit_year=request.initial_visit_year,
-            initial_visit_month=request.initial_visit_month,
-            initial_visit_day=request.initial_visit_day,
-            initial_visit_day_of_week=request.initial_visit_day_of_week,
-            initial_visit_start_hour=request.initial_visit_start_hour,
-            initial_visit_start_minute=request.initial_visit_start_minute,
-            initial_visit_end_hour=request.initial_visit_end_hour,
-            initial_visit_end_minute=request.initial_visit_end_minute,
-            main_disease=request.main_disease,
-            medical_history=request.medical_history,
-            current_illness_history=request.current_illness_history,
-            family_structure=request.family_structure,
+            visit_date=request.visit_date,
+            visit_start_hour=request.visit_start_hour,
+            visit_start_minute=request.visit_start_minute,
+            visit_end_hour=request.visit_end_hour,
+            visit_end_minute=request.visit_end_minute,
             daily_life_meal_nutrition=request.daily_life_meal_nutrition,
             daily_life_hygiene=request.daily_life_hygiene,
             daily_life_medication=request.daily_life_medication,
             daily_life_sleep=request.daily_life_sleep,
             daily_life_living_environment=request.daily_life_living_environment,
             daily_life_family_environment=request.daily_life_family_environment,
-            doctor_name=request.doctor_name,
-            hospital_name=request.hospital_name,
-            hospital_address=request.hospital_address,
-            hospital_phone=request.hospital_phone,
             notes=request.notes,
             recorder_name=request.recorder_name,
             status=request.status,
@@ -242,50 +216,43 @@ async def update_visit_record_endpoint(
     Returns updated visit record data.
     """
     try:
+        # Build update dict from request (only visit-specific fields)
+        update_kwargs = {}
+        if request.patient_id is not None:
+            update_kwargs["patient_id"] = request.patient_id
+        if request.visit_date is not None:
+            update_kwargs["visit_date"] = request.visit_date
+        if request.visit_start_hour is not None:
+            update_kwargs["visit_start_hour"] = request.visit_start_hour
+        if request.visit_start_minute is not None:
+            update_kwargs["visit_start_minute"] = request.visit_start_minute
+        if request.visit_end_hour is not None:
+            update_kwargs["visit_end_hour"] = request.visit_end_hour
+        if request.visit_end_minute is not None:
+            update_kwargs["visit_end_minute"] = request.visit_end_minute
+        if request.daily_life_meal_nutrition is not None:
+            update_kwargs["daily_life_meal_nutrition"] = request.daily_life_meal_nutrition
+        if request.daily_life_hygiene is not None:
+            update_kwargs["daily_life_hygiene"] = request.daily_life_hygiene
+        if request.daily_life_medication is not None:
+            update_kwargs["daily_life_medication"] = request.daily_life_medication
+        if request.daily_life_sleep is not None:
+            update_kwargs["daily_life_sleep"] = request.daily_life_sleep
+        if request.daily_life_living_environment is not None:
+            update_kwargs["daily_life_living_environment"] = request.daily_life_living_environment
+        if request.daily_life_family_environment is not None:
+            update_kwargs["daily_life_family_environment"] = request.daily_life_family_environment
+        if request.notes is not None:
+            update_kwargs["notes"] = request.notes
+        if request.recorder_name is not None:
+            update_kwargs["recorder_name"] = request.recorder_name
+        if request.status is not None:
+            update_kwargs["status"] = request.status
+        
         updated_visit_record = update_visit_record(
             visit_record_id=visit_record_id,
             user_id=current_user["user_id"],
-            patient_id=request.patient_id,
-            patient_name=request.patient_name,
-            gender=request.gender,
-            birth_date=request.birth_date,
-            birth_date_year=request.birth_date_year,
-            birth_date_month=request.birth_date_month,
-            birth_date_day=request.birth_date_day,
-            age=request.age,
-            patient_address=request.patient_address,
-            patient_contact=request.patient_contact,
-            key_person_name=request.key_person_name,
-            key_person_relationship=request.key_person_relationship,
-            key_person_address=request.key_person_address,
-            key_person_contact1=request.key_person_contact1,
-            key_person_contact2=request.key_person_contact2,
-            initial_visit_date=request.initial_visit_date,
-            initial_visit_year=request.initial_visit_year,
-            initial_visit_month=request.initial_visit_month,
-            initial_visit_day=request.initial_visit_day,
-            initial_visit_day_of_week=request.initial_visit_day_of_week,
-            initial_visit_start_hour=request.initial_visit_start_hour,
-            initial_visit_start_minute=request.initial_visit_start_minute,
-            initial_visit_end_hour=request.initial_visit_end_hour,
-            initial_visit_end_minute=request.initial_visit_end_minute,
-            main_disease=request.main_disease,
-            medical_history=request.medical_history,
-            current_illness_history=request.current_illness_history,
-            family_structure=request.family_structure,
-            daily_life_meal_nutrition=request.daily_life_meal_nutrition,
-            daily_life_hygiene=request.daily_life_hygiene,
-            daily_life_medication=request.daily_life_medication,
-            daily_life_sleep=request.daily_life_sleep,
-            daily_life_living_environment=request.daily_life_living_environment,
-            daily_life_family_environment=request.daily_life_family_environment,
-            doctor_name=request.doctor_name,
-            hospital_name=request.hospital_name,
-            hospital_address=request.hospital_address,
-            hospital_phone=request.hospital_phone,
-            notes=request.notes,
-            recorder_name=request.recorder_name,
-            status=request.status,
+            **update_kwargs
         )
         
         return VisitRecordResponse(**updated_visit_record)

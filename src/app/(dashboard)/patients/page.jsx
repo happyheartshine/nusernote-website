@@ -71,10 +71,39 @@ export default function PatientsPage() {
     if (!user?.id) return;
     setLoading(true);
     try {
-      // Fetch visit records (patient information is stored in visit_records for display)
+      // Fetch visit records with patient information joined from patients table
       const { data, error } = await supabase
         .from('visit_records')
-        .select('*')
+        .select(`
+          *,
+          patients (
+            id,
+            name,
+            age,
+            gender,
+            primary_diagnosis,
+            birth_date,
+            address,
+            contact,
+            key_person_name,
+            key_person_relationship,
+            key_person_address,
+            key_person_contact1,
+            key_person_contact2,
+            medical_history,
+            current_illness_history,
+            family_structure,
+            doctor_name,
+            hospital_name,
+            hospital_address,
+            hospital_phone,
+            initial_visit_date,
+            initial_visit_start_hour,
+            initial_visit_start_minute,
+            initial_visit_end_hour,
+            initial_visit_end_minute
+          )
+        `)
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
@@ -98,7 +127,39 @@ export default function PatientsPage() {
         }
         throw error;
       }
-      setVisitRecords(data || []);
+
+      // Flatten the data structure for backward compatibility
+      const flattenedData = (data || []).map(record => {
+        const patient = record.patients || {};
+        return {
+          ...record,
+          patient_name: patient.name || '',
+          gender: patient.gender || record.gender || '',
+          birth_date: patient.birth_date || record.birth_date || '',
+          age: patient.age || record.age || null,
+          patient_address: patient.address || record.patient_address || '',
+          patient_contact: patient.contact || record.patient_contact || '',
+          key_person_name: patient.key_person_name || record.key_person_name || '',
+          key_person_relationship: patient.key_person_relationship || record.key_person_relationship || '',
+          key_person_address: patient.key_person_address || record.key_person_address || '',
+          key_person_contact1: patient.key_person_contact1 || record.key_person_contact1 || '',
+          key_person_contact2: patient.key_person_contact2 || record.key_person_contact2 || '',
+          initial_visit_date: patient.initial_visit_date || record.initial_visit_date || '',
+          initial_visit_start_hour: patient.initial_visit_start_hour || record.initial_visit_start_hour || null,
+          initial_visit_start_minute: patient.initial_visit_start_minute || record.initial_visit_start_minute || null,
+          initial_visit_end_hour: patient.initial_visit_end_hour || record.initial_visit_end_hour || null,
+          initial_visit_end_minute: patient.initial_visit_end_minute || record.initial_visit_end_minute || null,
+          main_disease: patient.primary_diagnosis || record.main_disease || '',
+          medical_history: patient.medical_history || record.medical_history || '',
+          current_illness_history: patient.current_illness_history || record.current_illness_history || '',
+          family_structure: patient.family_structure || record.family_structure || '',
+          doctor_name: patient.doctor_name || record.doctor_name || '',
+          hospital_name: patient.hospital_name || record.hospital_name || '',
+          hospital_address: patient.hospital_address || record.hospital_address || '',
+          hospital_phone: patient.hospital_phone || record.hospital_phone || '',
+        };
+      });
+      setVisitRecords(flattenedData || []);
     } catch (error) {
       console.error('Fetch visit records error:', {
         error,
@@ -352,102 +413,135 @@ export default function PatientsPage() {
 
     setProcessingId(editingRecord?.id || 'new');
     try {
-      // Step 1: Find or create patient in patients table
-      const patientId = await findOrCreatePatient(
-        formData.patient_name,
-        formData.gender || null,
-        formData.age || null,
-        formData.main_disease || null
-      );
+      // Step 1: Find or create patient in patients table and update with all patient information
+      let patientId;
+      if (editingRecord?.patient_id) {
+        // If editing, use existing patient_id
+        patientId = editingRecord.patient_id;
+      } else {
+        // Find or create patient
+        patientId = await findOrCreatePatient(
+          formData.patient_name,
+          formData.gender || null,
+          formData.age || null,
+          formData.main_disease || null
+        );
+      }
 
-      // Step 2: Prepare visit record data (visit-specific information)
-      const visitRecordData = {
-        patient_id: patientId,
-        // Keep patient fields for backward compatibility and display
-        patient_name: formData.patient_name.trim(),
+      // Step 2: Update patient with all patient information (integrated from visit_records)
+      const patientData = {
+        name: formData.patient_name.trim(),
         gender: formData.gender || null,
-        birth_date: formData.birth_date || null,
         age: formData.age ? parseInt(formData.age, 10) : null,
-        patient_address: formData.patient_address.trim() || null,
-        patient_contact: formData.patient_contact.trim() || null,
-        // Visit-specific information
-        key_person_name: formData.key_person_name.trim() || null,
-        key_person_relationship: formData.key_person_relationship.trim() || null,
-        key_person_address: formData.key_person_address.trim() || null,
-        key_person_contact1: formData.key_person_contact1.trim() || null,
-        key_person_contact2: formData.key_person_contact2.trim() || null,
+        primary_diagnosis: formData.main_disease?.trim() || null,
+        birth_date: formData.birth_date || null,
+        address: formData.patient_address?.trim() || null,
+        contact: formData.patient_contact?.trim() || null,
+        key_person_name: formData.key_person_name?.trim() || null,
+        key_person_relationship: formData.key_person_relationship?.trim() || null,
+        key_person_address: formData.key_person_address?.trim() || null,
+        key_person_contact1: formData.key_person_contact1?.trim() || null,
+        key_person_contact2: formData.key_person_contact2?.trim() || null,
+        medical_history: formData.medical_history?.trim() || null,
+        current_illness_history: formData.current_illness_history?.trim() || null,
+        family_structure: formData.family_structure?.trim() || null,
+        doctor_name: formData.doctor_name?.trim() || null,
+        hospital_name: formData.hospital_name?.trim() || null,
+        hospital_address: formData.hospital_address?.trim() || null,
+        hospital_phone: formData.hospital_phone?.trim() || null,
         initial_visit_date: formData.initial_visit_date || null,
         initial_visit_start_hour: formData.initial_visit_start_hour ? parseInt(formData.initial_visit_start_hour, 10) : null,
         initial_visit_start_minute: formData.initial_visit_start_minute ? parseInt(formData.initial_visit_start_minute, 10) : null,
         initial_visit_end_hour: formData.initial_visit_end_hour ? parseInt(formData.initial_visit_end_hour, 10) : null,
         initial_visit_end_minute: formData.initial_visit_end_minute ? parseInt(formData.initial_visit_end_minute, 10) : null,
-        main_disease: formData.main_disease.trim() || null,
-        medical_history: formData.medical_history.trim() || null,
-        current_illness_history: formData.current_illness_history.trim() || null,
-        family_structure: formData.family_structure.trim() || null,
-        daily_life_meal_nutrition: formData.daily_life_meal_nutrition.trim() || null,
-        daily_life_hygiene: formData.daily_life_hygiene.trim() || null,
-        daily_life_medication: formData.daily_life_medication.trim() || null,
-        daily_life_sleep: formData.daily_life_sleep.trim() || null,
-        daily_life_living_environment: formData.daily_life_living_environment.trim() || null,
-        daily_life_family_environment: formData.daily_life_family_environment.trim() || null,
-        doctor_name: formData.doctor_name.trim() || null,
-        hospital_name: formData.hospital_name.trim() || null,
-        hospital_address: formData.hospital_address.trim() || null,
-        hospital_phone: formData.hospital_phone.trim() || null,
-        notes: formData.notes.trim() || null,
-        recorder_name: formData.recorder_name.trim() || null,
-        status: formData.status
       };
 
-      if (editingRecord) {
-        // Update existing visit record - ensure we're updating only the authenticated user's record
-        if (!user?.id) {
-          throw { message: 'ユーザーが認証されていません' };
+      // Remove null/undefined values
+      Object.keys(patientData).forEach(key => {
+        if (patientData[key] === null || patientData[key] === undefined || patientData[key] === '') {
+          delete patientData[key];
         }
+      });
+
+      const { error: patientUpdateError } = await supabase
+        .from('patients')
+        .update(patientData)
+        .eq('id', patientId)
+        .eq('user_id', user.id);
+
+      if (patientUpdateError) {
+        throw {
+          message: patientUpdateError.message || '患者情報の更新に失敗しました',
+          details: patientUpdateError.details || null,
+          hint: patientUpdateError.hint || null,
+          code: patientUpdateError.code || null,
+        };
+      }
+
+      // Step 3: Prepare visit record data (only visit-specific information)
+      const visitRecordData = {
+        patient_id: patientId,
+        visit_date: formData.initial_visit_date || null, // Use initial_visit_date as visit_date for now
+        visit_start_hour: formData.initial_visit_start_hour ? parseInt(formData.initial_visit_start_hour, 10) : null,
+        visit_start_minute: formData.initial_visit_start_minute ? parseInt(formData.initial_visit_start_minute, 10) : null,
+        visit_end_hour: formData.initial_visit_end_hour ? parseInt(formData.initial_visit_end_hour, 10) : null,
+        visit_end_minute: formData.initial_visit_end_minute ? parseInt(formData.initial_visit_end_minute, 10) : null,
+        daily_life_meal_nutrition: formData.daily_life_meal_nutrition?.trim() || null,
+        daily_life_hygiene: formData.daily_life_hygiene?.trim() || null,
+        daily_life_medication: formData.daily_life_medication?.trim() || null,
+        daily_life_sleep: formData.daily_life_sleep?.trim() || null,
+        daily_life_living_environment: formData.daily_life_living_environment?.trim() || null,
+        daily_life_family_environment: formData.daily_life_family_environment?.trim() || null,
+        notes: formData.notes?.trim() || null,
+        recorder_name: formData.recorder_name?.trim() || null,
+        status: formData.status || 'active'
+      };
+
+      // Remove null/undefined values
+      Object.keys(visitRecordData).forEach(key => {
+        if (visitRecordData[key] === null || visitRecordData[key] === undefined || visitRecordData[key] === '') {
+          delete visitRecordData[key];
+        }
+      });
+
+      if (editingRecord) {
+        // Update existing visit record
         const { data, error } = await supabase
           .from('visit_records')
           .update(visitRecordData)
           .eq('id', editingRecord.id)
-          .eq('user_id', user.id) // Filter by authenticated user's ID
+          .eq('user_id', user.id)
           .select();
 
         if (error) {
-          const errorObj = {
-            message: error.message || '更新に失敗しました',
+          throw {
+            message: error.message || '訪問記録の更新に失敗しました',
             details: error.details || null,
             hint: error.hint || null,
             code: error.code || null,
-            originalError: error
           };
-          throw errorObj;
         }
         if (!data || data.length === 0) {
           throw { message: '更新されたデータが見つかりませんでした' };
         }
         showToast('患者情報を更新しました', 'success');
       } else {
-        // Create new visit record - ensure we're using the authenticated user's ID
-        if (!user?.id) {
-          throw { message: 'ユーザーが認証されていません' };
-        }
+        // Create new visit record
         const { data, error } = await supabase
           .from('visit_records')
           .insert({
-            user_id: user.id, // Use authenticated user's ID
+            user_id: user.id,
             ...visitRecordData
           })
           .select();
 
         if (error) {
-          const errorObj = {
-            message: error.message || '作成に失敗しました',
+          throw {
+            message: error.message || '訪問記録の作成に失敗しました',
             details: error.details || null,
             hint: error.hint || null,
             code: error.code || null,
-            originalError: error
           };
-          throw errorObj;
         }
         if (!data || data.length === 0) {
           throw { message: '作成されたデータが見つかりませんでした' };
@@ -460,6 +554,9 @@ export default function PatientsPage() {
     } catch (error) {
       // Log full error details for debugging
       console.error('Save patient error:', error);
+      console.error('Error type:', typeof error);
+      console.error('Error keys:', error ? Object.keys(error) : 'no keys');
+      console.error('Error stringified:', JSON.stringify(error, null, 2));
 
       // Extract error message from error object
       let errorMessage = '不明なエラー';
@@ -482,15 +579,29 @@ export default function PatientsPage() {
           errorMessage = error.hint;
         } else if (error.code) {
           errorMessage = `エラーコード: ${error.code}`;
+        } else if (error.originalError) {
+          // Try to extract from originalError
+          const orig = error.originalError;
+          if (orig.message) {
+            errorMessage = orig.message;
+          } else if (orig.details) {
+            errorMessage = orig.details;
+          } else if (orig.hint) {
+            errorMessage = orig.hint;
+          }
         } else {
           // Try toString as last resort
           try {
             const errorStr = String(error);
             if (errorStr !== '[object Object]') {
               errorMessage = errorStr;
+            } else {
+              // If it's an empty object, check if it's a database constraint error
+              errorMessage = 'データベースエラーが発生しました。マイグレーションが実行されているか確認してください。';
             }
           } catch {
             // If all else fails, use default
+            errorMessage = 'データベースエラーが発生しました。マイグレーションが実行されているか確認してください。';
           }
         }
       }

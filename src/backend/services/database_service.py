@@ -57,6 +57,33 @@ def create_patient(
     primary_diagnosis: Optional[str] = None,
     individual_notes: Optional[str] = None,
     status: str = "active",
+    birth_date: Optional[str] = None,
+    birth_date_year: Optional[int] = None,
+    birth_date_month: Optional[int] = None,
+    birth_date_day: Optional[int] = None,
+    address: Optional[str] = None,
+    contact: Optional[str] = None,
+    key_person_name: Optional[str] = None,
+    key_person_relationship: Optional[str] = None,
+    key_person_address: Optional[str] = None,
+    key_person_contact1: Optional[str] = None,
+    key_person_contact2: Optional[str] = None,
+    medical_history: Optional[str] = None,
+    current_illness_history: Optional[str] = None,
+    family_structure: Optional[str] = None,
+    doctor_name: Optional[str] = None,
+    hospital_name: Optional[str] = None,
+    hospital_address: Optional[str] = None,
+    hospital_phone: Optional[str] = None,
+    initial_visit_date: Optional[str] = None,
+    initial_visit_year: Optional[int] = None,
+    initial_visit_month: Optional[int] = None,
+    initial_visit_day: Optional[int] = None,
+    initial_visit_day_of_week: Optional[str] = None,
+    initial_visit_start_hour: Optional[int] = None,
+    initial_visit_start_minute: Optional[int] = None,
+    initial_visit_end_hour: Optional[int] = None,
+    initial_visit_end_minute: Optional[int] = None,
 ) -> Dict[str, Any]:
     """
     Create a new patient record.
@@ -69,6 +96,7 @@ def create_patient(
         primary_diagnosis: Primary diagnosis (optional)
         individual_notes: Individual notes (optional)
         status: Patient status (default: "active")
+        ... (additional fields from visit_records integration)
         
     Returns:
         Dictionary containing the created patient data.
@@ -85,6 +113,7 @@ def create_patient(
             "status": status,
         }
         
+        # Basic fields
         if age is not None:
             patient_data["age"] = age
         if gender:
@@ -93,6 +122,44 @@ def create_patient(
             patient_data["primary_diagnosis"] = primary_diagnosis.strip()
         if individual_notes:
             patient_data["individual_notes"] = individual_notes.strip()
+        
+        # Additional patient information (integrated from visit_records)
+        optional_fields = {
+            "birth_date": birth_date,
+            "birth_date_year": birth_date_year,
+            "birth_date_month": birth_date_month,
+            "birth_date_day": birth_date_day,
+            "address": address,
+            "contact": contact,
+            "key_person_name": key_person_name,
+            "key_person_relationship": key_person_relationship,
+            "key_person_address": key_person_address,
+            "key_person_contact1": key_person_contact1,
+            "key_person_contact2": key_person_contact2,
+            "medical_history": medical_history,
+            "current_illness_history": current_illness_history,
+            "family_structure": family_structure,
+            "doctor_name": doctor_name,
+            "hospital_name": hospital_name,
+            "hospital_address": hospital_address,
+            "hospital_phone": hospital_phone,
+            "initial_visit_date": initial_visit_date,
+            "initial_visit_year": initial_visit_year,
+            "initial_visit_month": initial_visit_month,
+            "initial_visit_day": initial_visit_day,
+            "initial_visit_day_of_week": initial_visit_day_of_week,
+            "initial_visit_start_hour": initial_visit_start_hour,
+            "initial_visit_start_minute": initial_visit_start_minute,
+            "initial_visit_end_hour": initial_visit_end_hour,
+            "initial_visit_end_minute": initial_visit_end_minute,
+        }
+        
+        for field, value in optional_fields.items():
+            if value is not None:
+                if isinstance(value, str):
+                    patient_data[field] = value.strip() if value else None
+                else:
+                    patient_data[field] = value
         
         logger.info(f"Creating patient for user {user_id}, name: {name}")
         
@@ -206,6 +273,33 @@ def update_patient(
     primary_diagnosis: Optional[str] = None,
     individual_notes: Optional[str] = None,
     status: Optional[str] = None,
+    birth_date: Optional[str] = None,
+    birth_date_year: Optional[int] = None,
+    birth_date_month: Optional[int] = None,
+    birth_date_day: Optional[int] = None,
+    address: Optional[str] = None,
+    contact: Optional[str] = None,
+    key_person_name: Optional[str] = None,
+    key_person_relationship: Optional[str] = None,
+    key_person_address: Optional[str] = None,
+    key_person_contact1: Optional[str] = None,
+    key_person_contact2: Optional[str] = None,
+    medical_history: Optional[str] = None,
+    current_illness_history: Optional[str] = None,
+    family_structure: Optional[str] = None,
+    doctor_name: Optional[str] = None,
+    hospital_name: Optional[str] = None,
+    hospital_address: Optional[str] = None,
+    hospital_phone: Optional[str] = None,
+    initial_visit_date: Optional[str] = None,
+    initial_visit_year: Optional[int] = None,
+    initial_visit_month: Optional[int] = None,
+    initial_visit_day: Optional[int] = None,
+    initial_visit_day_of_week: Optional[str] = None,
+    initial_visit_start_hour: Optional[int] = None,
+    initial_visit_start_minute: Optional[int] = None,
+    initial_visit_end_hour: Optional[int] = None,
+    initial_visit_end_minute: Optional[int] = None,
 ) -> Dict[str, Any]:
     """
     Update a patient record.
@@ -213,12 +307,7 @@ def update_patient(
     Args:
         patient_id: Patient ID (UUID)
         user_id: Authenticated user ID (for security check)
-        name: Updated patient name (optional)
-        age: Updated patient age (optional)
-        gender: Updated patient gender (optional)
-        primary_diagnosis: Updated primary diagnosis (optional)
-        individual_notes: Updated individual notes (optional)
-        status: Updated patient status (optional)
+        ... (all patient fields, optional)
         
     Returns:
         Dictionary containing the updated patient data.
@@ -230,6 +319,8 @@ def update_patient(
         supabase = get_supabase_client()
         
         update_data = {}
+        
+        # Basic fields
         if name is not None:
             update_data["name"] = name.strip()
         if age is not None:
@@ -244,6 +335,44 @@ def update_patient(
             if status not in ["active", "inactive", "archived"]:
                 raise DatabaseServiceError(f"Invalid status: {status}. Must be 'active', 'inactive', or 'archived'.")
             update_data["status"] = status
+        
+        # Additional patient information (integrated from visit_records)
+        optional_fields = {
+            "birth_date": birth_date,
+            "birth_date_year": birth_date_year,
+            "birth_date_month": birth_date_month,
+            "birth_date_day": birth_date_day,
+            "address": address,
+            "contact": contact,
+            "key_person_name": key_person_name,
+            "key_person_relationship": key_person_relationship,
+            "key_person_address": key_person_address,
+            "key_person_contact1": key_person_contact1,
+            "key_person_contact2": key_person_contact2,
+            "medical_history": medical_history,
+            "current_illness_history": current_illness_history,
+            "family_structure": family_structure,
+            "doctor_name": doctor_name,
+            "hospital_name": hospital_name,
+            "hospital_address": hospital_address,
+            "hospital_phone": hospital_phone,
+            "initial_visit_date": initial_visit_date,
+            "initial_visit_year": initial_visit_year,
+            "initial_visit_month": initial_visit_month,
+            "initial_visit_day": initial_visit_day,
+            "initial_visit_day_of_week": initial_visit_day_of_week,
+            "initial_visit_start_hour": initial_visit_start_hour,
+            "initial_visit_start_minute": initial_visit_start_minute,
+            "initial_visit_end_hour": initial_visit_end_hour,
+            "initial_visit_end_minute": initial_visit_end_minute,
+        }
+        
+        for field, value in optional_fields.items():
+            if value is not None:
+                if isinstance(value, str):
+                    update_data[field] = value.strip() if value else None
+                else:
+                    update_data[field] = value
         
         if not update_data:
             raise DatabaseServiceError("No update data provided")
@@ -783,49 +912,24 @@ def update_soap_record(
 def create_visit_record(
     user_id: str,
     patient_id: str,
-    patient_name: str,
-    gender: Optional[str] = None,
-    birth_date: Optional[str] = None,
-    birth_date_year: Optional[int] = None,
-    birth_date_month: Optional[int] = None,
-    birth_date_day: Optional[int] = None,
-    age: Optional[int] = None,
-    patient_address: Optional[str] = None,
-    patient_contact: Optional[str] = None,
-    key_person_name: Optional[str] = None,
-    key_person_relationship: Optional[str] = None,
-    key_person_address: Optional[str] = None,
-    key_person_contact1: Optional[str] = None,
-    key_person_contact2: Optional[str] = None,
-    initial_visit_date: Optional[str] = None,
-    initial_visit_year: Optional[int] = None,
-    initial_visit_month: Optional[int] = None,
-    initial_visit_day: Optional[int] = None,
-    initial_visit_day_of_week: Optional[str] = None,
-    initial_visit_start_hour: Optional[int] = None,
-    initial_visit_start_minute: Optional[int] = None,
-    initial_visit_end_hour: Optional[int] = None,
-    initial_visit_end_minute: Optional[int] = None,
-    main_disease: Optional[str] = None,
-    medical_history: Optional[str] = None,
-    current_illness_history: Optional[str] = None,
-    family_structure: Optional[str] = None,
+    visit_date: Optional[str] = None,
+    visit_start_hour: Optional[int] = None,
+    visit_start_minute: Optional[int] = None,
+    visit_end_hour: Optional[int] = None,
+    visit_end_minute: Optional[int] = None,
     daily_life_meal_nutrition: Optional[str] = None,
     daily_life_hygiene: Optional[str] = None,
     daily_life_medication: Optional[str] = None,
     daily_life_sleep: Optional[str] = None,
     daily_life_living_environment: Optional[str] = None,
     daily_life_family_environment: Optional[str] = None,
-    doctor_name: Optional[str] = None,
-    hospital_name: Optional[str] = None,
-    hospital_address: Optional[str] = None,
-    hospital_phone: Optional[str] = None,
     notes: Optional[str] = None,
     recorder_name: Optional[str] = None,
     status: str = "active",
 ) -> Dict[str, Any]:
     """
-    Create a new visit record.
+    Create a new visit record (visit-specific information only).
+    Patient information is now stored in the patients table.
     
     Returns:
         Dictionary containing the created visit record data.
@@ -839,48 +943,22 @@ def create_visit_record(
         visit_record_data = {
             "user_id": user_id,
             "patient_id": patient_id,
-            "patient_name": patient_name.strip(),
             "status": status,
         }
         
-        # Add all optional fields if provided
+        # Add all optional visit-specific fields if provided
         optional_fields = {
-            "gender": gender,
-            "birth_date": birth_date,
-            "birth_date_year": birth_date_year,
-            "birth_date_month": birth_date_month,
-            "birth_date_day": birth_date_day,
-            "age": age,
-            "patient_address": patient_address,
-            "patient_contact": patient_contact,
-            "key_person_name": key_person_name,
-            "key_person_relationship": key_person_relationship,
-            "key_person_address": key_person_address,
-            "key_person_contact1": key_person_contact1,
-            "key_person_contact2": key_person_contact2,
-            "initial_visit_date": initial_visit_date,
-            "initial_visit_year": initial_visit_year,
-            "initial_visit_month": initial_visit_month,
-            "initial_visit_day": initial_visit_day,
-            "initial_visit_day_of_week": initial_visit_day_of_week,
-            "initial_visit_start_hour": initial_visit_start_hour,
-            "initial_visit_start_minute": initial_visit_start_minute,
-            "initial_visit_end_hour": initial_visit_end_hour,
-            "initial_visit_end_minute": initial_visit_end_minute,
-            "main_disease": main_disease,
-            "medical_history": medical_history,
-            "current_illness_history": current_illness_history,
-            "family_structure": family_structure,
+            "visit_date": visit_date,
+            "visit_start_hour": visit_start_hour,
+            "visit_start_minute": visit_start_minute,
+            "visit_end_hour": visit_end_hour,
+            "visit_end_minute": visit_end_minute,
             "daily_life_meal_nutrition": daily_life_meal_nutrition,
             "daily_life_hygiene": daily_life_hygiene,
             "daily_life_medication": daily_life_medication,
             "daily_life_sleep": daily_life_sleep,
             "daily_life_living_environment": daily_life_living_environment,
             "daily_life_family_environment": daily_life_family_environment,
-            "doctor_name": doctor_name,
-            "hospital_name": hospital_name,
-            "hospital_address": hospital_address,
-            "hospital_phone": hospital_phone,
             "notes": notes,
             "recorder_name": recorder_name,
         }
@@ -892,7 +970,7 @@ def create_visit_record(
                 else:
                     visit_record_data[field] = value
         
-        logger.info(f"Creating visit record for user {user_id}, patient: {patient_name}")
+        logger.info(f"Creating visit record for user {user_id}, patient_id: {patient_id}")
         
         response = supabase.table("visit_records").insert(visit_record_data).execute()
         
@@ -907,43 +985,17 @@ def create_visit_record(
             "id": str(record["id"]),
             "user_id": str(record["user_id"]),
             "patient_id": str(record["patient_id"]),
-            "patient_name": record["patient_name"],
-            "gender": record.get("gender"),
-            "birth_date": str(record["birth_date"]) if record.get("birth_date") else None,
-            "birth_date_year": record.get("birth_date_year"),
-            "birth_date_month": record.get("birth_date_month"),
-            "birth_date_day": record.get("birth_date_day"),
-            "age": record.get("age"),
-            "patient_address": record.get("patient_address"),
-            "patient_contact": record.get("patient_contact"),
-            "key_person_name": record.get("key_person_name"),
-            "key_person_relationship": record.get("key_person_relationship"),
-            "key_person_address": record.get("key_person_address"),
-            "key_person_contact1": record.get("key_person_contact1"),
-            "key_person_contact2": record.get("key_person_contact2"),
-            "initial_visit_date": str(record["initial_visit_date"]) if record.get("initial_visit_date") else None,
-            "initial_visit_year": record.get("initial_visit_year"),
-            "initial_visit_month": record.get("initial_visit_month"),
-            "initial_visit_day": record.get("initial_visit_day"),
-            "initial_visit_day_of_week": record.get("initial_visit_day_of_week"),
-            "initial_visit_start_hour": record.get("initial_visit_start_hour"),
-            "initial_visit_start_minute": record.get("initial_visit_start_minute"),
-            "initial_visit_end_hour": record.get("initial_visit_end_hour"),
-            "initial_visit_end_minute": record.get("initial_visit_end_minute"),
-            "main_disease": record.get("main_disease"),
-            "medical_history": record.get("medical_history"),
-            "current_illness_history": record.get("current_illness_history"),
-            "family_structure": record.get("family_structure"),
+            "visit_date": str(record["visit_date"]) if record.get("visit_date") else None,
+            "visit_start_hour": record.get("visit_start_hour"),
+            "visit_start_minute": record.get("visit_start_minute"),
+            "visit_end_hour": record.get("visit_end_hour"),
+            "visit_end_minute": record.get("visit_end_minute"),
             "daily_life_meal_nutrition": record.get("daily_life_meal_nutrition"),
             "daily_life_hygiene": record.get("daily_life_hygiene"),
             "daily_life_medication": record.get("daily_life_medication"),
             "daily_life_sleep": record.get("daily_life_sleep"),
             "daily_life_living_environment": record.get("daily_life_living_environment"),
             "daily_life_family_environment": record.get("daily_life_family_environment"),
-            "doctor_name": record.get("doctor_name"),
-            "hospital_name": record.get("hospital_name"),
-            "hospital_address": record.get("hospital_address"),
-            "hospital_phone": record.get("hospital_phone"),
             "notes": record.get("notes"),
             "recorder_name": record.get("recorder_name"),
             "status": record["status"],
@@ -999,50 +1051,24 @@ def get_visit_records(
         
         logger.info(f"Found {len(response.data)} visit records for user {user_id}")
         
-        # Convert all records
+        # Convert all records (only visit-specific fields)
         result = []
         for record in response.data:
             result.append({
                 "id": str(record["id"]),
                 "user_id": str(record["user_id"]),
                 "patient_id": str(record["patient_id"]),
-                "patient_name": record["patient_name"],
-                "gender": record.get("gender"),
-                "birth_date": str(record["birth_date"]) if record.get("birth_date") else None,
-                "birth_date_year": record.get("birth_date_year"),
-                "birth_date_month": record.get("birth_date_month"),
-                "birth_date_day": record.get("birth_date_day"),
-                "age": record.get("age"),
-                "patient_address": record.get("patient_address"),
-                "patient_contact": record.get("patient_contact"),
-                "key_person_name": record.get("key_person_name"),
-                "key_person_relationship": record.get("key_person_relationship"),
-                "key_person_address": record.get("key_person_address"),
-                "key_person_contact1": record.get("key_person_contact1"),
-                "key_person_contact2": record.get("key_person_contact2"),
-                "initial_visit_date": str(record["initial_visit_date"]) if record.get("initial_visit_date") else None,
-                "initial_visit_year": record.get("initial_visit_year"),
-                "initial_visit_month": record.get("initial_visit_month"),
-                "initial_visit_day": record.get("initial_visit_day"),
-                "initial_visit_day_of_week": record.get("initial_visit_day_of_week"),
-                "initial_visit_start_hour": record.get("initial_visit_start_hour"),
-                "initial_visit_start_minute": record.get("initial_visit_start_minute"),
-                "initial_visit_end_hour": record.get("initial_visit_end_hour"),
-                "initial_visit_end_minute": record.get("initial_visit_end_minute"),
-                "main_disease": record.get("main_disease"),
-                "medical_history": record.get("medical_history"),
-                "current_illness_history": record.get("current_illness_history"),
-                "family_structure": record.get("family_structure"),
+                "visit_date": str(record["visit_date"]) if record.get("visit_date") else None,
+                "visit_start_hour": record.get("visit_start_hour"),
+                "visit_start_minute": record.get("visit_start_minute"),
+                "visit_end_hour": record.get("visit_end_hour"),
+                "visit_end_minute": record.get("visit_end_minute"),
                 "daily_life_meal_nutrition": record.get("daily_life_meal_nutrition"),
                 "daily_life_hygiene": record.get("daily_life_hygiene"),
                 "daily_life_medication": record.get("daily_life_medication"),
                 "daily_life_sleep": record.get("daily_life_sleep"),
                 "daily_life_living_environment": record.get("daily_life_living_environment"),
                 "daily_life_family_environment": record.get("daily_life_family_environment"),
-                "doctor_name": record.get("doctor_name"),
-                "hospital_name": record.get("hospital_name"),
-                "hospital_address": record.get("hospital_address"),
-                "hospital_phone": record.get("hospital_phone"),
                 "notes": record.get("notes"),
                 "recorder_name": record.get("recorder_name"),
                 "status": record["status"],
@@ -1094,43 +1120,17 @@ def get_visit_record_by_id(visit_record_id: str, user_id: str) -> Dict[str, Any]
             "id": str(record["id"]),
             "user_id": str(record["user_id"]),
             "patient_id": str(record["patient_id"]),
-            "patient_name": record["patient_name"],
-            "gender": record.get("gender"),
-            "birth_date": str(record["birth_date"]) if record.get("birth_date") else None,
-            "birth_date_year": record.get("birth_date_year"),
-            "birth_date_month": record.get("birth_date_month"),
-            "birth_date_day": record.get("birth_date_day"),
-            "age": record.get("age"),
-            "patient_address": record.get("patient_address"),
-            "patient_contact": record.get("patient_contact"),
-            "key_person_name": record.get("key_person_name"),
-            "key_person_relationship": record.get("key_person_relationship"),
-            "key_person_address": record.get("key_person_address"),
-            "key_person_contact1": record.get("key_person_contact1"),
-            "key_person_contact2": record.get("key_person_contact2"),
-            "initial_visit_date": str(record["initial_visit_date"]) if record.get("initial_visit_date") else None,
-            "initial_visit_year": record.get("initial_visit_year"),
-            "initial_visit_month": record.get("initial_visit_month"),
-            "initial_visit_day": record.get("initial_visit_day"),
-            "initial_visit_day_of_week": record.get("initial_visit_day_of_week"),
-            "initial_visit_start_hour": record.get("initial_visit_start_hour"),
-            "initial_visit_start_minute": record.get("initial_visit_start_minute"),
-            "initial_visit_end_hour": record.get("initial_visit_end_hour"),
-            "initial_visit_end_minute": record.get("initial_visit_end_minute"),
-            "main_disease": record.get("main_disease"),
-            "medical_history": record.get("medical_history"),
-            "current_illness_history": record.get("current_illness_history"),
-            "family_structure": record.get("family_structure"),
+            "visit_date": str(record["visit_date"]) if record.get("visit_date") else None,
+            "visit_start_hour": record.get("visit_start_hour"),
+            "visit_start_minute": record.get("visit_start_minute"),
+            "visit_end_hour": record.get("visit_end_hour"),
+            "visit_end_minute": record.get("visit_end_minute"),
             "daily_life_meal_nutrition": record.get("daily_life_meal_nutrition"),
             "daily_life_hygiene": record.get("daily_life_hygiene"),
             "daily_life_medication": record.get("daily_life_medication"),
             "daily_life_sleep": record.get("daily_life_sleep"),
             "daily_life_living_environment": record.get("daily_life_living_environment"),
             "daily_life_family_environment": record.get("daily_life_family_environment"),
-            "doctor_name": record.get("doctor_name"),
-            "hospital_name": record.get("hospital_name"),
-            "hospital_address": record.get("hospital_address"),
-            "hospital_phone": record.get("hospital_phone"),
             "notes": record.get("notes"),
             "recorder_name": record.get("recorder_name"),
             "status": record["status"],
@@ -1204,43 +1204,17 @@ def update_visit_record(
             "id": str(record["id"]),
             "user_id": str(record["user_id"]),
             "patient_id": str(record["patient_id"]),
-            "patient_name": record["patient_name"],
-            "gender": record.get("gender"),
-            "birth_date": str(record["birth_date"]) if record.get("birth_date") else None,
-            "birth_date_year": record.get("birth_date_year"),
-            "birth_date_month": record.get("birth_date_month"),
-            "birth_date_day": record.get("birth_date_day"),
-            "age": record.get("age"),
-            "patient_address": record.get("patient_address"),
-            "patient_contact": record.get("patient_contact"),
-            "key_person_name": record.get("key_person_name"),
-            "key_person_relationship": record.get("key_person_relationship"),
-            "key_person_address": record.get("key_person_address"),
-            "key_person_contact1": record.get("key_person_contact1"),
-            "key_person_contact2": record.get("key_person_contact2"),
-            "initial_visit_date": str(record["initial_visit_date"]) if record.get("initial_visit_date") else None,
-            "initial_visit_year": record.get("initial_visit_year"),
-            "initial_visit_month": record.get("initial_visit_month"),
-            "initial_visit_day": record.get("initial_visit_day"),
-            "initial_visit_day_of_week": record.get("initial_visit_day_of_week"),
-            "initial_visit_start_hour": record.get("initial_visit_start_hour"),
-            "initial_visit_start_minute": record.get("initial_visit_start_minute"),
-            "initial_visit_end_hour": record.get("initial_visit_end_hour"),
-            "initial_visit_end_minute": record.get("initial_visit_end_minute"),
-            "main_disease": record.get("main_disease"),
-            "medical_history": record.get("medical_history"),
-            "current_illness_history": record.get("current_illness_history"),
-            "family_structure": record.get("family_structure"),
+            "visit_date": str(record["visit_date"]) if record.get("visit_date") else None,
+            "visit_start_hour": record.get("visit_start_hour"),
+            "visit_start_minute": record.get("visit_start_minute"),
+            "visit_end_hour": record.get("visit_end_hour"),
+            "visit_end_minute": record.get("visit_end_minute"),
             "daily_life_meal_nutrition": record.get("daily_life_meal_nutrition"),
             "daily_life_hygiene": record.get("daily_life_hygiene"),
             "daily_life_medication": record.get("daily_life_medication"),
             "daily_life_sleep": record.get("daily_life_sleep"),
             "daily_life_living_environment": record.get("daily_life_living_environment"),
             "daily_life_family_environment": record.get("daily_life_family_environment"),
-            "doctor_name": record.get("doctor_name"),
-            "hospital_name": record.get("hospital_name"),
-            "hospital_address": record.get("hospital_address"),
-            "hospital_phone": record.get("hospital_phone"),
             "notes": record.get("notes"),
             "recorder_name": record.get("recorder_name"),
             "status": record["status"],
