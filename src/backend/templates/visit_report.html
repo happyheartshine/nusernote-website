@@ -16,121 +16,103 @@
         <h1>精神科訪問看護記録書Ⅱ</h1>
     </div>
     
-    <!-- HEADER TABLE: Basic Information -->
-    <table class="header-table">
+    <!-- UNIFIED TABLE: All form sections in one table -->
+    <table class="unified-form-table">
+        <!-- Column group: Define 12 equal columns (8.33% each) -->
+        <colgroup>
+            <col style="width: 8.33%;">
+            <col style="width: 8.33%;">
+            <col style="width: 8.33%;">
+            <col style="width: 8.33%;">
+            <col style="width: 8.33%;">
+            <col style="width: 8.33%;">
+            <col style="width: 8.33%;">
+            <col style="width: 8.33%;">
+            <col style="width: 8.33%;">
+            <col style="width: 8.33%;">
+            <col style="width: 8.33%;">
+            <col style="width: 8.33%;">
+        </colgroup>
+        <!-- Row 1: 利用者氏名 / 看護師等氏名 -->
         <tr>
-            <td class="header-label">利用者氏名</td>
-            <td class="header-value">{{ patient_name }} 様</td>
-            <td class="header-label">看護師等氏名</td>
-            <td class="header-value">{{ nurse_names }}</td>
+            <!-- Left: 利用者氏名 + 氏名 -->
+            <td class="form-label" rowspan="2" colspan="2">利用者氏名</td>
+            <td class="form-value" rowspan="2" colspan="4">{{ patient_name }} 様</td>
+            <!-- Right: 看護師等氏名 -->
+            <td class="form-label" colspan="2">看護師等氏名</td>
+            <td class="form-value" colspan="4">{{ nurse_names }}</td>
         </tr>
         <tr>
-            <td class="header-label">訪問職種</td>
-            <td class="header-value">{{ visit_type }}</td>
-            <td class="header-label">訪問年月日</td>
-            <td class="header-value">
+            <td class="form-label" colspan="2">訪問職種</td>
+            <td class="form-value" colspan="4">{{ visit_type if visit_type else '保健師・看護師・准看護師・作業療法士' }}</td>
+        </tr>
+        <!-- Row 2: 訪問年月日 / 訪問職種 -->
+        <tr>
+            <!-- Left: 訪問年月日 + 時間 -->
+            <td class="form-label" colspan="2">訪問年月日</td>
+            <td class="form-value" colspan="10">
                 <span class="date-field">{{ visit_year }} 年</span>
                 <span class="date-field">{{ visit_month }} 月</span>
                 <span class="date-field">{{ visit_day }} 日</span>
-            </td>
-        </tr>
-        <tr>
-            <td class="header-label">訪問時間</td>
-            <td class="header-value">
                 <span class="time-field">{{ start_hour }} 時</span>
                 <span class="time-field">{{ start_minute }} 分</span>
                 <span class="time-separator">～</span>
                 <span class="time-field">{{ end_hour }} 時</span>
                 <span class="time-field">{{ end_minute }} 分</span>
             </td>
-            <td class="header-label">訪問先</td>
-            <td class="header-value">{{ visit_location if visit_location else '　' }}</td>
+            <!-- Right: 訪問職種 + 固定文言 -->
         </tr>
-    </table>
-    
-    <!-- MAIN BODY SECTIONS -->
-    
-    <!-- Section 1: 食生活、清潔、排泄、睡眠、生活リズム、部屋の整頓等 -->
-    <div class="form-section">
-        <div class="section-header">
-            <div class="section-number">1</div>
-            <div class="section-title">食生活、清潔、排泄、睡眠、生活リズム、部屋の整頓等</div>
-        </div>
-        <div class="section-content">
-            {{ daily_living if daily_living else '　' }}
-        </div>
-    </div>
-    
-    <!-- Section 2: 精神状態 -->
-    <div class="form-section">
-        <div class="section-header">
-            <div class="section-number">2</div>
-            <div class="section-title">精神状態</div>
-        </div>
-        <div class="section-content">
-            {{ mental_state if mental_state else '　' }}
-        </div>
-    </div>
-    
-    <!-- Section 3: 服薬等の状況 -->
-    <div class="form-section">
-        <div class="section-header">
-            <div class="section-number">3</div>
-            <div class="section-title">服薬等の状況</div>
-        </div>
-        <div class="section-content">
-            {{ medication_status if medication_status else '　' }}
-        </div>
-    </div>
-    
-    <!-- Section 4: 作業、対人関係について -->
-    <div class="form-section">
-        <div class="section-header">
-            <div class="section-number">4</div>
-            <div class="section-title">作業、対人関係について</div>
-        </div>
-        <div class="section-content">
-            {{ work_interpersonal if work_interpersonal else '　' }}
-        </div>
-    </div>
-    
-    <!-- Section 5: 実施した看護内容 -->
-    <div class="form-section">
-        <div class="section-header">
-            <div class="section-number">5</div>
-            <div class="section-title">実施した看護内容</div>
-        </div>
-        <div class="section-content">
-            {{ nursing_interventions if nursing_interventions else '　' }}
-        </div>
-    </div>
-    
-    <!-- Section 6: 備考 (with GAF on the right) -->
-    <div class="form-section remarks-section">
-        <div class="section-header">
-            <div class="section-number">6</div>
-            <div class="section-title">備考</div>
-            <div class="gaf-box">
-                <div class="gaf-label">GAF</div>
-                <div class="gaf-value">{{ gaf_score if gaf_score else '　' }}</div>
-            </div>
-        </div>
-        <div class="section-content">
-            {{ remarks if remarks else '　' }}
-        </div>
-    </div>
-    
-    <!-- FOOTER: Next Visit Information -->
-    <table class="footer-table">
+        
+        <!-- Row 3: 訪問先 -->
         <tr>
-            <td class="footer-label">次回の訪問予定日</td>
-            <td class="footer-value">
+            <td class="form-label" colspan="2">訪問先</td>
+            <td class="form-value" colspan="10">{{ visit_location if visit_location else '　' }}</td>
+        </tr>
+        
+        <!-- Row 5: Daily living section -->
+        <tr>
+            <td class="form-value" colspan="12">食生活、清潔、排泄、睡眠、生活リズム、部屋の整頓等<br><br>{{ daily_living if daily_living else '　' }}</td>
+        </tr>
+        
+        <!-- Row 6: Mental state section -->
+        <tr>
+            <td class="form-value" colspan="12">精神状態<br><br>{{ mental_state if mental_state else '　' }}</td>
+        </tr>
+        
+        <!-- Row 7: Medication status section -->
+        <tr>
+            <td class="form-value" colspan="12">服薬等の状況<br><br>{{ medication_status if medication_status else '　' }}</td>
+        </tr>
+        
+        <!-- Row 8: Work/interpersonal section -->
+        <tr>
+            <td class="form-value" colspan="12">作業、対人関係について<br><br>{{ work_interpersonal if work_interpersonal else '　' }}</td>
+        </tr>
+        
+        <!-- Row 9: Nursing interventions section -->
+        <tr>
+            <td class="form-value" colspan="12">実施した看護内容<br><br>{{ nursing_interventions if nursing_interventions else '　' }}</td>
+        </tr>
+        
+        <!-- Row 10: Remarks and GAF (split horizontally) -->
+        <tr>
+            <td class="remarks-content-cell" rowspan="2" colspan="9">備考<br><br>{{ remarks if remarks else '　' }}</td>
+            <td class="gaf-label-cell" colspan="3">GAF</td>
+        </tr>
+        <tr>
+            <td class="gaf-content-cell" colspan="3">
+                <div class="gaf-value-cell">{{ gaf_score if gaf_score else '　' }}</div>
+                <div class="gaf-points-label">点</div>
+                <div class="gaf-note">(※月の初日の指定訪問看護時に記載)</div>
+            </td>
+        </tr>
+        <!-- Row 11: Next visit date and time -->
+        <tr>
+            <td class="form-label" colspan="2">次回の訪問予定日</td>
+            <td class="form-value" colspan="10">
                 <span class="date-field">{{ next_visit_year if next_visit_year else '　' }} 年</span>
                 <span class="date-field">{{ next_visit_month if next_visit_month else '　' }} 月</span>
                 <span class="date-field">{{ next_visit_day if next_visit_day else '　' }} 日</span>
-            </td>
-            <td class="footer-label">次回訪問時間</td>
-            <td class="footer-value">
                 <span class="time-field">{{ next_visit_start_hour if next_visit_start_hour else '　' }} 時</span>
                 <span class="time-field">{{ next_visit_start_minute if next_visit_start_minute else '　' }} 分</span>
                 <span class="time-separator">～</span>

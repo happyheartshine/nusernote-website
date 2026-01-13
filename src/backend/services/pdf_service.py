@@ -302,8 +302,10 @@ def generate_visit_report_pdf(record_data: Dict[str, Any]) -> bytes:
         except TemplateNotFound:
             raise PDFServiceError("Visit report template not found: visit_report.html")
         
-        # Get CSS file path and read it
-        css_path = get_css_path()
+        # Get CSS file path for visit report and read it
+        template_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'templates')
+        css_path = os.path.join(template_dir, 'pdf_report.css')
+        css_path = os.path.abspath(css_path)
         
         # Read CSS and inject font path dynamically
         with open(css_path, 'r', encoding='utf-8') as f:

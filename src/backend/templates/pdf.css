@@ -68,47 +68,59 @@ body {
 }
 
 /* ============================================
-   HEADER TABLE - Basic Information
+   UNIFIED FORM TABLE - Single table for entire form
    ============================================ */
 
-.header-table {
+.unified-form-table {
     width: 100%;
     border-collapse: collapse;
     margin-bottom: 8mm;
     border: 1.5pt solid #000;
+    page-break-inside: avoid;
 }
 
-.header-table tr {
+.unified-form-table tr {
     border-bottom: 1pt solid #000;
 }
 
-.header-table tr:last-child {
+.unified-form-table tr:last-child {
     border-bottom: none;
 }
 
-.header-table td {
+.unified-form-table td {
     padding: 4pt 6pt;
     vertical-align: middle;
     border-right: 1pt solid #000;
 }
 
-.header-table td:last-child {
+.unified-form-table td:last-child {
     border-right: none;
 }
 
-.header-label {
-    width: 20%;
+/* Form label cells */
+.form-label {
+    width: 15%;
     font-weight: bold;
     background-color: #f5f5f5;
     text-align: center;
+    vertical-align: middle;
 }
 
-.header-value {
-    width: 30%;
+/* Form value cells */
+.form-value {
+    width: 35%;
     text-align: left;
     padding-left: 8pt;
+    vertical-align: middle;
 }
 
+/* Empty cells */
+.form-empty {
+    width: 15%;
+    background-color: #fff;
+}
+
+/* Date and time fields */
 .date-field,
 .time-field {
     display: inline-block;
@@ -120,114 +132,93 @@ body {
     margin: 0 4pt;
 }
 
-/* ============================================
-   FORM SECTIONS - Main Body
-   ============================================ */
-
-.form-section {
-    border: 1.5pt solid #000;
-    margin-bottom: 6mm;
-    page-break-inside: avoid;
+/* Section content cells (with colspan) */
+.unified-form-table tr:nth-child(5) td.form-value,
+.unified-form-table tr:nth-child(6) td.form-value,
+.unified-form-table tr:nth-child(7) td.form-value,
+.unified-form-table tr:nth-child(8) td.form-value,
+.unified-form-table tr:nth-child(9) td.form-value {
+    vertical-align: top;
     min-height: 25mm;
-}
-
-.section-header {
-    border-bottom: 1pt solid #000;
-    padding: 4pt 6pt;
-    display: flex;
-    align-items: center;
-    background-color: #f5f5f5;
-}
-
-.section-number {
-    font-weight: bold;
-    font-size: 11pt;
-    margin-right: 8pt;
-    min-width: 12pt;
-    text-align: center;
-}
-
-.section-title {
-    font-weight: bold;
-    font-size: 11pt;
-    flex: 1;
-}
-
-.section-content {
-    padding: 6pt 8pt;
-    min-height: 20mm;
     white-space: pre-wrap;
     word-wrap: break-word;
     line-height: 1.6;
+    padding: 6pt 8pt;
 }
 
-/* ============================================
-   REMARKS SECTION (with GAF)
-   ============================================ */
-
-.remarks-section .section-header {
-    position: relative;
-}
-
-.gaf-box {
-    position: absolute;
-    right: 6pt;
-    top: 50%;
-    transform: translateY(-50%);
-    border: 1pt solid #000;
-    padding: 2pt 4pt;
-    background-color: #fff;
-    display: flex;
-    align-items: center;
-    gap: 4pt;
-}
-
-.gaf-label {
-    font-weight: bold;
-    font-size: 9pt;
-}
-
-.gaf-value {
-    font-size: 10pt;
-    min-width: 20pt;
-    text-align: center;
-    border: 0.5pt solid #ccc;
-    padding: 1pt 2pt;
-}
-
-/* ============================================
-   FOOTER TABLE - Next Visit Information
-   ============================================ */
-
-.footer-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 8mm;
-    border: 1.5pt solid #000;
-}
-
-.footer-table td {
-    padding: 4pt 6pt;
+/* Section labels (wider for long text) */
+.unified-form-table tr:nth-child(5) td.form-label,
+.unified-form-table tr:nth-child(6) td.form-label,
+.unified-form-table tr:nth-child(7) td.form-label,
+.unified-form-table tr:nth-child(8) td.form-label,
+.unified-form-table tr:nth-child(9) td.form-label {
+    width: 25%;
     vertical-align: middle;
-    border-right: 1pt solid #000;
 }
 
-.footer-table td:last-child {
-    border-right: none;
-}
-
-.footer-label {
-    width: 20%;
+/* Remarks and GAF row (row 10) */
+.remarks-label-cell {
+    width: 15%;
     font-weight: bold;
     background-color: #f5f5f5;
     text-align: center;
+    vertical-align: top;
+    padding: 4pt;
 }
 
-.footer-value {
-    width: 30%;
-    text-align: left;
-    padding-left: 8pt;
+.remarks-content-cell {
+    width: 55%;
+    padding: 6pt 8pt;
+    min-height: 30mm;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    line-height: 1.6;
+    vertical-align: top;
 }
+
+.gaf-label-cell {
+    width: 10%;
+    font-weight: bold;
+    background-color: #f5f5f5;
+    text-align: center;
+    vertical-align: top;
+    padding: 4pt;
+}
+
+.gaf-content-cell {
+    width: 20%;
+    text-align: center;
+    vertical-align: top;
+    padding: 4pt;
+}
+
+.gaf-value-cell {
+    border: 1pt solid #000;
+    padding: 4pt;
+    margin: 0 auto 4pt auto;
+    min-height: 8mm;
+    min-width: 30pt;
+    max-width: 40pt;
+    text-align: center;
+    vertical-align: middle;
+}
+
+.gaf-points-label {
+    font-weight: bold;
+    padding: 2pt;
+    margin-bottom: 4pt;
+    text-align: center;
+}
+
+.gaf-note {
+    font-size: 7pt;
+    color: #666;
+    padding: 2pt;
+    line-height: 1.4;
+    text-align: center;
+    margin-top: 4pt;
+}
+
 
 /* ============================================
    PRINT-SPECIFIC STYLES
@@ -239,12 +230,7 @@ body {
         print-color-adjust: exact;
     }
     
-    .form-section {
-        page-break-inside: avoid;
-    }
-    
-    .header-table,
-    .footer-table {
+    .unified-form-table {
         page-break-inside: avoid;
     }
 }

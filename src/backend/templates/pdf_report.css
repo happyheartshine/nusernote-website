@@ -1,0 +1,272 @@
+/**
+ * PDF Styles for Visit Report - 精神科訪問看護記録書Ⅱ
+ * 
+ * This CSS file is specifically designed for WeasyPrint PDF generation
+ * with proper Japanese font embedding and exact form layout matching.
+ * 
+ * IMPORTANT: Font path is dynamically injected by Python code.
+ * The @font-face rule below uses a placeholder that will be replaced
+ * with the actual absolute font path at runtime.
+ */
+
+/* ============================================
+   FONT EMBEDDING - CRITICAL FOR JAPANESE TEXT
+   ============================================ */
+
+/**
+ * IPAexGothic Font - Primary Japanese Font
+ * 
+ * Font path will be dynamically injected by Python code.
+ * This ensures proper font embedding regardless of OS (Windows/Linux/Mac).
+ */
+@font-face {
+    font-family: 'IPAexGothic';
+    src: url('file:///app/fonts/IPAexGothic.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
+
+/* ============================================
+   PAGE SETUP - A4 SIZE
+   ============================================ */
+
+@page {
+    size: A4;
+    margin: 10mm 15mm; /* Top/Bottom: 10mm, Left/Right: 15mm - Reduced for single page */
+}
+
+/* ============================================
+   BASE STYLES
+   ============================================ */
+
+body {
+    font-family: 'IPAexGothic', 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', 'Meiryo', 'MS Gothic', sans-serif;
+    font-size: 7pt;
+    line-height: 1.3;
+    color: #000;
+    margin: 0;
+    padding: 0;
+}
+
+/* ============================================
+   TITLE SECTION
+   ============================================ */
+
+.title-section {
+    text-align: center;
+    margin-bottom: 6mm;
+    padding-bottom: 2mm;
+    border-bottom: 1pt solid #000;
+}
+
+.title-section h1 {
+    font-size: 14pt;
+    margin: 0;
+    padding: 0;
+    letter-spacing: 0.3pt;
+}
+
+/* ============================================
+   UNIFIED FORM TABLE - Single table for entire form
+   ============================================ */
+
+.unified-form-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 0;
+    border: 1pt solid #000;
+    page-break-inside: avoid;
+    table-layout: fixed; /* Force fixed layout for consistent column widths */
+}
+
+.unified-form-table tr {
+    border-bottom: 1pt solid #000;
+}
+
+.unified-form-table tr:last-child {
+    border-bottom: none;
+}
+
+.unified-form-table td {
+    padding: 2pt 4pt;
+    vertical-align: middle;
+    border-right: 1pt solid #000;
+}
+
+.unified-form-table td:last-child {
+    border-right: none;
+}
+
+/* Form label cells - Default styles */
+.form-label {
+    background-color: #f5f5f5;
+    text-align: center;
+    vertical-align: middle;
+}
+
+/* Form value cells - Default styles */
+.form-value {
+    text-align: left;
+    padding-left: 4pt;
+    vertical-align: middle;
+}
+
+/* Empty cells */
+.form-empty {
+    background-color: #fff;
+}
+
+/* Header rows (rows 1-2) - 12 columns structure (2+4+2+4)
+   Remove width constraints to let colspan handle distribution */
+.unified-form-table tr:nth-child(1) td.form-label,
+.unified-form-table tr:nth-child(2) td.form-label {
+    /* Width determined by colspan */
+    height: 6mm;
+}
+
+.unified-form-table tr:nth-child(1) td.form-value,
+.unified-form-table tr:nth-child(2) td.form-value {
+    /* Width determined by colspan */
+}
+
+/* For rows 3+ (訪問年月日, 訪問先, etc.) - 12 columns structure */
+.unified-form-table tr:nth-child(3) td.form-label,
+.unified-form-table tr:nth-child(4) td.form-label {
+    /* Width determined by colspan="2" = 16.67% of 12 columns */
+}
+
+.unified-form-table tr:nth-child(3) td.form-value,
+.unified-form-table tr:nth-child(4) td.form-value {
+    /* Width determined by colspan="10" = 83.33% of 12 columns */
+}
+
+/* Date and time fields */
+.date-field,
+.time-field {
+    display: inline-block;
+    /* min-width: 20pt; */
+    text-align: center;
+}
+
+.time-separator {
+    margin: 0 4pt;
+}
+.unified-form-table tr:nth-child(3) td.form-value{
+    height: 8mm;
+}
+.unified-form-table tr:nth-child(4) td.form-value{
+    height: 20mm;
+}
+/* Section content cells (with colspan) - Rows 5-9 */
+.unified-form-table tr:nth-child(5) td.form-value,
+.unified-form-table tr:nth-child(6) td.form-value,
+.unified-form-table tr:nth-child(7) td.form-value,
+.unified-form-table tr:nth-child(8) td.form-value,
+.unified-form-table tr:nth-child(9) td.form-value {
+    vertical-align: top;
+    min-height: 25mm;           /* Match original (1st) format height */
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    line-height: 1.6;           /* More generous line spacing like 1st format */
+    padding: 6pt 8pt;           /* Restore larger writing area padding */
+}
+
+/* Section labels (wider for long text) - Rows 5-9 */
+/* Note: Rows 5-9 don't have separate label cells, they're merged with content */
+.unified-form-table tr:nth-child(5) td.form-label,
+.unified-form-table tr:nth-child(6) td.form-label,
+.unified-form-table tr:nth-child(7) td.form-label,
+.unified-form-table tr:nth-child(8) td.form-label,
+.unified-form-table tr:nth-child(9) td.form-label {
+    /* No width rule - these rows use colspan="12" for full width */
+    vertical-align: middle;
+}
+
+/* Remarks and GAF row (row 10) */
+.remarks-label-cell {
+    width: 15%;
+    background-color: #f5f5f5;
+    text-align: center;
+    vertical-align: top;
+    padding: 2pt;
+}
+
+.remarks-content-cell {
+    width: 55%;
+    padding: 3pt 4pt;
+    min-height: 15mm;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    line-height: 1.4;
+    vertical-align: top;
+}
+
+.gaf-label-cell {
+    width: 10%;
+    background-color: #f5f5f5;
+    text-align: center;
+    vertical-align: top;
+    padding: 2pt;
+}
+
+.gaf-content-cell {
+    width: 20%;
+    text-align: center;
+    vertical-align: top;
+    padding: 2pt;
+}
+
+.gaf-value-cell {
+    border: 0pt solid #000;
+    padding: 2pt;
+    margin: 0 auto 2pt auto;
+    min-height: 6mm;
+    min-width: 25pt;
+    max-width: 35pt;
+    text-align: center;
+    vertical-align: middle;
+}
+
+.gaf-points-label {
+    padding: 1pt;
+    margin-bottom: 2pt;
+    text-align: center;
+    font-size: 7pt;
+}
+
+.gaf-note {
+    font-size: 6pt;
+    color: #666;
+    padding: 1pt;
+    line-height: 1.2;
+    text-align: center;
+    margin-top: 2pt;
+}
+
+/* ============================================
+   PRINT-SPECIFIC STYLES
+   ============================================ */
+
+@media print {
+    body {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+    
+    .unified-form-table {
+        page-break-inside: avoid;
+    }
+}
+
+/* ============================================
+   UTILITY CLASSES
+   ============================================ */
+
+/* Ensure proper spacing for empty fields */
+.date-field:empty::before,
+.time-field:empty::before {
+    content: '　';
+}
+
+
+
