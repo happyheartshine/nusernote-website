@@ -300,3 +300,146 @@ class UpdateRecordRequest(BaseModel):
     plan_output: dict | None = Field(None, description="Updated plan output data")
     status: str | None = Field(None, description="Record status (draft/confirmed)")
 
+
+# ============================================================================
+# Plan (訪問看護計画書) Models
+# ============================================================================
+
+class PlanItemCreate(BaseModel):
+    """Request body for creating/updating a plan item."""
+
+    id: str | None = Field(None, description="Plan item ID (for updates)")
+    item_key: str = Field(..., description="Item key (e.g. LONG_TERM, SHORT_TERM, POLICY)")
+    label: str = Field(..., description="Display label")
+    observation_text: str | None = Field(None, description="必要な観察項目")
+    assistance_text: str | None = Field(None, description="援助内容")
+    sort_order: int = Field(default=0, description="Sort order")
+
+
+class PlanEvaluationCreate(BaseModel):
+    """Request body for creating/updating a plan evaluation."""
+
+    id: str | None = Field(None, description="Evaluation ID (for updates)")
+    evaluation_slot: int = Field(..., description="Evaluation slot number (1, 2, ...)")
+    evaluation_date: str = Field(..., description="Evaluation date (YYYY-MM-DD)")
+    result: str = Field(default="NONE", description="Result: CIRCLE, CHECK, or NONE")
+    note: str | None = Field(None, description="Evaluation note")
+
+
+class PlanCreateRequest(BaseModel):
+    """Request body for creating a plan."""
+
+    title: str | None = Field(default="精神科訪問看護計画書", description="Plan title")
+    start_date: str = Field(..., description="Start date (YYYY-MM-DD)")
+    end_date: str = Field(..., description="End date (YYYY-MM-DD)")
+    long_term_goal: str | None = Field(None, description="看護の目標")
+    short_term_goal: str | None = Field(None, description="短期目標")
+    nursing_policy: str | None = Field(None, description="看護援助の方針")
+    patient_family_wish: str | None = Field(None, description="患者様とご家族の希望")
+    has_procedure: bool = Field(default=False, description="衛生材料等を要する処置の有無")
+    procedure_content: str | None = Field(None, description="処置内容")
+    material_details: str | None = Field(None, description="衛生材料（種類・サイズ）等")
+    material_amount: str | None = Field(None, description="必要量")
+    procedure_note: str | None = Field(None, description="備考")
+    items: list[PlanItemCreate] | None = Field(None, description="Plan items")
+    evaluations: list[PlanEvaluationCreate] | None = Field(None, description="Plan evaluations")
+
+
+class PlanUpdateRequest(BaseModel):
+    """Request body for updating a plan."""
+
+    title: str | None = Field(None, description="Plan title")
+    start_date: str | None = Field(None, description="Start date (YYYY-MM-DD)")
+    end_date: str | None = Field(None, description="End date (YYYY-MM-DD)")
+    long_term_goal: str | None = Field(None, description="看護の目標")
+    short_term_goal: str | None = Field(None, description="短期目標")
+    nursing_policy: str | None = Field(None, description="看護援助の方針")
+    patient_family_wish: str | None = Field(None, description="患者様とご家族の希望")
+    has_procedure: bool | None = Field(None, description="衛生材料等を要する処置の有無")
+    procedure_content: str | None = Field(None, description="処置内容")
+    material_details: str | None = Field(None, description="衛生材料（種類・サイズ）等")
+    material_amount: str | None = Field(None, description="必要量")
+    procedure_note: str | None = Field(None, description="備考")
+    status: str | None = Field(None, description="Status: ACTIVE, ENDED_BY_HOSPITALIZATION, CLOSED")
+    items: list[PlanItemCreate] | None = Field(None, description="Plan items")
+    evaluations: list[PlanEvaluationCreate] | None = Field(None, description="Plan evaluations")
+
+
+class PlanHospitalizationCreate(BaseModel):
+    """Request body for creating a hospitalization record."""
+
+    hospitalized_at: str = Field(..., description="Hospitalization date (YYYY-MM-DD)")
+    note: str | None = Field(None, description="Hospitalization note")
+
+
+class PlanItemResponse(BaseModel):
+    """Response model for a plan item."""
+
+    id: str = Field(..., description="Plan item ID")
+    plan_id: str = Field(..., description="Plan ID")
+    item_key: str = Field(..., description="Item key")
+    label: str = Field(..., description="Display label")
+    observation_text: str | None = Field(None, description="必要な観察項目")
+    assistance_text: str | None = Field(None, description="援助内容")
+    sort_order: int = Field(..., description="Sort order")
+    created_at: str = Field(..., description="Created at")
+    updated_at: str = Field(..., description="Updated at")
+
+
+class PlanEvaluationResponse(BaseModel):
+    """Response model for a plan evaluation."""
+
+    id: str = Field(..., description="Evaluation ID")
+    plan_id: str = Field(..., description="Plan ID")
+    evaluation_slot: int = Field(..., description="Evaluation slot number")
+    evaluation_date: str = Field(..., description="Evaluation date (YYYY-MM-DD)")
+    result: str = Field(..., description="Result: CIRCLE, CHECK, or NONE")
+    note: str | None = Field(None, description="Evaluation note")
+    decided_by: str | None = Field(None, description="How result was decided: AUTO or MANUAL")
+    source_soap_record_id: str | None = Field(None, description="Source SOAP record ID")
+    created_at: str = Field(..., description="Created at")
+    updated_at: str = Field(..., description="Updated at")
+
+
+class PlanHospitalizationResponse(BaseModel):
+    """Response model for a plan hospitalization."""
+
+    id: str = Field(..., description="Hospitalization ID")
+    plan_id: str = Field(..., description="Plan ID")
+    hospitalized_at: str = Field(..., description="Hospitalization date (YYYY-MM-DD)")
+    note: str | None = Field(None, description="Hospitalization note")
+    created_at: str = Field(..., description="Created at")
+
+
+class PlanResponse(BaseModel):
+    """Response model for a plan."""
+
+    id: str = Field(..., description="Plan ID")
+    patient_id: str = Field(..., description="Patient ID")
+    title: str = Field(..., description="Plan title")
+    start_date: str = Field(..., description="Start date (YYYY-MM-DD)")
+    end_date: str = Field(..., description="End date (YYYY-MM-DD)")
+    long_term_goal: str | None = Field(None, description="看護の目標")
+    short_term_goal: str | None = Field(None, description="短期目標")
+    nursing_policy: str | None = Field(None, description="看護援助の方針")
+    patient_family_wish: str | None = Field(None, description="患者様とご家族の希望")
+    has_procedure: bool = Field(..., description="衛生材料等を要する処置の有無")
+    procedure_content: str | None = Field(None, description="処置内容")
+    material_details: str | None = Field(None, description="衛生材料（種類・サイズ）等")
+    material_amount: str | None = Field(None, description="必要量")
+    procedure_note: str | None = Field(None, description="備考")
+    status: str = Field(..., description="Status: ACTIVE, ENDED_BY_HOSPITALIZATION, CLOSED")
+    closed_at: str | None = Field(None, description="Closed at")
+    closed_reason: str | None = Field(None, description="Closed reason")
+    created_at: str = Field(..., description="Created at")
+    updated_at: str = Field(..., description="Updated at")
+    items: list[PlanItemResponse] = Field(default_factory=list, description="Plan items")
+    evaluations: list[PlanEvaluationResponse] = Field(default_factory=list, description="Plan evaluations")
+    hospitalizations: list[PlanHospitalizationResponse] = Field(default_factory=list, description="Hospitalizations")
+
+
+class PlansListResponse(BaseModel):
+    """Response model for list of plans."""
+
+    plans: list[PlanResponse] = Field(..., description="List of plans")
+

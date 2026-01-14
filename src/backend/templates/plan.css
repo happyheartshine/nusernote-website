@@ -1,0 +1,295 @@
+/**
+ * PDF Styles for Japanese Medical Documents - 精神科訪問看護計画書
+ * 
+ * This CSS file is specifically designed for WeasyPrint PDF generation
+ * with proper Japanese font embedding and exact form layout matching.
+ * 
+ * IMPORTANT: Font path is dynamically injected by Python code.
+ * The @font-face rule below uses a placeholder that will be replaced
+ * with the actual absolute font path at runtime.
+ */
+
+/* ============================================
+   FONT EMBEDDING - CRITICAL FOR JAPANESE TEXT
+   ============================================ */
+
+/**
+ * IPAexGothic Font - Primary Japanese Font
+ * 
+ * Font path will be dynamically injected by Python code.
+ * This ensures proper font embedding regardless of OS (Windows/Linux/Mac).
+ */
+@font-face {
+    font-family: 'IPAexGothic';
+    src: url('file:///app/fonts/IPAexGothic.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
+
+/* ============================================
+   PAGE SETUP - A4 SIZE
+   ============================================ */
+
+@page {
+    size: A4;
+    margin: 10mm 15mm; /* Reduced margins to fit everything on one page */
+}
+
+/* ============================================
+   BASE STYLES
+   ============================================ */
+
+body {
+    font-family: 'IPAexGothic', 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', 'Meiryo', 'MS Gothic', sans-serif;
+    font-size: 8pt;
+    line-height: 1.5;
+    color: #000;
+    margin: 0;
+    padding: 0;
+}
+
+/* ============================================
+   DOCUMENT NUMBER
+   ============================================ */
+
+.document-number {
+    text-align: right;
+    font-size: 8pt;
+    margin-bottom: 2mm;
+    padding-right: 2mm;
+}
+
+/* ============================================
+   TITLE SECTION
+   ============================================ */
+
+.title-section {
+    text-align: center;
+    margin-bottom: 4mm;
+    padding-bottom: 2mm;
+}
+
+.title-section h1 {
+    font-size: 14pt;
+    font-weight: bold;
+    margin: 0;
+    padding: 0;
+    letter-spacing: 0.5pt;
+}
+
+/* ============================================
+   MAIN PLAN FORM TABLE
+   ============================================ */
+
+.plan-form-table {
+    width: 100%;
+    border-collapse: collapse;
+    border: 1.5pt solid #000;
+    margin-bottom: 0;
+    page-break-inside: avoid;
+}
+
+.plan-form-table td {
+    border: 1pt solid #000;
+    padding: 2pt 4pt;
+    vertical-align: middle;
+    font-size: 7pt;
+    line-height: 1.3;
+}
+
+/* Label cells */
+.plan-form-table .label-cell {
+    font-weight: bold;
+    background-color: #f5f5f5;
+    text-align: center;
+    vertical-align: middle;
+    width: 12%;
+    min-width: 60pt;
+}
+
+.plan-form-table .label-cell.small {
+    width: 6%;
+    font-size: 8pt;
+    padding: 1pt 3pt;
+}
+
+.plan-form-table .label-cell.observation-label {
+    text-align: left;
+    padding-left: 8pt;
+    width: 18%;
+    background-color: #fff;
+    font-weight: normal;
+}
+
+.plan-form-table .label-cell.footer-label {
+    vertical-align: middle;
+    padding-top: 3pt;
+    text-align: center;
+}
+
+/* Value cells */
+.plan-form-table .value-cell {
+    text-align: left;
+    padding-left: 8pt;
+    vertical-align: middle;
+    background-color: #fff;
+}
+
+.plan-form-table .value-cell.wide {
+    width: auto;
+}
+
+.plan-form-table .value-cell.small {
+    width: 8%;
+    font-size: 8pt;
+    padding: 1pt 3pt;
+    text-align: center;
+}
+
+.plan-form-table .value-cell.checkbox-cell {
+    text-align: center;
+    font-weight: bold;
+}
+
+.plan-form-table .value-cell.birth-date {
+    text-align: center;
+    padding: 2pt 4pt;
+}
+
+/* Header cells */
+.plan-form-table .header-cell {
+    font-weight: bold;
+    background-color: #f5f5f5;
+    text-align: center;
+    vertical-align: middle;
+    padding: 4pt;
+}
+
+.plan-form-table .header-cell.date-header {
+    writing-mode: vertical-rl;
+    text-orientation: upright;
+    width: 3%;
+    min-width: 20pt;
+    padding: 4pt 2pt;
+}
+
+/* Assistance content cells */
+.plan-form-table .assistance-content {
+    vertical-align: top;
+    padding: 3pt 5pt;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    line-height: 1.4;
+    min-height: 12mm;
+}
+
+.plan-form-table .assistance-content.tall {
+    min-height: 18mm;
+}
+
+.plan-form-table .assistance-content.very-tall {
+    min-height: 20mm;
+}
+
+/* Date and evaluation cells */
+.plan-form-table .date-cell {
+    width: 8%;
+    text-align: center;
+    padding: 2pt;
+    font-size: 8pt;
+    vertical-align: middle;
+}
+
+.plan-form-table .evaluation-cell {
+    width: 15%;
+    text-align: left;
+    padding: 2pt 4pt;
+    font-size: 8pt;
+    vertical-align: middle;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+
+/* Wish content cell */
+.plan-form-table .wish-content {
+    vertical-align: top;
+    padding: 3pt 5pt;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    line-height: 1.4;
+    min-height: 20mm;
+}
+
+/* Footer content */
+.plan-form-table .footer-content {
+    vertical-align: top;
+    padding: 6pt 8pt;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    line-height: 1.6;
+    font-size: 8pt;
+}
+
+.plan-form-table .footer-content-row {
+    vertical-align: middle;
+    padding: 3pt 5pt;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    line-height: 1.4;
+    font-size: 8pt;
+    text-align: left;
+}
+
+/* Consent section */
+.plan-form-table .consent-content {
+    text-align: center;
+    padding: 3pt;
+    font-size: 8pt;
+    vertical-align: middle;
+}
+
+.plan-form-table .consent-date {
+    text-align: center;
+    padding: 2pt;
+    font-size: 8pt;
+    vertical-align: middle;
+}
+
+.plan-form-table .signature-cell {
+    text-align: center;
+    padding: 4pt;
+    vertical-align: bottom;
+    font-size: 8pt;
+}
+
+.signature-line {
+    border-top: 1pt dashed #000;
+    margin-top: 4pt;
+    width: 80%;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* Plan item styling */
+.plan-item {
+    margin-bottom: 4pt;
+}
+
+.plan-item strong {
+    font-weight: bold;
+}
+
+/* ============================================
+   PRINT-SPECIFIC STYLES
+   ============================================ */
+
+@media print {
+    body {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+    
+    .plan-form-table {
+        page-break-inside: avoid;
+    }
+}

@@ -13,6 +13,7 @@ export default function PDFPreviewButton({
   onPreviewReady,
   isActive = false,
   className = '',
+  method = 'POST',
 }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -56,7 +57,7 @@ export default function PDFPreviewButton({
       const url = buildUrl();
 
       const response = await fetch(url, {
-        method: 'POST',
+        method: method,
         headers: {
           'Authorization': `Bearer ${session.access_token}`,
           'ngrok-skip-browser-warning': 'true',
@@ -117,6 +118,7 @@ PDFPreviewButton.propTypes = {
   onPreviewReady: PropTypes.func.isRequired,
   isActive: PropTypes.bool,
   className: PropTypes.string,
+  method: PropTypes.string,
 };
 
 

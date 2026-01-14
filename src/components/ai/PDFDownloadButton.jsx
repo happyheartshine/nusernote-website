@@ -6,7 +6,7 @@ import { getSessionFromStorage } from '@/lib/sessionStorage';
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || '';
 
-export default function PDFDownloadButton({ label, endpoint, queryParams, filename, className = '' }) {
+export default function PDFDownloadButton({ label, endpoint, queryParams, filename, className = '', method = 'POST' }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -44,7 +44,7 @@ export default function PDFDownloadButton({ label, endpoint, queryParams, filena
       const url = buildUrl();
 
       const response = await fetch(url, {
-        method: 'POST',
+        method: method,
         headers: {
           'Authorization': `Bearer ${session.access_token}`,
           'ngrok-skip-browser-warning': 'true',
@@ -143,6 +143,7 @@ PDFDownloadButton.propTypes = {
   queryParams: PropTypes.object,
   filename: PropTypes.string,
   className: PropTypes.string,
+  method: PropTypes.string,
 };
 
 

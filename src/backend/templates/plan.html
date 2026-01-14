@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>精神科訪問看護計画書</title>
+    <!-- 
+        NOTE: External CSS (plan.css) is loaded by WeasyPrint via Python code.
+        This ensures proper @font-face loading with absolute paths.
+        Do NOT embed styles here - keep them in plan.css for font embedding to work.
+    -->
+</head>
+<body>
+    
+    <!-- Main Title -->
+    <div class="title-section">
+        <div class="document-number">文書番号 F28-002-01</div>
+        <h1>精神科訪問看護計画書</h1>
+    </div>
+    
+    <!-- Main Form Table -->
+    <table class="plan-form-table">
+        <colgroup>
+            <col style="width: 8.33%;">
+            <col style="width: 8.33%;">
+            <col style="width: 8.33%;">
+            <col style="width: 8.33%;">
+            <col style="width: 8.33%;">
+            <col style="width: 8.33%;">
+            <col style="width: 8.33%;">
+            <col style="width: 8.33%;">
+            <col style="width: 8.33%;">
+            <col style="width: 8.33%;">
+            <col style="width: 8.33%;">
+            <col style="width: 8.33%;">
+        </colgroup>
+        <!-- Patient Information Section -->
+        <tr>
+            <td class="label-cell" colspan="2">患者様氏名</td>
+            <td class="value-cell wide" colspan="2">{{ patient_name if patient_name else '　' }}</td>
+            <td class="label-cell small" colspan="1">男</td>
+            <td class="value-cell small" colspan="2">{{ '◯' if patient_gender == '男' else '　' }}</td>
+            <td class="label-cell small" colspan="1">生年月日</td>
+            <td class="value-cell small birth-date" colspan="4">
+                {% if patient_birth_date %}
+                    {{ patient_birth_date }}
+                {% else %}
+                    　年　月　日
+                {% endif %}
+            </td>
+        </tr>
+        <tr>
+            <td class="label-cell" colspan="2">患者様住所・TEL</td>
+            <td class="value-cell wide" colspan="10">
+                {% if patient_address %}
+                    {{ patient_address }}
+                {% endif %}
+                {% if patient_contact %}
+                    {% if patient_address %} / {% endif %}{{ patient_contact }}
+                {% endif %}
+                {% if not patient_address and not patient_contact %}　{% endif %}
+            </td>
+        </tr>
+        <tr>
+            <td class="label-cell" colspan="2">主たる傷病名</td>
+            <td class="value-cell wide" colspan="10">{{ patient_diagnosis if patient_diagnosis else '　' }}</td>
+        </tr>
+        <tr>
+            <td class="label-cell" colspan="2">要介護認定の状況</td>
+            <td class="value-cell wide" colspan="10">{{ patient_care_level if patient_care_level else '　' }}</td>
+        </tr>
+        <tr>
+            <td class="value-cell wide" colspan="12">看護の目標 <br>{{ long_term_goal if long_term_goal else '　' }}</td>
+        </tr>
+        
+        <!-- Main Care Plan Section - Header Row -->
+        <tr>
+            <td class="header-cell date-header" rowspan="6" colspan="1">年月日</td>
+            <td class="header-cell" colspan="3">必要な観察項目</td>
+            <td class="header-cell" colspan="4">援助内容</td>
+            <td class="header-cell" colspan="1">日付</td>
+            <td class="header-cell" colspan="3">評価</td>
+        </tr>
+        <tr>
+            <td class="label-cell observation-label" colspan="3">- 長期目標</td>
+            <td class="value-cell assistance-content" colspan="4">{{ long_term_goal if long_term_goal else '　' }}</td>
+            <td class="date-cell" colspan="1">{{ evaluations[0].evaluation_date if evaluations and evaluations[0] else '　' }}</td>
+            <td class="evaluation-cell" colspan="3">{{ evaluations[0].note if evaluations and evaluations[0] else '　' }}</td>
+        </tr>
+        <tr>
+            <td class="label-cell observation-label" colspan="3">- 短期目標</td>
+            <td class="value-cell assistance-content" colspan="4">{{ short_term_goal if short_term_goal else '　' }}</td>
+            <td class="date-cell" colspan="1">{{ evaluations[1].evaluation_date if evaluations and evaluations[1] else '　' }}</td>
+            <td class="evaluation-cell" colspan="3">{{ evaluations[1].note if evaluations and evaluations[1] else '　' }}</td>
+        </tr>
+        <tr>
+            <td class="label-cell observation-label" colspan="3">- 看護援助の方針</td>
+            <td class="value-cell assistance-content tall" colspan="4">{{ nursing_policy if nursing_policy else '　' }}</td>
+            <td class="date-cell" colspan="1">{{ evaluations[2].evaluation_date if evaluations and evaluations[2] else '　' }}</td>
+            <td class="evaluation-cell" colspan="3">{{ evaluations[2].note if evaluations and evaluations[2] else '　' }}</td>
+        </tr>
+        <tr>
+            <td class="label-cell observation-label" colspan="3">- 訪問看護の具体的内容</td>
+            <td class="value-cell assistance-content tall" colspan="4">
+                <!-- {% if items %}
+                    {% for item in items %}
+                        <div class="plan-item">
+                            <strong>{{ item.label if item.label else '' }}</strong><br>
+                            {% if item.observation_text %}
+                                観察: {{ item.observation_text }}<br>
+                            {% endif %}
+                            {% if item.assistance_text %}
+                                援助: {{ item.assistance_text }}
+                            {% endif %}
+                        </div>
+                        {% if not loop.last %}<br>{% endif %}
+                    {% endfor %}
+                {% else %}
+                    　
+                {% endif %} -->
+            </td>
+            <td class="date-cell" colspan="1">{{ evaluations[3].evaluation_date if evaluations and evaluations[3] else '　' }}</td>
+            <td class="evaluation-cell" colspan="3">{{ evaluations[3].note if evaluations and evaluations[3] else '　' }}</td>
+        </tr>
+        <tr>
+            <td class="label-cell observation-label" colspan="3">- 生活リズム及び日中の活動状況</td>
+            <td class="value-cell assistance-content tall" colspan="4">　</td>
+            <td class="date-cell" colspan="1">{{ evaluations[4].evaluation_date if evaluations and evaluations[4] else '　' }}</td>
+            <td class="evaluation-cell" colspan="3">{{ evaluations[4].note if evaluations and evaluations[4] else '　' }}</td>
+        </tr>
+        
+        <!-- Additional Information Section -->
+        <tr>
+            <td class="label-cell" colspan="12">複数名対応の有無 &nbsp;有</td>
+        </tr>
+        <tr>
+            <td class="label-cell" colspan="4">患者様とご家族の希望</td>
+            <td class="label-cell" colspan="4">衛生材料等が必要な処置の有無</td>
+            <td class="value-cell small checkbox-cell" colspan="4">
+                {% if has_procedure %}有{% else %}無{% endif %}
+            </td>
+        </tr>
+        <tr>
+            <td class="value-cell wish-content" rowspan="2" colspan="4">{{ patient_family_wish if patient_family_wish else '　' }}</td>
+            <td class="label-cell small" colspan="3">処置の内容</td>
+            <td class="label-cell small" colspan="3">衛生材料(種類・サイズ)等</td>
+            <td class="label-cell small" colspan="2">必要量</td>
+        </tr>
+        <tr>
+            <td class="value-cell small tall" colspan="3">{{ procedure_content if procedure_content else '　' }}</td>
+            <td class="value-cell small tall" colspan="3">{{ material_details if material_details else '　' }}</td>
+            <td class="value-cell small tall" colspan="2">{{ material_amount if material_amount else '　' }}</td>
+        </tr>
+        
+        <!-- Footer Section -->
+        <tr>
+            <td class="value-cell footer-content-row" colspan="12">
+                備考<br>訪問する職種:看護師・准看護師
+            </td>
+        </tr>
+        <tr>
+            <td class="value-cell footer-content-row" colspan="6">
+                {% if org_station_name %}
+                事業署名 訪問看護ステーション {{ org_station_name }}
+                {% else %}
+                事業署名 訪問看護ステーション ○○
+                {% endif %}
+                <br>事業所住所 {% if org_station_address %}{{ org_station_address }}{% endif %}
+                <br>計画立案者 ◎ {% if org_planner_name %}{{ org_planner_name }}{% endif %}
+            </td>
+            <td class="value-cell consent-date" colspan="6">
+                説明を受け、内容に同意し交付を受けました。
+                <br>年　月　日<br>
+                署名<br>
+                <div class="signature-line"></div>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>

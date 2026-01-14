@@ -48,6 +48,22 @@ def get_css_path() -> str:
     return os.path.abspath(css_path)
 
 
+def get_plan_css_path() -> str:
+    """
+    Get absolute path to Plan PDF CSS file.
+    
+    WeasyPrint requires absolute paths for proper font loading.
+    This ensures the CSS file with @font-face definitions is loaded correctly.
+    """
+    template_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'templates')
+    css_path = os.path.join(template_dir, 'plan.css')
+    
+    if not os.path.exists(css_path):
+        logger.warning(f"Plan CSS file not found at: {css_path}")
+    
+    return os.path.abspath(css_path)
+
+
 def get_font_path() -> str:
     """
     Get absolute path to fonts directory.
@@ -657,5 +673,185 @@ def generate_patient_record_pdf(patient_data: Dict[str, Any]) -> bytes:
     except Exception as e:
         logger.error(f"Error generating patient record PDF: {e}")
         raise PDFServiceError(f"Failed to generate patient record PDF: {str(e)}") from e
+
+
+def map_plan_to_pdf_template(plan_data: Dict[str, Any], patient_data: Dict[str, Any], org_settings: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    """
+    Map plan data to PDF template format (精神科訪問看護計画書).
+    
+    This function maps plan database fields to the plan.html template format.
+    
+    Args:
+        plan_data: Plan dictionary from database
+        patient_data: Patient dictionary from database
+        org_settings: Optional organization settings dictionary
+        
+    Returns:
+        Dictionary with mapped data for plan template
+    """
+    from datetime import datetime
+    
+    # Parse patient birth date
+    patient_birth_date = ''
+    if patient_data.get('birth_date'):
+        try:
+            birth_date = datetime.fromisoformat(patient_data['birth_date'].replace('Z', '+00:00'))
+            patient_birth_date = f"{birth_date.year}年{birth_date.month}月{birth_date.day}日"
+        except (ValueError, AttributeError):
+            try:
+                birth_date = datetime.strptime(patient_data['birth_date'], '%Y-%m-%d')
+                patient_birth_date = f"{birth_date.year}年{birth_date.month}月{birth_date.day}日"
+            except (ValueError, AttributeError):
+                # Try using year/month/day fields
+                if patient_data.get('birth_date_year'):
+                    year = patient_data.get('birth_date_year', '')
+                    month = patient_data.get('birth_date_month', '')
+                    day = patient_data.get('birth_date_day', '')
+                    patient_birth_date = f"{year}年{month}月{day}日" if year else ''
+    
+    # Map gender
+    gender = patient_data.get('gender', '')
+    if gender == 'male':
+        gender = '男'
+    elif gender == 'female':
+        gender = '女'
+    
+    # Format plan dates
+    start_date = plan_data.get('start_date', '')
+    end_date = plan_data.get('end_date', '')
+    if start_date:
+        try:
+            start_dt = datetime.strptime(start_date, '%Y-%m-%d')
+            start_date = f"{start_dt.year}年{start_dt.month}月{start_dt.day}日"
+        except ValueError:
+            pass
+    if end_date:
+        try:
+            end_dt = datetime.strptime(end_date, '%Y-%m-%d')
+            end_date = f"{end_dt.year}年{end_dt.month}月{end_dt.day}日"
+        except ValueError:
+            pass
+    
+    # Format evaluation dates
+    evaluations = plan_data.get('evaluations', [])
+    formatted_evaluations = []
+    for eval_item in evaluations:
+        eval_date = eval_item.get('evaluation_date', '')
+        if eval_date:
+            try:
+                eval_dt = datetime.strptime(eval_date, '%Y-%m-%d')
+                eval_date = f"{eval_dt.year}年{eval_dt.month}月{eval_dt.day}日"
+            except ValueError:
+                pass
+        
+        formatted_evaluations.append({
+            'evaluation_date': eval_date,
+            'result': eval_item.get('result', 'NONE'),
+            'note': eval_item.get('note'),
+        })
+    
+    # Organization settings
+    org_station_name = None
+    org_station_address = None
+    org_planner_name = None
+    org_profession_text = '訪問する職種：看護師・准看護師'
+    
+    if org_settings:
+        org_station_name = org_settings.get('station_name')
+        org_station_address = org_settings.get('station_address')
+        org_planner_name = org_settings.get('planner_name')
+        org_profession_text = org_settings.get('profession_text', org_profession_text)
+    
+    return {
+        'title': plan_data.get('title', '精神科訪問看護計画書'),
+        'patient_name': patient_data.get('name', ''),
+        'patient_gender': gender,
+        'patient_birth_date': patient_birth_date,
+        'patient_address': patient_data.get('address', ''),
+        'patient_contact': patient_data.get('contact', ''),
+        'patient_diagnosis': patient_data.get('primary_diagnosis', ''),
+        'patient_care_level': '',  # Not in current schema, leave blank
+        'start_date': start_date,
+        'end_date': end_date,
+        'long_term_goal': plan_data.get('long_term_goal', ''),
+        'short_term_goal': plan_data.get('short_term_goal'),
+        'nursing_policy': plan_data.get('nursing_policy'),
+        'patient_family_wish': plan_data.get('patient_family_wish'),
+        'has_procedure': plan_data.get('has_procedure', False),
+        'procedure_content': plan_data.get('procedure_content'),
+        'material_details': plan_data.get('material_details'),
+        'material_amount': plan_data.get('material_amount'),
+        'procedure_note': plan_data.get('procedure_note'),
+        'items': plan_data.get('items', []),
+        'evaluations': formatted_evaluations,
+        'org_station_name': org_station_name,
+        'org_station_address': org_station_address,
+        'org_planner_name': org_planner_name,
+        'org_profession_text': org_profession_text,
+    }
+
+
+def generate_plan_pdf(plan_data: Dict[str, Any], patient_data: Dict[str, Any], org_settings: Optional[Dict[str, Any]] = None) -> bytes:
+    """
+    Generate plan PDF (精神科訪問看護計画書).
+    
+    This function uses WeasyPrint with embedded Japanese fonts to ensure
+    proper rendering of Japanese medical text in the PDF.
+    
+    Args:
+        plan_data: Plan dictionary from database (with items and evaluations)
+        patient_data: Patient dictionary from database
+        org_settings: Optional organization settings dictionary
+        
+    Returns:
+        PDF file content as bytes with embedded Japanese fonts
+        
+    Raises:
+        PDFServiceError: If PDF generation fails
+    """
+    try:
+        # Verify font file exists (log warning if missing)
+        font_path = get_font_path()
+        if not os.path.exists(font_path):
+            logger.warning(
+                f"Japanese font not found at: {font_path}\n"
+                f"Japanese text will render as boxes (■■■) in the PDF.\n"
+                f"Please download IPAexGothic.ttf and place it in the fonts directory."
+            )
+        else:
+            logger.info(f"Japanese font verified at: {font_path}")
+        
+        template_env = get_template_env()
+        
+        # Map plan data to PDF template format
+        template_data = map_plan_to_pdf_template(plan_data, patient_data, org_settings)
+        
+        # Render HTML template
+        try:
+            template = template_env.get_template('plan.html')
+            html_content = template.render(**template_data)
+        except TemplateNotFound:
+            raise PDFServiceError("Plan template not found: plan.html")
+        
+        # Get CSS file path for WeasyPrint (use plan.css for plan PDFs)
+        css_path = get_plan_css_path()
+        
+        # Convert HTML to PDF using WeasyPrint with embedded fonts
+        logger.info("Converting HTML to PDF using WeasyPrint with Japanese font embedding")
+        
+        # Create HTML object from string
+        html_obj = HTML(string=html_content)
+        
+        # Generate PDF with external CSS (contains @font-face for Japanese fonts)
+        pdf_bytes = html_obj.write_pdf(
+            stylesheets=[CSS(filename=css_path)]
+        )
+        
+        logger.info(f"Successfully generated plan PDF ({len(pdf_bytes)} bytes)")
+        return pdf_bytes
+        
+    except Exception as e:
+        logger.error(f"Error generating plan PDF: {e}")
+        raise PDFServiceError(f"Failed to generate plan PDF: {str(e)}") from e
 
 

@@ -6,6 +6,7 @@ import ConfirmDialog from '@/components/ConfirmDialog';
 import { supabase } from '@/lib/supabase';
 import PDFDownloadButton from '@/components/ai/PDFDownloadButton';
 import PDFPreviewButton from '@/components/ai/PDFPreviewButton';
+import PatientPlansModal from '@/components/plans/PatientPlansModal';
 
 // ==============================|| PATIENTS PAGE ||============================== //
 
@@ -24,6 +25,7 @@ export default function PatientsPage() {
   const [showForm, setShowForm] = useState(false);
   const [pdfPreviewUrl, setPdfPreviewUrl] = useState(null);
   const [previewPatientId, setPreviewPatientId] = useState(null);
+  const [plansModalPatient, setPlansModalPatient] = useState(null);
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -482,6 +484,14 @@ export default function PatientsPage() {
           onCancel={confirmDialog.onCancel}
           confirmText="削除"
           cancelText="キャンセル"
+        />
+      )}
+      {plansModalPatient && (
+        <PatientPlansModal
+          patientId={plansModalPatient.id}
+          patientName={plansModalPatient.name}
+          isOpen={!!plansModalPatient}
+          onClose={() => setPlansModalPatient(null)}
         />
       )}
       <div className="container mx-auto px-4 py-8">
@@ -1136,6 +1146,13 @@ export default function PatientsPage() {
                       </td>
                       <td className="px-6 py-4 text-right text-sm font-medium whitespace-nowrap">
                         <div className="flex items-center justify-end gap-2">
+                          <button
+                            onClick={() => setPlansModalPatient({ id: record.id, name: record.patient_name })}
+                            className="text-green-600 hover:text-green-900"
+                            title="計画書"
+                          >
+                            <i className="ph ph-file-text"></i>
+                          </button>
                           <button
                             onClick={() => {
                               if (previewPatientId === record.id) {
