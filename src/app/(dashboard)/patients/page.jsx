@@ -416,18 +416,68 @@ export default function PatientsPage() {
             showToast('ユーザーが認証されていません', 'error');
             return;
           }
-          const { error } = await supabase
+          
+          // Try using backend API endpoint first (preferred)
+          try {
+            const { getSessionFromStorage } = await import('@/lib/sessionStorage');
+            const session = getSessionFromStorage();
+            if (session?.access_token) {
+              const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || '';
+              const response = await fetch(`${BACKEND_URL}/patients/${record.id}`, {
+                method: 'DELETE',
+                headers: {
+                  'Authorization': `Bearer ${session.access_token}`,
+                  'ngrok-skip-browser-warning': 'true',
+                },
+              });
+              
+              if (response.ok || response.status === 204) {
+                // 204 No Content means success
+                showToast('患者情報を削除しました', 'success');
+                fetchPatients();
+                return;
+              }
+              
+              // If not successful, try to get error message
+              let errorMessage = `削除に失敗しました: ${response.status}`;
+              try {
+                const errorData = await response.json();
+                errorMessage = errorData.detail || errorMessage;
+              } catch {
+                // If JSON parsing fails, use status text
+                errorMessage = response.statusText || errorMessage;
+              }
+              throw new Error(errorMessage);
+            }
+          } catch (apiError) {
+            // If backend API is not available or failed, fallback to Supabase direct call
+            console.warn('Backend API delete failed, trying Supabase direct:', apiError);
+            // Continue to Supabase fallback below
+          }
+          
+          // Fallback: Use Supabase directly
+          const { data, error } = await supabase
             .from('patients')
             .delete()
             .eq('id', record.id)
-            .eq('user_id', user.id); // Ensure we're deleting only the authenticated user's record
+            .eq('user_id', user.id)
+            .select(); // Select to verify deletion
 
-          if (error) throw error;
+          if (error) {
+            throw new Error(error.message || '削除に失敗しました');
+          }
+          
+          // Check if any rows were actually deleted
+          if (!data || data.length === 0) {
+            throw new Error('削除する患者が見つかりませんでした');
+          }
+          
           showToast('患者情報を削除しました', 'success');
           fetchPatients();
         } catch (error) {
           console.error('Delete patient error:', error);
-          showToast('削除に失敗しました: ' + (error.message || '不明なエラー'), 'error');
+          const errorMessage = error instanceof Error ? error.message : (error?.message || '不明なエラー');
+          showToast('削除に失敗しました: ' + errorMessage, 'error');
         } finally {
           setProcessingId(null);
         }

@@ -259,7 +259,7 @@ export default function PlanEditPage() {
     }
 
     try {
-      const result = await autoEvaluatePlan(planId);
+      await autoEvaluatePlan(planId);
       // Refetch plan to get updated evaluations
       const updatedPlan = await fetchPlan(planId);
       

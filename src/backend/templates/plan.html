@@ -70,7 +70,7 @@
             <td class="value-cell wide" colspan="10">{{ patient_care_level if patient_care_level else '　' }}</td>
         </tr>
         <tr>
-            <td class="value-cell wide" colspan="12">看護の目標 <br>{{ long_term_goal if long_term_goal else '　' }}</td>
+            <td class="value-cell wide" colspan="12">看護の目標 <br><br>{{ long_term_goal if long_term_goal else '　' }}</td>
         </tr>
         
         <!-- Main Care Plan Section - Header Row -->
@@ -102,22 +102,26 @@
         <tr>
             <td class="label-cell observation-label" colspan="3">- 訪問看護の具体的内容</td>
             <td class="value-cell assistance-content tall" colspan="4">
-                <!-- {% if items %}
+                {% if items %}
                     {% for item in items %}
                         <div class="plan-item">
-                            <strong>{{ item.label if item.label else '' }}</strong><br>
-                            {% if item.observation_text %}
-                                観察: {{ item.observation_text }}<br>
-                            {% endif %}
-                            {% if item.assistance_text %}
-                                援助: {{ item.assistance_text }}
+                            <strong>{{ item.label if item.label else '' }}</strong>
+                            {% if item.observation_text or item.assistance_text %}
+                                <span class="plan-item-content">
+                                    {% if item.observation_text %}
+                                        観察: {{ item.observation_text }}
+                                    {% endif %}
+                                    {% if item.observation_text and item.assistance_text %} / {% endif %}
+                                    {% if item.assistance_text %}
+                                        援助: {{ item.assistance_text }}
+                                    {% endif %}
+                                </span>
                             {% endif %}
                         </div>
-                        {% if not loop.last %}<br>{% endif %}
                     {% endfor %}
                 {% else %}
                     　
-                {% endif %} -->
+                {% endif %}
             </td>
             <td class="date-cell" colspan="1">{{ evaluations[3].evaluation_date if evaluations and evaluations[3] else '　' }}</td>
             <td class="evaluation-cell" colspan="3">{{ evaluations[3].note if evaluations and evaluations[3] else '　' }}</td>
@@ -131,7 +135,7 @@
         
         <!-- Additional Information Section -->
         <tr>
-            <td class="label-cell" colspan="12">複数名対応の有無 &nbsp;有</td>
+            <td class="value-cell" colspan="12">複数名対応の有無 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;有</td>
         </tr>
         <tr>
             <td class="label-cell" colspan="4">患者様とご家族の希望</td>
@@ -154,25 +158,25 @@
         
         <!-- Footer Section -->
         <tr>
-            <td class="value-cell footer-content-row" colspan="12">
+            <td class="value-cell" colspan="12">
                 備考<br>訪問する職種:看護師・准看護師
             </td>
         </tr>
         <tr>
-            <td class="value-cell footer-content-row" colspan="6">
+            <td class="value-cell" colspan="6">
                 {% if org_station_name %}
                 事業署名 訪問看護ステーション {{ org_station_name }}
                 {% else %}
                 事業署名 訪問看護ステーション ○○
                 {% endif %}
-                <br>事業所住所 {% if org_station_address %}{{ org_station_address }}{% endif %}
-                <br>計画立案者 ◎ {% if org_planner_name %}{{ org_planner_name }}{% endif %}
+                <br><br>事業所住所 {% if org_station_address %}{{ org_station_address }}{% endif %}
+                <br><br>計画立案者 ◎ {% if org_planner_name %}{{ org_planner_name }}{% endif %}
             </td>
             <td class="value-cell consent-date" colspan="6">
-                説明を受け、内容に同意し交付を受けました。
-                <br>年　月　日<br>
-                署名<br>
-                <div class="signature-line"></div>
+                <br>説明を受け、内容に同意し交付を受けました。
+                <br><br>年　月　日
+                <br><br>署名
+                <br><div class="signature-line"></div><br>
             </td>
         </tr>
     </table>
