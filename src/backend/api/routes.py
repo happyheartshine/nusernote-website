@@ -19,7 +19,6 @@ from api.routers import (
     patients_router,
     pdf_router,
     records_router,
-    visit_records_router,
 )
 
 # Create main router
@@ -32,4 +31,3 @@ router.include_router(records_router)
 router.include_router(pdf_router)
 router.include_router(patients_router)
 router.include_router(care_plans_router)
-router.include_router(visit_records_router)

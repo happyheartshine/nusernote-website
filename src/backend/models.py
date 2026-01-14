@@ -11,7 +11,7 @@ class PatientCreateRequest(BaseModel):
     individual_notes: str | None = Field(None, description="個別メモ")
     status: str = Field(default="active", description="ステータス (active/inactive/archived)")
     
-    # Additional patient information (integrated from visit_records)
+    # Additional patient information
     birth_date: str | None = Field(None, description="生年月日 (YYYY-MM-DD)")
     birth_date_year: int | None = Field(None, description="生年月日(年)")
     birth_date_month: int | None = Field(None, description="生年月日(月)")
@@ -59,7 +59,7 @@ class PatientUpdateRequest(BaseModel):
     individual_notes: str | None = Field(None, description="個別メモ")
     status: str | None = Field(None, description="ステータス (active/inactive/archived)")
     
-    # Additional patient information (integrated from visit_records)
+    # Additional patient information
     birth_date: str | None = Field(None, description="生年月日 (YYYY-MM-DD)")
     birth_date_year: int | None = Field(None, description="生年月日(年)")
     birth_date_month: int | None = Field(None, description="生年月日(月)")
@@ -110,7 +110,7 @@ class PatientResponse(BaseModel):
     created_at: str = Field(..., description="作成日時")
     updated_at: str = Field(..., description="更新日時")
     
-    # Additional patient information (integrated from visit_records)
+    # Additional patient information
     birth_date: str | None = Field(None, description="生年月日")
     birth_date_year: int | None = Field(None, description="生年月日(年)")
     birth_date_month: int | None = Field(None, description="生年月日(月)")
@@ -300,90 +300,3 @@ class UpdateRecordRequest(BaseModel):
     plan_output: dict | None = Field(None, description="Updated plan output data")
     status: str | None = Field(None, description="Record status (draft/confirmed)")
 
-
-class VisitRecordCreateRequest(BaseModel):
-    """Request body for creating a visit record."""
-
-    patient_id: str = Field(..., description="Patient ID")
-    
-    # Visit-specific information only (patient info is now in patients table)
-    visit_date: str | None = Field(None, description="訪問日 (YYYY-MM-DD)")
-    visit_start_hour: int | None = Field(None, description="訪問開始時")
-    visit_start_minute: int | None = Field(None, description="訪問開始分")
-    visit_end_hour: int | None = Field(None, description="訪問終了時")
-    visit_end_minute: int | None = Field(None, description="訪問終了分")
-    
-    # Daily Life Status (visit-specific)
-    daily_life_meal_nutrition: str | None = Field(None, description="食事・栄養")
-    daily_life_hygiene: str | None = Field(None, description="清潔・整容")
-    daily_life_medication: str | None = Field(None, description="服薬")
-    daily_life_sleep: str | None = Field(None, description="睡眠")
-    daily_life_living_environment: str | None = Field(None, description="生活環境")
-    daily_life_family_environment: str | None = Field(None, description="家族環境")
-    
-    # Additional
-    notes: str | None = Field(None, description="備考")
-    recorder_name: str | None = Field(None, description="記載者")
-    status: str = Field(default="active", description="ステータス (active/inactive/archived)")
-
-
-class VisitRecordUpdateRequest(BaseModel):
-    """Request body for updating a visit record."""
-
-    patient_id: str | None = Field(None, description="Patient ID")
-    
-    # Visit-specific information only (patient info is now in patients table)
-    visit_date: str | None = Field(None, description="訪問日 (YYYY-MM-DD)")
-    visit_start_hour: int | None = Field(None, description="訪問開始時")
-    visit_start_minute: int | None = Field(None, description="訪問開始分")
-    visit_end_hour: int | None = Field(None, description="訪問終了時")
-    visit_end_minute: int | None = Field(None, description="訪問終了分")
-    
-    # Daily Life Status (visit-specific)
-    daily_life_meal_nutrition: str | None = Field(None, description="食事・栄養")
-    daily_life_hygiene: str | None = Field(None, description="清潔・整容")
-    daily_life_medication: str | None = Field(None, description="服薬")
-    daily_life_sleep: str | None = Field(None, description="睡眠")
-    daily_life_living_environment: str | None = Field(None, description="生活環境")
-    daily_life_family_environment: str | None = Field(None, description="家族環境")
-    
-    # Additional
-    notes: str | None = Field(None, description="備考")
-    recorder_name: str | None = Field(None, description="記載者")
-    status: str | None = Field(None, description="ステータス (active/inactive/archived)")
-
-
-class VisitRecordResponse(BaseModel):
-    """Response model for a visit record."""
-
-    id: str = Field(..., description="Visit Record ID")
-    user_id: str = Field(..., description="User ID")
-    patient_id: str = Field(..., description="Patient ID")
-    
-    # Visit-specific information only (patient info is now in patients table)
-    visit_date: str | None = Field(None, description="訪問日")
-    visit_start_hour: int | None = Field(None, description="訪問開始時")
-    visit_start_minute: int | None = Field(None, description="訪問開始分")
-    visit_end_hour: int | None = Field(None, description="訪問終了時")
-    visit_end_minute: int | None = Field(None, description="訪問終了分")
-    
-    # Daily Life Status (visit-specific)
-    daily_life_meal_nutrition: str | None = Field(None, description="食事・栄養")
-    daily_life_hygiene: str | None = Field(None, description="清潔・整容")
-    daily_life_medication: str | None = Field(None, description="服薬")
-    daily_life_sleep: str | None = Field(None, description="睡眠")
-    daily_life_living_environment: str | None = Field(None, description="生活環境")
-    daily_life_family_environment: str | None = Field(None, description="家族環境")
-    
-    # Additional
-    notes: str | None = Field(None, description="備考")
-    recorder_name: str | None = Field(None, description="記載者")
-    status: str = Field(..., description="ステータス")
-    created_at: str = Field(..., description="作成日時")
-    updated_at: str = Field(..., description="更新日時")
-
-
-class VisitRecordsListResponse(BaseModel):
-    """Response model for list of visit records."""
-
-    visit_records: list[VisitRecordResponse] = Field(..., description="List of visit records")

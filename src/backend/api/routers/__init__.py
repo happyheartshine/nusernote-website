@@ -6,7 +6,6 @@ from api.routers.health import router as health_router
 from api.routers.patients import router as patients_router
 from api.routers.pdf import router as pdf_router
 from api.routers.records import router as records_router
-from api.routers.visit_records import router as visit_records_router
 
 __all__ = [
     "care_plans_router",
@@ -15,6 +14,5 @@ __all__ = [
     "patients_router",
     "pdf_router",
     "records_router",
-    "visit_records_router",
 ]
 

@@ -6,13 +6,13 @@ import { useAuthProfile } from '@/hooks/useAuthProfile';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { supabase } from '@/lib/supabase';
 
-// ==============================|| PATIENTS PAGE (Using Visit Records Structure) ||============================== //
+// ==============================|| PATIENTS PAGE ||============================== //
 
 export default function PatientsPage() {
   const { user } = useAuthProfile();
   const router = useRouter();
-  const [visitRecords, setVisitRecords] = useState([]);
-  const [filteredVisitRecords, setFilteredVisitRecords] = useState([]);
+  const [patients, setPatients] = useState([]);
+  const [filteredPatients, setFilteredPatients] = useState([]);
   const [displayedRecords, setDisplayedRecords] = useState([]); // Paginated records
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState('all');
@@ -67,43 +67,14 @@ export default function PatientsPage() {
     setTimeout(() => setToast(null), 3000);
   };
 
-  const fetchVisitRecords = useCallback(async () => {
+  const fetchPatients = useCallback(async () => {
     if (!user?.id) return;
     setLoading(true);
     try {
-      // Fetch visit records with patient information joined from patients table
+      // Fetch patients directly from patients table
       const { data, error } = await supabase
-        .from('visit_records')
-        .select(`
-          *,
-          patients (
-            id,
-            name,
-            age,
-            gender,
-            primary_diagnosis,
-            birth_date,
-            address,
-            contact,
-            key_person_name,
-            key_person_relationship,
-            key_person_address,
-            key_person_contact1,
-            key_person_contact2,
-            medical_history,
-            current_illness_history,
-            family_structure,
-            doctor_name,
-            hospital_name,
-            hospital_address,
-            hospital_phone,
-            initial_visit_date,
-            initial_visit_start_hour,
-            initial_visit_start_minute,
-            initial_visit_end_hour,
-            initial_visit_end_minute
-          )
-        `)
+        .from('patients')
+        .select('*')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
@@ -114,54 +85,20 @@ export default function PatientsPage() {
           hint: error.hint,
           code: error.code
         });
-        // Check if table doesn't exist
-        if (
-          error.code === '42P01' ||
-          error.message?.includes('does not exist') ||
-          error.message?.includes('relation') ||
-          error.hint?.includes('visit_records')
-        ) {
-          console.error(
-            'Table visit_records does not exist. Please run the migration: supabase/migrations/20260111000001_create_visit_records_table.sql'
-          );
-        }
         throw error;
       }
 
-      // Flatten the data structure for backward compatibility
-      const flattenedData = (data || []).map(record => {
-        const patient = record.patients || {};
-        return {
-          ...record,
-          patient_name: patient.name || '',
-          gender: patient.gender || record.gender || '',
-          birth_date: patient.birth_date || record.birth_date || '',
-          age: patient.age || record.age || null,
-          patient_address: patient.address || record.patient_address || '',
-          patient_contact: patient.contact || record.patient_contact || '',
-          key_person_name: patient.key_person_name || record.key_person_name || '',
-          key_person_relationship: patient.key_person_relationship || record.key_person_relationship || '',
-          key_person_address: patient.key_person_address || record.key_person_address || '',
-          key_person_contact1: patient.key_person_contact1 || record.key_person_contact1 || '',
-          key_person_contact2: patient.key_person_contact2 || record.key_person_contact2 || '',
-          initial_visit_date: patient.initial_visit_date || record.initial_visit_date || '',
-          initial_visit_start_hour: patient.initial_visit_start_hour || record.initial_visit_start_hour || null,
-          initial_visit_start_minute: patient.initial_visit_start_minute || record.initial_visit_start_minute || null,
-          initial_visit_end_hour: patient.initial_visit_end_hour || record.initial_visit_end_hour || null,
-          initial_visit_end_minute: patient.initial_visit_end_minute || record.initial_visit_end_minute || null,
-          main_disease: patient.primary_diagnosis || record.main_disease || '',
-          medical_history: patient.medical_history || record.medical_history || '',
-          current_illness_history: patient.current_illness_history || record.current_illness_history || '',
-          family_structure: patient.family_structure || record.family_structure || '',
-          doctor_name: patient.doctor_name || record.doctor_name || '',
-          hospital_name: patient.hospital_name || record.hospital_name || '',
-          hospital_address: patient.hospital_address || record.hospital_address || '',
-          hospital_phone: patient.hospital_phone || record.hospital_phone || '',
-        };
-      });
-      setVisitRecords(flattenedData || []);
+      // Map patient data to display format
+      const mappedData = (data || []).map(patient => ({
+        ...patient,
+        patient_name: patient.name || '',
+        main_disease: patient.primary_diagnosis || '',
+        patient_address: patient.address || '',
+        patient_contact: patient.contact || '',
+      }));
+      setPatients(mappedData || []);
     } catch (error) {
-      console.error('Fetch visit records error:', {
+      console.error('Fetch patients error:', {
         error,
         message: error?.message,
         details: error?.details,
@@ -176,24 +113,24 @@ export default function PatientsPage() {
     }
   }, [user]);
 
-  const filterVisitRecords = useCallback(() => {
-    let filtered = [...visitRecords];
+  const filterPatients = useCallback(() => {
+    let filtered = [...patients];
 
     if (statusFilter !== 'all') {
-      filtered = filtered.filter((record) => record.status === statusFilter);
+      filtered = filtered.filter((patient) => patient.status === statusFilter);
     }
 
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       filtered = filtered.filter(
-        (record) =>
-          record.patient_name.toLowerCase().includes(query) ||
-          (record.main_disease && record.main_disease.toLowerCase().includes(query)) ||
-          (record.notes && record.notes.toLowerCase().includes(query))
+        (patient) =>
+          patient.patient_name.toLowerCase().includes(query) ||
+          (patient.main_disease && patient.main_disease.toLowerCase().includes(query)) ||
+          (patient.individual_notes && patient.individual_notes.toLowerCase().includes(query))
       );
     }
 
-    setFilteredVisitRecords(filtered);
+    setFilteredPatients(filtered);
 
     // Apply pagination to filtered results
     const totalPages = Math.ceil(filtered.length / pageSize) || 1;
@@ -206,15 +143,15 @@ export default function PatientsPage() {
     if (currentPage > totalPages && totalPages > 0) {
       setCurrentPage(1);
     }
-  }, [visitRecords, statusFilter, searchQuery, currentPage, pageSize]);
+  }, [patients, statusFilter, searchQuery, currentPage, pageSize]);
 
   useEffect(() => {
-    fetchVisitRecords();
-  }, [fetchVisitRecords]);
+    fetchPatients();
+  }, [fetchPatients]);
 
   useEffect(() => {
-    filterVisitRecords();
-  }, [filterVisitRecords]);
+    filterPatients();
+  }, [filterPatients]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -428,7 +365,7 @@ export default function PatientsPage() {
         );
       }
 
-      // Step 2: Update patient with all patient information (integrated from visit_records)
+      // Step 2: Update patient with all patient information
       const patientData = {
         name: formData.patient_name.trim(),
         gender: formData.gender || null,
@@ -454,6 +391,8 @@ export default function PatientsPage() {
         initial_visit_start_minute: formData.initial_visit_start_minute ? parseInt(formData.initial_visit_start_minute, 10) : null,
         initial_visit_end_hour: formData.initial_visit_end_hour ? parseInt(formData.initial_visit_end_hour, 10) : null,
         initial_visit_end_minute: formData.initial_visit_end_minute ? parseInt(formData.initial_visit_end_minute, 10) : null,
+        individual_notes: formData.notes?.trim() || null,
+        status: formData.status || 'active'
       };
 
       // Remove null/undefined values
@@ -463,59 +402,18 @@ export default function PatientsPage() {
         }
       });
 
-      const { error: patientUpdateError } = await supabase
-        .from('patients')
-        .update(patientData)
-        .eq('id', patientId)
-        .eq('user_id', user.id);
-
-      if (patientUpdateError) {
-        throw {
-          message: patientUpdateError.message || '患者情報の更新に失敗しました',
-          details: patientUpdateError.details || null,
-          hint: patientUpdateError.hint || null,
-          code: patientUpdateError.code || null,
-        };
-      }
-
-      // Step 3: Prepare visit record data (only visit-specific information)
-      const visitRecordData = {
-        patient_id: patientId,
-        visit_date: formData.initial_visit_date || null, // Use initial_visit_date as visit_date for now
-        visit_start_hour: formData.initial_visit_start_hour ? parseInt(formData.initial_visit_start_hour, 10) : null,
-        visit_start_minute: formData.initial_visit_start_minute ? parseInt(formData.initial_visit_start_minute, 10) : null,
-        visit_end_hour: formData.initial_visit_end_hour ? parseInt(formData.initial_visit_end_hour, 10) : null,
-        visit_end_minute: formData.initial_visit_end_minute ? parseInt(formData.initial_visit_end_minute, 10) : null,
-        daily_life_meal_nutrition: formData.daily_life_meal_nutrition?.trim() || null,
-        daily_life_hygiene: formData.daily_life_hygiene?.trim() || null,
-        daily_life_medication: formData.daily_life_medication?.trim() || null,
-        daily_life_sleep: formData.daily_life_sleep?.trim() || null,
-        daily_life_living_environment: formData.daily_life_living_environment?.trim() || null,
-        daily_life_family_environment: formData.daily_life_family_environment?.trim() || null,
-        notes: formData.notes?.trim() || null,
-        recorder_name: formData.recorder_name?.trim() || null,
-        status: formData.status || 'active'
-      };
-
-      // Remove null/undefined values
-      Object.keys(visitRecordData).forEach(key => {
-        if (visitRecordData[key] === null || visitRecordData[key] === undefined || visitRecordData[key] === '') {
-          delete visitRecordData[key];
-        }
-      });
-
       if (editingRecord) {
-        // Update existing visit record
+        // Update existing patient
         const { data, error } = await supabase
-          .from('visit_records')
-          .update(visitRecordData)
+          .from('patients')
+          .update(patientData)
           .eq('id', editingRecord.id)
           .eq('user_id', user.id)
           .select();
 
         if (error) {
           throw {
-            message: error.message || '訪問記録の更新に失敗しました',
+            message: error.message || '患者情報の更新に失敗しました',
             details: error.details || null,
             hint: error.hint || null,
             code: error.code || null,
@@ -526,18 +424,18 @@ export default function PatientsPage() {
         }
         showToast('患者情報を更新しました', 'success');
       } else {
-        // Create new visit record
+        // Create new patient
         const { data, error } = await supabase
-          .from('visit_records')
+          .from('patients')
           .insert({
             user_id: user.id,
-            ...visitRecordData
+            ...patientData
           })
           .select();
 
         if (error) {
           throw {
-            message: error.message || '訪問記録の作成に失敗しました',
+            message: error.message || '患者情報の作成に失敗しました',
             details: error.details || null,
             hint: error.hint || null,
             code: error.code || null,
@@ -550,7 +448,7 @@ export default function PatientsPage() {
       }
 
       handleCancel();
-      fetchVisitRecords();
+      fetchPatients();
     } catch (error) {
       // Log full error details for debugging
       console.error('Save patient error:', error);
@@ -625,14 +523,14 @@ export default function PatientsPage() {
             return;
           }
           const { error } = await supabase
-            .from('visit_records')
+            .from('patients')
             .delete()
             .eq('id', record.id)
             .eq('user_id', user.id); // Ensure we're deleting only the authenticated user's record
 
           if (error) throw error;
           showToast('患者情報を削除しました', 'success');
-          fetchVisitRecords();
+          fetchPatients();
         } catch (error) {
           console.error('Delete patient error:', error);
           showToast('削除に失敗しました: ' + (error.message || '不明なエラー'), 'error');
@@ -644,67 +542,6 @@ export default function PatientsPage() {
         setConfirmDialog(null);
       }
     });
-  };
-
-  const fetchPDFBlob = async (recordId) => {
-    const API_URL = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
-    
-    if (!API_URL || API_URL === 'http://localhost:8000') {
-      throw new Error('API URLが設定されていません。環境変数 NEXT_PUBLIC_API_URL または NEXT_PUBLIC_BACKEND_URL を設定してください。');
-    }
-
-    const { data: { session } } = await supabase.auth.getSession();
-    
-    if (!session) {
-      throw new Error('認証が必要です');
-    }
-
-    const response = await fetch(`${API_URL}/pdf/visit-record/${recordId}`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${session.access_token}`,
-        'Content-Type': 'application/json',
-      },
-    });
-
-    if (!response.ok) {
-      let errorMessage = 'PDF生成に失敗しました';
-      try {
-        const errorData = await response.json().catch(() => ({}));
-        errorMessage = errorData.detail || errorData.message || errorMessage;
-      } catch {
-        errorMessage = `PDF生成に失敗しました (HTTP ${response.status})`;
-      }
-      throw new Error(errorMessage);
-    }
-
-    return await response.blob();
-  };
-
-  const handleDownloadPDF = async (record) => {
-    setProcessingId(record.id + '-pdf');
-    try {
-      const blob = await fetchPDFBlob(record.id);
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `visit_record_${record.patient_name}_${record.id}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-
-      showToast('PDFをダウンロードしました', 'success');
-    } catch (error) {
-      console.error('PDF download error:', error);
-      showToast('PDFダウンロードに失敗しました', 'error');
-    } finally {
-      setProcessingId(null);
-    }
-  };
-
-  const handlePreviewPDF = (record) => {
-    router.push(`/visit-records/${record.id}/preview`);
   };
 
   const formatDate = (dateString) => {
@@ -760,7 +597,7 @@ export default function PatientsPage() {
           <div className="mb-6 flex items-center justify-between">
             <div>
               <h1 className="text-3xl font-bold text-gray-900">利用者基本情報</h1>
-              <p className="mt-2 text-gray-600">患者情報の作成、編集、削除、PDF出力</p>
+              <p className="mt-2 text-gray-600">患者情報の作成、編集、削除</p>
             </div>
             {!showForm && (
               <button onClick={handleCreate} className="btn btn-primary">
@@ -1351,7 +1188,7 @@ export default function PatientsPage() {
           <div className="flex items-center justify-center py-12">
             <div className="h-12 w-12 animate-spin rounded-full border-4 border-blue-500 border-t-transparent"></div>
           </div>
-        ) : filteredVisitRecords.length === 0 ? (
+        ) : filteredPatients.length === 0 ? (
           <div className="rounded-lg bg-white p-12 text-center shadow">
             <div className="mb-4 inline-flex h-16 w-16 items-center justify-center rounded-full bg-gray-100">
               <i className="ph ph-user text-4xl text-gray-400"></i>
@@ -1408,26 +1245,6 @@ export default function PatientsPage() {
                       <td className="px-6 py-4 text-right text-sm font-medium whitespace-nowrap">
                         <div className="flex items-center justify-end gap-2">
                           <button
-                            onClick={() => handlePreviewPDF(record)}
-                            disabled={processingId === record.id + '-pdf'}
-                            className="text-blue-500 hover:text-blue-900 disabled:opacity-50"
-                            title="PDFプレビュー"
-                          >
-                            <i className="ph ph-eye"></i>
-                          </button>
-                          <button
-                            onClick={() => handleDownloadPDF(record)}
-                            disabled={processingId === record.id + '-pdf'}
-                            className="text-green-600 hover:text-green-900 disabled:opacity-50"
-                            title="PDF出力"
-                          >
-                            {processingId === record.id + '-pdf' ? (
-                              <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-green-600 border-t-transparent"></span>
-                            ) : (
-                              <i className="ph ph-file-pdf"></i>
-                            )}
-                          </button>
-                          <button
                             onClick={() => handleEdit(record)}
                             disabled={processingId === record.id}
                             className="text-blue-600 hover:text-blue-900 disabled:opacity-50"
@@ -1453,11 +1270,11 @@ export default function PatientsPage() {
             <div className="bg-gray-50 px-6 py-3">
               <div className="flex items-center justify-between">
                 <div className="text-sm text-gray-500">
-                  全 {filteredVisitRecords.length} 件中 {((currentPage - 1) * pageSize) + 1} - {Math.min(currentPage * pageSize, filteredVisitRecords.length)} 件を表示
+                  全 {filteredPatients.length} 件中 {((currentPage - 1) * pageSize) + 1} - {Math.min(currentPage * pageSize, filteredPatients.length)} 件を表示
                 </div>
                 
                 {/* Pagination Controls */}
-                {Math.ceil(filteredVisitRecords.length / pageSize) > 1 && (
+                {Math.ceil(filteredPatients.length / pageSize) > 1 && (
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
@@ -1469,8 +1286,8 @@ export default function PatientsPage() {
                     </button>
                     
                     <div className="flex items-center gap-1">
-                      {Array.from({ length: Math.min(5, Math.ceil(filteredVisitRecords.length / pageSize)) }, (_, i) => {
-                        const totalPages = Math.ceil(filteredVisitRecords.length / pageSize);
+                      {Array.from({ length: Math.min(5, Math.ceil(filteredPatients.length / pageSize)) }, (_, i) => {
+                        const totalPages = Math.ceil(filteredPatients.length / pageSize);
                         let pageNum;
                         if (totalPages <= 5) {
                           pageNum = i + 1;
@@ -1499,8 +1316,8 @@ export default function PatientsPage() {
                     </div>
                     
                     <button
-                      onClick={() => setCurrentPage(prev => Math.min(Math.ceil(filteredVisitRecords.length / pageSize), prev + 1))}
-                      disabled={currentPage >= Math.ceil(filteredVisitRecords.length / pageSize)}
+                      onClick={() => setCurrentPage(prev => Math.min(Math.ceil(filteredPatients.length / pageSize), prev + 1))}
+                      disabled={currentPage >= Math.ceil(filteredPatients.length / pageSize)}
                       className="btn btn-outline-secondary btn-sm"
                     >
                       次へ
