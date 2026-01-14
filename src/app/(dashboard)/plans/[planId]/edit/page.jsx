@@ -132,6 +132,11 @@ export default function PlanEditPage() {
             short_term_goal: planData.short_term_goal || '',
             policy: planData.nursing_policy || '',
             patient_family_wish: planData.patient_family_wish || '',
+            has_procedure: planData.has_procedure || false,
+            procedure_content: planData.procedure_content || '',
+            material_details: planData.material_details || '',
+            material_amount: planData.material_amount || '',
+            procedure_note: planData.procedure_note || '',
             items: Array.from(defaultItemsMap.values()),
             evaluations: normalizedEvaluations,
             care_supplies: planData.care_supplies || [],
@@ -212,22 +217,33 @@ export default function PlanEditPage() {
         short_term_goal: formData.short_term_goal || null,
         nursing_policy: formData.policy || null,
         patient_family_wish: formData.patient_family_wish || null,
-        items: formData.items.map((item) => ({
-          id: item.id || null,
-          item_key: item.item_key,
-          label: item.label,
-          observation_text: item.observation || null,
-          assistance_text: item.assistance || null,
-          sort_order: item.sort_order,
-        })),
-        evaluations: formData.evaluations.map((evaluation, index) => ({
-          id: evaluation.id || null,
-          evaluation_slot: evaluation.evaluation_slot ?? index + 1,
-          evaluation_date: evaluation.evaluation_date,
-          result: evaluation.result || 'NONE',
-          note: evaluation.note || null,
-        })),
-        care_supplies: formData.care_supplies || [],
+        has_procedure: formData.has_procedure || false,
+        procedure_content: formData.procedure_content || null,
+        material_details: formData.material_details || null,
+        material_amount: formData.material_amount || null,
+        procedure_note: formData.procedure_note || null,
+        items: formData.items
+          .filter((item) => item.item_key) // Filter out items without item_key
+          .map((item) => ({
+            id: item.id || null,
+            item_key: item.item_key,
+            label: item.label || '',
+            observation_text: item.observation || null,
+            assistance_text: item.assistance || null,
+            sort_order: item.sort_order || 0,
+          })),
+        evaluations: formData.evaluations
+          .filter((evaluation) => {
+            // Filter out evaluations without slot or without date (required by database)
+            return evaluation.evaluation_slot != null && evaluation.evaluation_date && evaluation.evaluation_date.trim() !== '';
+          })
+          .map((evaluation, index) => ({
+            id: evaluation.id || null,
+            evaluation_slot: evaluation.evaluation_slot ?? index + 1,
+            evaluation_date: evaluation.evaluation_date.trim(),
+            result: evaluation.result || 'NONE',
+            note: evaluation.note || null,
+          })),
       };
 
       const updatedPlan = await updatePlan(planId, updateData);

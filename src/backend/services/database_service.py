@@ -857,12 +857,26 @@ class PlanService(BaseDatabaseService):
                 if long_term_goal or short_term_goal or nursing_policy:
                     logger.info(f"Prefilled plan fields from latest SOAP record plan_output")
             
+            # Validate required dates
+            if not start_date or not start_date.strip():
+                raise DatabaseServiceError("start_date is required and cannot be empty")
+            if not end_date or not end_date.strip():
+                raise DatabaseServiceError("end_date is required and cannot be empty")
+            
+            # Validate date format
+            try:
+                from datetime import datetime
+                datetime.strptime(start_date, "%Y-%m-%d")
+                datetime.strptime(end_date, "%Y-%m-%d")
+            except (ValueError, TypeError) as e:
+                raise DatabaseServiceError(f"Invalid date format. Expected YYYY-MM-DD. start_date: '{start_date}', end_date: '{end_date}'") from e
+            
             plan_data = {
                 "user_id": user_id,
                 "patient_id": patient_id,
                 "title": title.strip() if title else "精神科訪問看護計画書",
-                "start_date": start_date,
-                "end_date": end_date,
+                "start_date": start_date.strip(),
+                "end_date": end_date.strip(),
                 "has_procedure": has_procedure,
             }
             
@@ -962,16 +976,22 @@ class PlanService(BaseDatabaseService):
                 self.client.table("plan_items").insert(plan_items_data).execute()
             
             # Create default evaluations if not provided (2 slots: +3 months, +6 months)
+            # Note: start_date is already validated above, so it should be valid here
             if evaluations is None:
                 from datetime import datetime, timedelta
-                start_dt = datetime.strptime(start_date, "%Y-%m-%d")
-                eval1_date = (start_dt + timedelta(days=90)).strftime("%Y-%m-%d")
-                eval2_date = (start_dt + timedelta(days=180)).strftime("%Y-%m-%d")
-                
-                evaluations = [
-                    {"evaluation_slot": 1, "evaluation_date": eval1_date, "result": "NONE"},
-                    {"evaluation_slot": 2, "evaluation_date": eval2_date, "result": "NONE"},
-                ]
+                try:
+                    start_dt = datetime.strptime(start_date.strip(), "%Y-%m-%d")
+                    eval1_date = (start_dt + timedelta(days=90)).strftime("%Y-%m-%d")
+                    eval2_date = (start_dt + timedelta(days=180)).strftime("%Y-%m-%d")
+                    
+                    evaluations = [
+                        {"evaluation_slot": 1, "evaluation_date": eval1_date, "result": "NONE"},
+                        {"evaluation_slot": 2, "evaluation_date": eval2_date, "result": "NONE"},
+                    ]
+                except (ValueError, TypeError) as e:
+                    # This should not happen since we validated start_date above, but handle it gracefully
+                    logger.error(f"Unexpected error parsing validated start_date '{start_date}': {e}")
+                    raise DatabaseServiceError(f"Invalid start_date format after validation: {start_date}") from e
             
             # Insert evaluations
             plan_evaluations_data = []
@@ -1174,7 +1194,15 @@ class PlanService(BaseDatabaseService):
             for field, value in optional_fields.items():
                 if value is not None:
                     if isinstance(value, str):
-                        update_data[field] = value.strip() if value else None
+                        stripped_value = value.strip() if value else None
+                        # Validate date fields if they're being updated
+                        if field in ("start_date", "end_date") and stripped_value:
+                            try:
+                                from datetime import datetime
+                                datetime.strptime(stripped_value, "%Y-%m-%d")
+                            except (ValueError, TypeError) as e:
+                                raise DatabaseServiceError(f"Invalid {field} format '{stripped_value}'. Expected YYYY-MM-DD.") from e
+                        update_data[field] = stripped_value
                     else:
                         update_data[field] = value
             
@@ -1186,6 +1214,11 @@ class PlanService(BaseDatabaseService):
                 for item in items:
                     item_id = item.get("id")
                     item_key = item.get("item_key")
+                    
+                    # Skip items without item_key (required field)
+                    if not item_key:
+                        logger.warning(f"Skipping item without item_key: {item}")
+                        continue
                     
                     item_data = {
                         "user_id": user_id,
@@ -1200,36 +1233,49 @@ class PlanService(BaseDatabaseService):
                     if item_id:
                         # Update existing item
                         self.client.table("plan_items").update(item_data).eq("id", item_id).eq("user_id", user_id).execute()
-                    elif item_key:
-                        # Try to find existing by item_key
-                        existing = (
-                            self.client.table("plan_items")
-                            .select("id")
-                            .eq("plan_id", plan_id)
-                            .eq("item_key", item_key)
-                            .eq("user_id", user_id)
-                            .single()
-                            .execute()
-                        )
-                        if existing.data:
-                            self.client.table("plan_items").update(item_data).eq("id", existing.data["id"]).execute()
-                        else:
-                            self.client.table("plan_items").insert(item_data).execute()
                     else:
-                        # Insert new item
-                        self.client.table("plan_items").insert(item_data).execute()
+                        # Try to find existing by item_key
+                        try:
+                            existing = (
+                                self.client.table("plan_items")
+                                .select("id")
+                                .eq("plan_id", plan_id)
+                                .eq("item_key", item_key)
+                                .eq("user_id", user_id)
+                                .maybe_single()
+                                .execute()
+                            )
+                            if existing.data:
+                                self.client.table("plan_items").update(item_data).eq("id", existing.data["id"]).execute()
+                            else:
+                                self.client.table("plan_items").insert(item_data).execute()
+                        except Exception as e:
+                            # If lookup fails, try to insert (might be a new item)
+                            logger.warning(f"Error finding existing item by item_key {item_key}: {e}. Attempting insert.")
+                            self.client.table("plan_items").insert(item_data).execute()
             
             # Upsert evaluations if provided
             if evaluations is not None:
                 for eval_item in evaluations:
                     eval_id = eval_item.get("id")
                     eval_slot = eval_item.get("evaluation_slot")
+                    eval_date = eval_item.get("evaluation_date")
+                    
+                    # Skip evaluations without required fields
+                    if eval_slot is None:
+                        logger.warning(f"Skipping evaluation without evaluation_slot: {eval_item}")
+                        continue
+                    
+                    # Skip if evaluation_date is empty string (NOT NULL constraint)
+                    if not eval_date:
+                        logger.warning(f"Skipping evaluation without evaluation_date: {eval_item}")
+                        continue
                     
                     eval_data = {
                         "user_id": user_id,
                         "plan_id": plan_id,
                         "evaluation_slot": eval_slot,
-                        "evaluation_date": eval_item.get("evaluation_date"),
+                        "evaluation_date": eval_date,
                         "result": eval_item.get("result", "NONE"),
                         "note": eval_item.get("note"),
                     }
@@ -1237,20 +1283,25 @@ class PlanService(BaseDatabaseService):
                     if eval_id:
                         # Update existing evaluation
                         self.client.table("plan_evaluations").update(eval_data).eq("id", eval_id).eq("user_id", user_id).execute()
-                    elif eval_slot is not None:
+                    else:
                         # Try to find existing by slot
-                        existing = (
-                            self.client.table("plan_evaluations")
-                            .select("id")
-                            .eq("plan_id", plan_id)
-                            .eq("evaluation_slot", eval_slot)
-                            .eq("user_id", user_id)
-                            .single()
-                            .execute()
-                        )
-                        if existing.data:
-                            self.client.table("plan_evaluations").update(eval_data).eq("id", existing.data["id"]).execute()
-                        else:
+                        try:
+                            existing = (
+                                self.client.table("plan_evaluations")
+                                .select("id")
+                                .eq("plan_id", plan_id)
+                                .eq("evaluation_slot", eval_slot)
+                                .eq("user_id", user_id)
+                                .maybe_single()
+                                .execute()
+                            )
+                            if existing.data:
+                                self.client.table("plan_evaluations").update(eval_data).eq("id", existing.data["id"]).execute()
+                            else:
+                                self.client.table("plan_evaluations").insert(eval_data).execute()
+                        except Exception as e:
+                            # If lookup fails, try to insert (might be a new evaluation)
+                            logger.warning(f"Error finding existing evaluation by slot {eval_slot}: {e}. Attempting insert.")
                             self.client.table("plan_evaluations").insert(eval_data).execute()
             
             logger.info(f"Successfully updated plan {plan_id}")
