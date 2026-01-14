@@ -1,16 +1,16 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
 import { useAuthProfile } from '@/hooks/useAuthProfile';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { supabase } from '@/lib/supabase';
+import PDFDownloadButton from '@/components/ai/PDFDownloadButton';
+import PDFPreviewButton from '@/components/ai/PDFPreviewButton';
 
 // ==============================|| PATIENTS PAGE ||============================== //
 
 export default function PatientsPage() {
   const { user } = useAuthProfile();
-  const router = useRouter();
   const [patients, setPatients] = useState([]);
   const [filteredPatients, setFilteredPatients] = useState([]);
   const [displayedRecords, setDisplayedRecords] = useState([]); // Paginated records
@@ -22,6 +22,8 @@ export default function PatientsPage() {
   const [confirmDialog, setConfirmDialog] = useState(null);
   const [editingRecord, setEditingRecord] = useState(null);
   const [showForm, setShowForm] = useState(false);
+  const [pdfPreviewUrl, setPdfPreviewUrl] = useState(null);
+  const [previewPatientId, setPreviewPatientId] = useState(null);
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -72,11 +74,7 @@ export default function PatientsPage() {
     setLoading(true);
     try {
       // Fetch patients directly from patients table
-      const { data, error } = await supabase
-        .from('patients')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
+      const { data, error } = await supabase.from('patients').select('*').eq('user_id', user.id).order('created_at', { ascending: false });
 
       if (error) {
         console.error('Supabase error:', {
@@ -89,12 +87,12 @@ export default function PatientsPage() {
       }
 
       // Map patient data to display format
-      const mappedData = (data || []).map(patient => ({
+      const mappedData = (data || []).map((patient) => ({
         ...patient,
         patient_name: patient.name || '',
         main_disease: patient.primary_diagnosis || '',
         patient_address: patient.address || '',
-        patient_contact: patient.contact || '',
+        patient_contact: patient.contact || ''
       }));
       setPatients(mappedData || []);
     } catch (error) {
@@ -350,22 +348,7 @@ export default function PatientsPage() {
 
     setProcessingId(editingRecord?.id || 'new');
     try {
-      // Step 1: Find or create patient in patients table and update with all patient information
-      let patientId;
-      if (editingRecord?.patient_id) {
-        // If editing, use existing patient_id
-        patientId = editingRecord.patient_id;
-      } else {
-        // Find or create patient
-        patientId = await findOrCreatePatient(
-          formData.patient_name,
-          formData.gender || null,
-          formData.age || null,
-          formData.main_disease || null
-        );
-      }
-
-      // Step 2: Update patient with all patient information
+      // Prepare patient data
       const patientData = {
         name: formData.patient_name.trim(),
         gender: formData.gender || null,
@@ -1245,6 +1228,21 @@ export default function PatientsPage() {
                       <td className="px-6 py-4 text-right text-sm font-medium whitespace-nowrap">
                         <div className="flex items-center justify-end gap-2">
                           <button
+                            onClick={() => {
+                              if (previewPatientId === record.id) {
+                                setPreviewPatientId(null);
+                                setPdfPreviewUrl(null);
+                              } else {
+                                setPreviewPatientId(record.id);
+                                setPdfPreviewUrl(null);
+                              }
+                            }}
+                            className={`${previewPatientId === record.id ? 'text-green-600' : 'text-purple-600'} hover:text-purple-900`}
+                            title={previewPatientId === record.id ? 'PDF操作を閉じる' : 'PDF操作を表示'}
+                          >
+                            <i className={`ph ${previewPatientId === record.id ? 'ph-eye-slash' : 'ph-file-pdf'}`}></i>
+                          </button>
+                          <button
                             onClick={() => handleEdit(record)}
                             disabled={processingId === record.id}
                             className="text-blue-600 hover:text-blue-900 disabled:opacity-50"
@@ -1267,6 +1265,60 @@ export default function PatientsPage() {
                 </tbody>
               </table>
             </div>
+            
+            {/* PDF Preview and Download Section */}
+            {previewPatientId && (
+              <div className="border-t border-gray-200 p-6">
+                <div className="mb-4 flex items-center justify-between">
+                  <h3 className="text-lg font-semibold text-gray-900">PDF操作</h3>
+                  <button
+                    onClick={() => {
+                      setPreviewPatientId(null);
+                      setPdfPreviewUrl(null);
+                    }}
+                    className="btn btn-sm btn-outline-secondary"
+                  >
+                    <i className="ph ph-x me-1"></i>
+                    閉じる
+                  </button>
+                </div>
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  <PDFDownloadButton
+                    label="利用者情報 PDFをダウンロード"
+                    endpoint={`/pdf/patient-record/${previewPatientId}`}
+                    filename={`patient_record_${previewPatientId}.pdf`}
+                  />
+                  <PDFPreviewButton
+                    label={pdfPreviewUrl ? '利用者情報 プレビューを閉じる' : '利用者情報 をプレビュー'}
+                    endpoint={`/pdf/patient-record/${previewPatientId}`}
+                    isActive={!!pdfPreviewUrl}
+                    onPreviewReady={(url) => setPdfPreviewUrl(url)}
+                  />
+                </div>
+                
+                {pdfPreviewUrl && (
+                  <div className="mt-4 rounded-lg border border-gray-200 bg-white shadow">
+                    <div className="border-b border-gray-200 bg-gray-50 px-4 py-3">
+                      <div className="flex items-center justify-between">
+                        <span className="font-semibold text-gray-900">PDFプレビュー</span>
+                        <button
+                          type="button"
+                          onClick={() => setPdfPreviewUrl(null)}
+                          className="btn btn-sm btn-outline-secondary"
+                        >
+                          閉じる
+                        </button>
+                      </div>
+                    </div>
+                    <div className="p-0">
+                      <div className="w-full" style={{ height: '600px' }}>
+                        <iframe src={pdfPreviewUrl} title="PDF preview" className="w-full h-full border-0" />
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
             <div className="bg-gray-50 px-6 py-3">
               <div className="flex items-center justify-between">
                 <div className="text-sm text-gray-500">

@@ -7,8 +7,8 @@ from fastapi.responses import Response
 
 from api.dependencies import get_current_user
 from models import ErrorResponse, PDFGenerationResponse
-from services.database_service import DatabaseServiceError, get_soap_record_by_id, get_visits_by_patient_and_month
-from services.pdf_service import PDFServiceError, generate_monthly_report_pdf, generate_visit_report_pdf
+from services.database_service import DatabaseServiceError, get_soap_record_by_id, get_visits_by_patient_and_month, get_patient_by_id
+from services.pdf_service import PDFServiceError, generate_monthly_report_pdf, generate_visit_report_pdf, generate_patient_record_pdf
 from services.s3_service import S3ServiceError, generate_presigned_url, upload_pdf_to_s3
 
 logger = logging.getLogger(__name__)
@@ -180,6 +180,76 @@ async def generate_monthly_report_pdf_endpoint(
         ) from s3_exc
     except Exception as exc:  # pragma: no cover - defensive
         logger.error(f"Unexpected error generating monthly report PDF: {exc}")
+        raise HTTPException(
+            status_code=500,
+            detail="PDF生成中にエラーが発生しました。",
+        ) from exc
+
+
+@router.post(
+    "/pdf/patient-record/{patient_id}",
+    response_class=Response,
+    responses={
+        401: {"model": ErrorResponse, "description": "Authentication error"},
+        404: {"model": ErrorResponse, "description": "Patient not found"},
+        500: {"model": ErrorResponse, "description": "Internal server error"},
+    },
+    tags=["pdf"],
+    summary="Generate patient record PDF",
+    description="Generate 精神科訪問看護記録書Ⅰ PDF for a specific patient and return it directly.",
+)
+async def generate_patient_record_pdf_endpoint(
+    patient_id: str,
+    current_user: dict = Depends(get_current_user),
+) -> Response:
+    """
+    Generate patient record PDF (精神科訪問看護記録書Ⅰ) for a specific patient.
+    
+    Requires authentication via Supabase JWT token.
+    
+    Returns the PDF file directly.
+    """
+    try:
+        # Fetch patient data
+        patient_data = get_patient_by_id(patient_id=patient_id, user_id=current_user["user_id"])
+        
+        # Generate PDF
+        pdf_bytes = generate_patient_record_pdf(patient_data)
+        
+        logger.info(f"Successfully generated patient record PDF for patient {patient_id}")
+        
+        # Return PDF directly with appropriate headers
+        # Use Japanese-safe filename encoding
+        filename = f"patient_record_{patient_id}.pdf"
+        return Response(
+            content=pdf_bytes,
+            media_type="application/pdf",
+            headers={
+                "Content-Disposition": f"attachment; filename={filename}; filename*=UTF-8''{filename}"
+            }
+        )
+        
+    except DatabaseServiceError as db_exc:
+        error_msg = str(db_exc)
+        if "not found" in error_msg.lower():
+            logger.warning(f"Patient {patient_id} not found for user {current_user['user_id']}")
+            raise HTTPException(
+                status_code=404,
+                detail="利用者が見つかりませんでした。",
+            ) from db_exc
+        logger.error(f"Database error generating patient record PDF: {db_exc}")
+        raise HTTPException(
+            status_code=500,
+            detail="PDF生成中にエラーが発生しました。",
+        ) from db_exc
+    except PDFServiceError as pdf_exc:
+        logger.error(f"PDF service error generating patient record: {pdf_exc}")
+        raise HTTPException(
+            status_code=500,
+            detail="PDF生成中にエラーが発生しました。",
+        ) from pdf_exc
+    except Exception as exc:  # pragma: no cover - defensive
+        logger.error(f"Unexpected error generating patient record PDF: {exc}")
         raise HTTPException(
             status_code=500,
             detail="PDF生成中にエラーが発生しました。",

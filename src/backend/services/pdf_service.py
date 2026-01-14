@@ -490,3 +490,172 @@ def generate_monthly_report_pdf(patient_id: str, patient_name: str, month: str, 
         raise PDFServiceError(f"Failed to generate monthly report PDF: {str(e)}") from e
 
 
+def map_patient_to_visit_record(patient_data: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Map patient data to visit record format (精神科訪問看護記録書Ⅰ).
+    
+    This function maps patient database fields to the visit_record.html template format.
+    
+    Args:
+        patient_data: Patient dictionary from database
+        
+    Returns:
+        Dictionary with mapped data for visit_record template
+    """
+    from datetime import datetime
+    
+    # Parse birth date if available
+    birth_year = None
+    birth_month = None
+    birth_day = None
+    if patient_data.get('birth_date'):
+        try:
+            birth_date = datetime.fromisoformat(patient_data['birth_date'].replace('Z', '+00:00'))
+            birth_year = birth_date.year
+            birth_month = birth_date.month
+            birth_day = birth_date.day
+        except (ValueError, AttributeError):
+            # Try parsing as string if it's not ISO format
+            try:
+                birth_date = datetime.strptime(patient_data['birth_date'], '%Y-%m-%d')
+                birth_year = birth_date.year
+                birth_month = birth_date.month
+                birth_day = birth_date.day
+            except (ValueError, AttributeError):
+                pass
+    
+    # Parse initial visit date if available
+    initial_visit_year = None
+    initial_visit_month = None
+    initial_visit_day = None
+    initial_visit_day_of_week = None
+    if patient_data.get('initial_visit_date'):
+        try:
+            visit_date = datetime.fromisoformat(patient_data['initial_visit_date'].replace('Z', '+00:00'))
+            initial_visit_year = visit_date.year
+            initial_visit_month = visit_date.month
+            initial_visit_day = visit_date.day
+            # Get day of week in Japanese
+            days = ['月', '火', '水', '木', '金', '土', '日']
+            initial_visit_day_of_week = days[visit_date.weekday()]
+        except (ValueError, AttributeError):
+            try:
+                visit_date = datetime.strptime(patient_data['initial_visit_date'], '%Y-%m-%d')
+                initial_visit_year = visit_date.year
+                initial_visit_month = visit_date.month
+                initial_visit_day = visit_date.day
+                days = ['月', '火', '水', '木', '金', '土', '日']
+                initial_visit_day_of_week = days[visit_date.weekday()]
+            except (ValueError, AttributeError):
+                pass
+    
+    # Map gender
+    gender = patient_data.get('gender', '')
+    if gender == 'male':
+        gender = '男'
+    elif gender == 'female':
+        gender = '女'
+    
+    return {
+        'patient_name': patient_data.get('name', ''),
+        'gender': gender,
+        'birth_year': birth_year,
+        'birth_month': birth_month,
+        'birth_day': birth_day,
+        'age': patient_data.get('age'),
+        'patient_address': patient_data.get('address', ''),
+        'patient_contact': patient_data.get('contact', ''),
+        'key_person_name': patient_data.get('key_person_name', ''),
+        'key_person_relationship': patient_data.get('key_person_relationship', ''),
+        'key_person_address': patient_data.get('key_person_address', ''),
+        'key_person_contact1': patient_data.get('key_person_contact1', ''),
+        'key_person_contact2': patient_data.get('key_person_contact2', ''),
+        'initial_visit_year': initial_visit_year,
+        'initial_visit_month': initial_visit_month,
+        'initial_visit_day': initial_visit_day,
+        'initial_visit_day_of_week': initial_visit_day_of_week,
+        'initial_visit_start_hour': patient_data.get('initial_visit_start_hour'),
+        'initial_visit_start_minute': patient_data.get('initial_visit_start_minute'),
+        'initial_visit_end_hour': patient_data.get('initial_visit_end_hour'),
+        'initial_visit_end_minute': patient_data.get('initial_visit_end_minute'),
+        'main_disease': patient_data.get('primary_diagnosis', ''),
+        'medical_history': patient_data.get('medical_history', ''),
+        'current_illness_history': patient_data.get('current_illness_history', ''),
+        'family_structure': patient_data.get('family_structure', ''),
+        'daily_life_meal_nutrition': patient_data.get('daily_life_meal_nutrition', ''),
+        'daily_life_hygiene': patient_data.get('daily_life_hygiene', ''),
+        'daily_life_medication': patient_data.get('daily_life_medication', ''),
+        'daily_life_sleep': patient_data.get('daily_life_sleep', ''),
+        'daily_life_living_environment': patient_data.get('daily_life_living_environment', ''),
+        'daily_life_family_environment': patient_data.get('daily_life_family_environment', ''),
+        'doctor_name': patient_data.get('doctor_name', ''),
+        'hospital_name': patient_data.get('hospital_name', ''),
+        'hospital_address': patient_data.get('hospital_address', ''),
+        'hospital_phone': patient_data.get('hospital_phone', ''),
+        'notes': patient_data.get('individual_notes', ''),
+        'recorder_name': patient_data.get('recorder_name', ''),
+    }
+
+
+def generate_patient_record_pdf(patient_data: Dict[str, Any]) -> bytes:
+    """
+    Generate patient record PDF (精神科訪問看護記録書Ⅰ).
+    
+    This function uses WeasyPrint with embedded Japanese fonts to ensure
+    proper rendering of Japanese medical text in the PDF.
+    
+    Args:
+        patient_data: Patient dictionary from database
+        
+    Returns:
+        PDF file content as bytes with embedded Japanese fonts
+        
+    Raises:
+        PDFServiceError: If PDF generation fails
+    """
+    try:
+        # Verify font file exists (log warning if missing)
+        font_path = get_font_path()
+        if not os.path.exists(font_path):
+            logger.warning(
+                f"Japanese font not found at: {font_path}\n"
+                f"Japanese text will render as boxes (■■■) in the PDF.\n"
+                f"Please download IPAexGothic.ttf and place it in the fonts directory."
+            )
+        else:
+            logger.info(f"Japanese font verified at: {font_path}")
+        
+        template_env = get_template_env()
+        
+        # Map patient data to visit record format
+        template_data = map_patient_to_visit_record(patient_data)
+        
+        # Render HTML template
+        try:
+            template = template_env.get_template('visit_record.html')
+            html_content = template.render(**template_data)
+        except TemplateNotFound:
+            raise PDFServiceError("Visit record template not found: visit_record.html")
+        
+        # Get CSS file path for visit record (pdf.css)
+        css_path = get_css_path()
+        
+        # Convert HTML to PDF using WeasyPrint with embedded fonts
+        logger.info("Converting HTML to PDF using WeasyPrint with Japanese font embedding")
+        
+        # Create HTML object from string
+        html_obj = HTML(string=html_content)
+        
+        # Generate PDF with external CSS (contains @font-face for Japanese fonts)
+        pdf_bytes = html_obj.write_pdf(
+            stylesheets=[CSS(filename=css_path)]
+        )
+        
+        logger.info(f"Successfully generated patient record PDF ({len(pdf_bytes)} bytes)")
+        return pdf_bytes
+        
+    except Exception as e:
+        logger.error(f"Error generating patient record PDF: {e}")
+        raise PDFServiceError(f"Failed to generate patient record PDF: {str(e)}") from e
+
+
