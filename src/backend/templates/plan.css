@@ -153,9 +153,7 @@ body {
     background-color: #fff;
 }
 
-.plan-form-table .value-cell.wide {
-    /* width removed - controlled by colgroup */
-}
+
 
 .plan-form-table .value-cell.small {
     /* width removed - controlled by colgroup */

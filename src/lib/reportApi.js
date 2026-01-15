@@ -108,7 +108,7 @@ export async function createPatientReport(patientId, reportData) {
           detail: text || response.statusText
         };
       }
-    } catch (parseError) {
+    } catch {
       errorData = { 
         error: `HTTP ${response.status}: ${response.statusText}`,
         detail: response.statusText
@@ -222,7 +222,7 @@ export async function regenerateReport(reportId, force = false) {
           detail: text || response.statusText
         };
       }
-    } catch (parseError) {
+    } catch {
       errorData = { 
         error: `HTTP ${response.status}: ${response.statusText}`,
         detail: response.statusText

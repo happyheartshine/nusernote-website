@@ -124,21 +124,6 @@ body {
     height: 6mm;
 }
 
-.unified-form-table tr:nth-child(1) td.form-value,
-.unified-form-table tr:nth-child(2) td.form-value {
-    /* Width determined by colspan */
-}
-
-/* For rows 3+ (訪問年月日, 訪問先, etc.) - 12 columns structure */
-.unified-form-table tr:nth-child(3) td.form-label,
-.unified-form-table tr:nth-child(4) td.form-label {
-    /* Width determined by colspan="2" = 16.67% of 12 columns */
-}
-
-.unified-form-table tr:nth-child(3) td.form-value,
-.unified-form-table tr:nth-child(4) td.form-value {
-    /* Width determined by colspan="10" = 83.33% of 12 columns */
-}
 
 /* Date and time fields */
 .date-field,
