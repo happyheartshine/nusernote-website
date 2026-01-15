@@ -7,6 +7,7 @@ import { supabase } from '@/lib/supabase';
 import PDFDownloadButton from '@/components/ai/PDFDownloadButton';
 import PDFPreviewButton from '@/components/ai/PDFPreviewButton';
 import PatientPlansModal from '@/components/plans/PatientPlansModal';
+import PatientReportsModal from '@/components/reports/PatientReportsModal';
 
 // ==============================|| PATIENTS PAGE ||============================== //
 
@@ -26,6 +27,7 @@ export default function PatientsPage() {
   const [pdfPreviewUrl, setPdfPreviewUrl] = useState(null);
   const [previewPatientId, setPreviewPatientId] = useState(null);
   const [plansModalPatient, setPlansModalPatient] = useState(null);
+  const [reportsModalPatient, setReportsModalPatient] = useState(null);
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -542,6 +544,14 @@ export default function PatientsPage() {
           patientName={plansModalPatient.name}
           isOpen={!!plansModalPatient}
           onClose={() => setPlansModalPatient(null)}
+        />
+      )}
+      {reportsModalPatient && (
+        <PatientReportsModal
+          patientId={reportsModalPatient.id}
+          patientName={reportsModalPatient.name}
+          isOpen={!!reportsModalPatient}
+          onClose={() => setReportsModalPatient(null)}
         />
       )}
       <div className="container mx-auto px-4 py-8">
@@ -1202,6 +1212,13 @@ export default function PatientsPage() {
                             title="計画書"
                           >
                             <i className="ph ph-file-text"></i>
+                          </button>
+                          <button
+                            onClick={() => setReportsModalPatient({ id: record.id, name: record.patient_name })}
+                            className="text-blue-600 hover:text-blue-900"
+                            title="月次報告書"
+                          >
+                            <i className="ph ph-file-doc"></i>
                           </button>
                           <button
                             onClick={() => {

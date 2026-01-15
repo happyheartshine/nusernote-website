@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>精神科訪問看護報告書</title>
+    <!-- 
+        NOTE: External CSS (report.css) is loaded by WeasyPrint via Python code.
+        This ensures proper @font-face loading with absolute paths.
+        Do NOT embed styles here - keep them in report.css for font embedding to work.
+    -->
+</head>
+<body>
+    
+    <!-- Main Title -->
+    <div class="title-section">
+        <h1>精神科訪問看護報告書</h1>
+    </div>
+    
+    <!-- Main Form Table - All sections in one table -->
+    <table class="report-form-table">
+        <colgroup>
+            <col style="width: 8.33%;">
+            <col style="width: 8.33%;">
+            <col style="width: 8.33%;">
+            <col style="width: 8.33%;">
+            <col style="width: 8.33%;">
+            <col style="width: 8.33%;">
+            <col style="width: 8.33%;">
+            <col style="width: 8.33%;">
+            <col style="width: 8.33%;">
+            <col style="width: 8.33%;">
+            <col style="width: 8.33%;">
+            <col style="width: 8.33%;">
+        </colgroup>
+        
+        <!-- Patient Information Section -->
+        <tr>
+            <td class="label-cell" colspan="2">患者様氏名</td>
+            <td class="value-cell wide" colspan="3">{{ patient_name if patient_name else '　' }}</td>
+            <td class="label-cell small" colspan="1">{{patient_gender if patient_gender else '　'}}</td>
+            <td class="label-cell small" colspan="1">生年月日</td>
+            <td class="value-cell small" colspan="5">
+                {% if patient_birth_date %}
+                    {{ patient_birth_date }}
+                {% else %}
+                    　年　月　日
+                {% endif %}
+            </td>
+        </tr>
+        <tr>
+            <td class="label-cell" colspan="2">患者様住所・TEL</td>
+            <td class="value-cell wide" colspan="10">
+                {% if patient_address %}{{ patient_address }}{% endif %}
+                {% if patient_contact %} TEL: {{ patient_contact }}{% endif %}
+                {% if not patient_address and not patient_contact %}　{% endif %}
+            </td>
+        </tr>
+        <tr>
+            <td class="label-cell" colspan="2">要介護認定の状況</td>
+            <td class="value-cell wide" colspan="10">{{ long_term_care_status if long_term_care_status else '　' }}</td>
+        </tr>
+        
+        <!-- Visit Dates and Calendar Section -->
+        <tr>
+            <td class="visit-date-label" rowspan="2" colspan="1">訪問日</td>
+            <td class="calendar-container" colspan="4">
+                <!-- Calendar for first month -->
+                <div class="calendar-month">
+                    <div class="calendar-header">{{ calendar_month1_label if calendar_month1_label else '　' }}</div>
+                    <table class="calendar-grid">
+                        <tr class="calendar-weekdays">
+                            <td>日</td>
+                            <td>月</td>
+                            <td>火</td>
+                            <td>水</td>
+                            <td>木</td>
+                            <td>金</td>
+                            <td>土</td>
+                        </tr>
+                        {% if calendar_month1_weeks %}
+                            {% for week in calendar_month1_weeks %}
+                            <tr>
+                                {% for day in week %}
+                                <td class="calendar-day">
+                                    {% if day.date %}
+                                        <span class="day-number">{{ day.date }}</span>
+                                        {% if day.marks %}
+                                            <span class="day-marks">{{ day.marks }}</span>
+                                        {% endif %}
+                                    {% endif %}
+                                </td>
+                                {% endfor %}
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr><td colspan="7">　</td></tr>
+                        {% endif %}
+                    </table>
+                </div>
+            </td>
+            <td class="calendar-container" colspan="4">
+                <!-- Calendar for second month -->
+                <div class="calendar-month">
+                    <div class="calendar-header">{{ calendar_month2_label if calendar_month2_label else '　' }}</div>
+                    <table class="calendar-grid">
+                        <tr class="calendar-weekdays">
+                            <td>日</td>
+                            <td>月</td>
+                            <td>火</td>
+                            <td>水</td>
+                            <td>木</td>
+                            <td>金</td>
+                            <td>土</td>
+                        </tr>
+                        {% if calendar_month2_weeks %}
+                            {% for week in calendar_month2_weeks %}
+                            <tr>
+                                {% for day in week %}
+                                <td class="calendar-day">
+                                    {% if day.date %}
+                                        <span class="day-number">{{ day.date }}</span>
+                                        {% if day.marks %}
+                                            <span class="day-marks">{{ day.marks }}</span>
+                                        {% endif %}
+                                    {% endif %}
+                                </td>
+                                {% endfor %}
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr><td colspan="7">　</td></tr>
+                        {% endif %}
+                    </table>
+                </div>
+            </td>
+            <td class="legend-column" rowspan="2" colspan="3">
+                <div class="legend-content">
+                    <div class="legend-item">訪問日を○で囲む</div>
+                    <div class="legend-item">特別訪問看護指示書に基づく訪問看護を実施した日は△で囲む</div>
+                    <div class="legend-item">1日に2回以上訪問した日は◎で囲む</div>
+                    <div class="legend-item">長時間訪問看護加算を算定した日は□で囲む</div>
+                    <div class="legend-item">30分未満の訪問看護を実施した日はレ印をつけること。</div>
+                </div>
+            </td>
+        </tr>
+        <tr>
+            <td class="calendar-container" colspan="4">　</td>
+            <td class="calendar-container" colspan="4">　</td>
+        </tr>
+        
+        <!-- Narrative Sections -->
+        <tr>
+            <td class="narrative-label" colspan="2">病状の経過</td>
+            <td class="narrative-content" colspan="10">{{ disease_progress_text if disease_progress_text else '　' }}</td>
+        </tr>
+        <tr>
+            <td class="narrative-label" colspan="2">看護・リハビリテーションの内容</td>
+            <td class="narrative-content" colspan="10">{{ nursing_rehab_text if nursing_rehab_text else '　' }}</td>
+        </tr>
+        <tr>
+            <td class="narrative-label" colspan="2">家庭状況</td>
+            <td class="narrative-content" colspan="10">{{ family_situation_text if family_situation_text else '　' }}</td>
+        </tr>
+        <tr>
+            <td class="narrative-label" colspan="2">処置</td>
+            <td class="narrative-content" colspan="10">
+                <div class="procedure-label">衛生材料(頻度・種類・サイズ) 等及び必要量</div>
+                <div class="procedure-content">{{ procedure_text if procedure_text else '　' }}</div>
+            </td>
+        </tr>
+        <tr>
+            <td class="narrative-label" colspan="2">特記すべき事項及びモニタリング</td>
+            <td class="narrative-content" colspan="10">
+                {% if gaf_score %}GAF{{ gaf_score }}点{% if gaf_date %} ({{ gaf_date }}){% endif %}{% endif %}
+                {% if profession_text %}<div class="profession-text">{{ profession_text }}</div>{% endif %}
+                <div class="monitoring-content">{{ monitoring_text if monitoring_text else '　' }}</div>
+            </td>
+        </tr>
+        
+        <!-- Footer Statement -->
+        <tr>
+            <td class="footer-statement-cell" colspan="12">
+                <div class="footer-statement">
+                    <span class="statement-text">上記の通り、指定訪問看護について報告いたします。</span>
+                    <span class="report-date">{{ report_date if report_date else '　年　月　日' }}</span>
+                </div>
+            </td>
+        </tr>
+        
+        <!-- Signature Section -->
+        <tr>
+            <td class="signature-label" colspan="2">事業所名</td>
+            <td class="signature-value" colspan="8">{{ org_station_name if org_station_name else '　' }}</td>
+            <td class="signature-seal" colspan="2">　</td>
+        </tr>
+        <tr>
+            <td class="signature-label" colspan="2">管理者氏名</td>
+            <td class="signature-value" colspan="8">{{ org_admin_name if org_admin_name else '　' }}</td>
+            <td class="signature-seal" colspan="2">印</td>
+        </tr>
+    </table>
+    
+</body>
+</html>

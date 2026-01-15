@@ -1245,7 +1245,7 @@ class PlanService(BaseDatabaseService):
                                 .maybe_single()
                                 .execute()
                             )
-                            if existing.data:
+                            if existing and hasattr(existing, 'data') and existing.data:
                                 self.client.table("plan_items").update(item_data).eq("id", existing.data["id"]).execute()
                             else:
                                 self.client.table("plan_items").insert(item_data).execute()
@@ -1295,7 +1295,7 @@ class PlanService(BaseDatabaseService):
                                 .maybe_single()
                                 .execute()
                             )
-                            if existing.data:
+                            if existing and hasattr(existing, 'data') and existing.data:
                                 self.client.table("plan_evaluations").update(eval_data).eq("id", existing.data["id"]).execute()
                             else:
                                 self.client.table("plan_evaluations").insert(eval_data).execute()
@@ -1405,6 +1405,439 @@ class PlanService(BaseDatabaseService):
 
 
 # ============================================================================
+# Report Service
+# ============================================================================
+
+class ReportService(BaseDatabaseService):
+    """Service for report operations."""
+    
+    def create(
+        self,
+        user_id: str,
+        patient_id: str,
+        year_month: Optional[str] = None,
+        period_start: Optional[str] = None,
+        period_end: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """Create a new report with auto-generated visit marks."""
+        try:
+            from datetime import datetime, timedelta
+            from calendar import monthrange
+            
+            # Determine period from year_month or period_start/period_end
+            # If both are provided, year_month takes precedence
+            if year_month:
+                # Parse YYYY-MM format
+                try:
+                    year, month = map(int, year_month.split("-"))
+                    period_start = f"{year}-{month:02d}-01"
+                    # Get last day of month
+                    last_day = monthrange(year, month)[1]
+                    period_end = f"{year}-{month:02d}-{last_day}"
+                    logger.info(f"Calculated period from year_month {year_month}: {period_start} to {period_end}")
+                except (ValueError, IndexError) as e:
+                    raise DatabaseServiceError(f"Invalid year_month format '{year_month}'. Expected YYYY-MM.") from e
+            elif period_start and period_end:
+                # Validate date format
+                try:
+                    datetime.strptime(period_start, "%Y-%m-%d")
+                    datetime.strptime(period_end, "%Y-%m-%d")
+                except ValueError as e:
+                    raise DatabaseServiceError(f"Invalid date format. Expected YYYY-MM-DD.") from e
+                
+                # Derive year_month from period_start
+                start_dt = datetime.strptime(period_start, "%Y-%m-%d")
+                year_month = start_dt.strftime("%Y-%m")
+            else:
+                raise DatabaseServiceError("Either year_month or both period_start and period_end must be provided")
+            
+            # Check if report already exists
+            existing = (
+                self.client.table("reports")
+                .select("id")
+                .eq("user_id", user_id)
+                .eq("patient_id", patient_id)
+                .eq("year_month", year_month)
+                .maybe_single()
+                .execute()
+            )
+            
+            if existing and hasattr(existing, 'data') and existing.data:
+                raise DatabaseServiceError(f"Report for {year_month} already exists for this patient")
+            
+            # Create report with empty text fields
+            report_data = {
+                "user_id": user_id,
+                "patient_id": patient_id,
+                "year_month": year_month,
+                "period_start": period_start,
+                "period_end": period_end,
+                "status": "DRAFT",
+            }
+            
+            logger.info(f"Creating report for user {user_id}, patient {patient_id}, period {year_month} ({period_start} to {period_end})")
+            logger.debug(f"Report data to insert: {report_data}")
+            
+            # Validate that client is available
+            if self.client is None:
+                raise DatabaseServiceError("Supabase client is not initialized")
+            
+            try:
+                # Execute insert
+                insert_query = self.client.table("reports").insert(report_data)
+                logger.debug(f"Executing Supabase insert query for reports table")
+                
+                response = insert_query.execute()
+                
+                # Check if response is None (shouldn't happen, but handle it)
+                if response is None:
+                    logger.error("Supabase insert returned None - possible RLS policy issue or constraint violation")
+                    raise DatabaseServiceError("Failed to create report: Database insert returned None. Check RLS policies and constraints.")
+                
+                # Check if response has data attribute
+                if not hasattr(response, 'data'):
+                    logger.error(f"Supabase insert response missing data attribute. Response type: {type(response)}, Response: {response}")
+                    # Check if response has error information
+                    if hasattr(response, 'error') and response.error:
+                        error_msg = str(response.error)
+                        logger.error(f"Supabase error in response: {error_msg}")
+                        raise DatabaseServiceError(f"Failed to create report: {error_msg}")
+                    raise DatabaseServiceError("Failed to create report: Invalid response from database insert")
+                
+                # Check if data is empty
+                if not response.data:
+                    logger.error(f"Supabase insert returned empty data. Response: {response}")
+                    # Check for error in response
+                    if hasattr(response, 'error') and response.error:
+                        error_msg = str(response.error)
+                        logger.error(f"Supabase error: {error_msg}")
+                        raise DatabaseServiceError(f"Failed to create report: {error_msg}")
+                    raise DatabaseServiceError("Failed to create report: No data returned from database insert")
+                    
+            except DatabaseServiceError:
+                # Re-raise our custom errors
+                raise
+            except Exception as insert_error:
+                # Catch all other exceptions (Supabase API errors, network errors, etc.)
+                error_type = type(insert_error).__name__
+                error_msg = str(insert_error)
+                logger.error(f"Failed to insert report into database: {error_type}: {error_msg}", exc_info=True)
+                
+                # Check for common Supabase error patterns
+                if "duplicate key" in error_msg.lower() or "unique constraint" in error_msg.lower():
+                    raise DatabaseServiceError(f"Report for {year_month} already exists for this patient")
+                elif "permission denied" in error_msg.lower() or "row-level security" in error_msg.lower():
+                    raise DatabaseServiceError(f"Permission denied: Check RLS policies. Error: {error_msg}")
+                elif "foreign key" in error_msg.lower():
+                    raise DatabaseServiceError(f"Invalid patient_id or user_id. Error: {error_msg}")
+                else:
+                    raise DatabaseServiceError(f"Failed to insert report: {error_msg}") from insert_error
+            
+            # Safely extract report data
+            try:
+                report = response.data[0]
+                report_id = report["id"]
+            except (IndexError, KeyError, TypeError) as e:
+                logger.error(f"Failed to extract report data from response: {e}. Response: {response}")
+                raise DatabaseServiceError(f"Failed to extract report data from database response: {str(e)}") from e
+            
+            # Auto-generate visit marks from soap_records
+            try:
+                from services.report_service import generate_visit_marks, ReportServiceError
+                generate_visit_marks(report_id, user_id, patient_id, period_start, period_end)
+                logger.info(f"Successfully generated visit marks for report {report_id}")
+            except ReportServiceError as e:
+                logger.warning(f"Failed to auto-generate visit marks (ReportServiceError): {e}. Report created but marks not generated.")
+            except Exception as e:
+                logger.warning(f"Failed to auto-generate visit marks (unexpected error): {type(e).__name__}: {e}. Report created but marks not generated.", exc_info=True)
+            
+            # Optionally prefill disease_progress_text from last N soap_records
+            try:
+                soap_service = SOAPRecordService()
+                soap_records = soap_service.get_all(
+                    user_id=user_id,
+                    patient_id=patient_id,
+                    date_from=period_start,
+                    date_to=period_end,
+                    limit=10,  # Last 10 records
+                )
+                
+                if soap_records:
+                    # Simple concatenation of soap_output and notes
+                    progress_parts = []
+                    for record in reversed(soap_records):  # Oldest first
+                        soap_output = record.get("soap_output", {})
+                        notes = record.get("notes", "")
+                        
+                        if isinstance(soap_output, dict):
+                            # Extract relevant text from SOAP structure
+                            a_section = soap_output.get("A", {})
+                            if isinstance(a_section, dict):
+                                for key, value in a_section.items():
+                                    if isinstance(value, str) and value.strip():
+                                        progress_parts.append(value.strip())
+                        
+                        if notes and notes.strip():
+                            progress_parts.append(notes.strip())
+                    
+                    if progress_parts:
+                        # Limit to reasonable length (e.g., 2000 chars)
+                        progress_text = "\n".join(progress_parts[:20])  # Limit to 20 parts
+                        if len(progress_text) > 2000:
+                            progress_text = progress_text[:2000] + "..."
+                        
+                        self.client.table("reports").update({
+                            "disease_progress_text": progress_text
+                        }).eq("id", report_id).execute()
+            except Exception as e:
+                logger.warning(f"Failed to prefill disease_progress_text: {e}")
+            
+            logger.info(f"Successfully created report with ID: {report_id}")
+            
+            # Return complete report with visit marks
+            # If get_by_id fails, return the basic report data we already have
+            try:
+                return self.get_by_id(report_id, user_id)
+            except Exception as e:
+                logger.warning(f"Failed to fetch complete report after creation: {e}. Returning basic report data.")
+                # Return basic report data with empty visit marks
+                report["visit_marks"] = []
+                return report
+            
+        except DatabaseServiceError:
+            raise
+        except Exception as e:
+            logger.error(f"Error in create report: {type(e).__name__}: {str(e)}", exc_info=True)
+            self._handle_error("create report", e)
+    
+    def get_by_patient(
+        self,
+        patient_id: str,
+        user_id: str,
+        year_month: Optional[str] = None,
+    ) -> list[Dict[str, Any]]:
+        """Fetch all reports for a specific patient."""
+        try:
+            logger.info(f"Fetching reports for patient {patient_id}, user {user_id}, year_month={year_month}")
+            
+            query = (
+                self.client.table("reports")
+                .select("*")
+                .eq("patient_id", patient_id)
+                .eq("user_id", user_id)
+            )
+            
+            if year_month:
+                query = query.eq("year_month", year_month)
+            
+            response = (
+                query
+                .order("year_month", desc=True)
+                .execute()
+            )
+            
+            if not response.data:
+                logger.info(f"No reports found for patient {patient_id}")
+                return []
+            
+            # Fetch visit marks for each report
+            reports = []
+            for report in response.data:
+                report_id = report["id"]
+                
+                marks_response = (
+                    self.client.table("report_visit_marks")
+                    .select("*")
+                    .eq("report_id", report_id)
+                    .eq("user_id", user_id)
+                    .order("visit_date")
+                    .execute()
+                )
+                report["visit_marks"] = marks_response.data if marks_response.data else []
+                
+                reports.append(report)
+            
+            logger.info(f"Successfully fetched {len(reports)} reports for patient {patient_id}")
+            return reports
+            
+        except Exception as e:
+            self._handle_error("fetch reports", e)
+    
+    def get_by_id(self, report_id: str, user_id: str) -> Dict[str, Any]:
+        """Fetch a single report by ID with visit marks."""
+        try:
+            logger.info(f"Fetching report {report_id} for user {user_id}")
+            
+            response = (
+                self.client.table("reports")
+                .select("*")
+                .eq("id", report_id)
+                .eq("user_id", user_id)
+                .single()
+                .execute()
+            )
+            
+            if not response.data:
+                raise DatabaseServiceError(f"Report {report_id} not found")
+            
+            report = response.data
+            
+            # Fetch visit marks
+            try:
+                marks_response = (
+                    self.client.table("report_visit_marks")
+                    .select("*")
+                    .eq("report_id", report_id)
+                    .eq("user_id", user_id)
+                    .order("visit_date")
+                    .execute()
+                )
+                report["visit_marks"] = marks_response.data if marks_response.data else []
+            except Exception as e:
+                logger.warning(f"Failed to fetch visit marks for report {report_id}: {e}. Returning report without marks.")
+                report["visit_marks"] = []
+            
+            logger.info(f"Successfully fetched report {report_id}")
+            return report
+            
+        except Exception as e:
+            self._handle_error("fetch report", e)
+    
+    def update(
+        self,
+        report_id: str,
+        user_id: str,
+        disease_progress_text: Optional[str] = None,
+        nursing_rehab_text: Optional[str] = None,
+        family_situation_text: Optional[str] = None,
+        procedure_text: Optional[str] = None,
+        monitoring_text: Optional[str] = None,
+        gaf_score: Optional[int] = None,
+        gaf_date: Optional[str] = None,
+        profession_text: Optional[str] = None,
+        report_date: Optional[str] = None,
+        status: Optional[str] = None,
+        visit_marks: Optional[list[Dict[str, Any]]] = None,
+    ) -> Dict[str, Any]:
+        """Update a report and optionally upsert visit marks."""
+        try:
+            # Verify report exists and belongs to user
+            self.get_by_id(report_id, user_id)
+            
+            # Build update data
+            update_data = {}
+            optional_fields = {
+                "disease_progress_text": disease_progress_text,
+                "nursing_rehab_text": nursing_rehab_text,
+                "family_situation_text": family_situation_text,
+                "procedure_text": procedure_text,
+                "monitoring_text": monitoring_text,
+                "gaf_score": gaf_score,
+                "gaf_date": gaf_date,
+                "profession_text": profession_text,
+                "report_date": report_date,
+                "status": status,
+            }
+            
+            for field, value in optional_fields.items():
+                if value is not None:
+                    if isinstance(value, str):
+                        update_data[field] = value.strip() if value else None
+                    else:
+                        update_data[field] = value
+            
+            # Validate date fields
+            if "gaf_date" in update_data and update_data["gaf_date"]:
+                try:
+                    from datetime import datetime
+                    datetime.strptime(update_data["gaf_date"], "%Y-%m-%d")
+                except ValueError as e:
+                    raise DatabaseServiceError(f"Invalid gaf_date format '{update_data['gaf_date']}'. Expected YYYY-MM-DD.") from e
+            
+            if "report_date" in update_data and update_data["report_date"]:
+                try:
+                    from datetime import datetime
+                    datetime.strptime(update_data["report_date"], "%Y-%m-%d")
+                except ValueError as e:
+                    raise DatabaseServiceError(f"Invalid report_date format '{update_data['report_date']}'. Expected YYYY-MM-DD.") from e
+            
+            # Validate status
+            if "status" in update_data and update_data["status"]:
+                if update_data["status"] not in ["DRAFT", "FINAL"]:
+                    raise DatabaseServiceError(f"Invalid status '{update_data['status']}'. Must be DRAFT or FINAL.")
+            
+            if update_data:
+                self.client.table("reports").update(update_data).eq("id", report_id).eq("user_id", user_id).execute()
+            
+            # Upsert visit marks if provided
+            if visit_marks is not None:
+                # Delete existing marks for dates being updated
+                dates_to_update = {mark.get("visit_date") for mark in visit_marks if mark.get("visit_date")}
+                
+                if dates_to_update:
+                    # Delete existing marks for these dates
+                    for date in dates_to_update:
+                        self.client.table("report_visit_marks").delete().eq("report_id", report_id).eq("visit_date", date).eq("user_id", user_id).execute()
+                    
+                    # Insert new marks
+                    marks_data = []
+                    for mark in visit_marks:
+                        visit_date = mark.get("visit_date")
+                        mark_type = mark.get("mark")
+                        
+                        if not visit_date or not mark_type:
+                            continue
+                        
+                        if mark_type not in ["CIRCLE", "TRIANGLE", "DOUBLE_CIRCLE", "SQUARE", "CHECK"]:
+                            logger.warning(f"Invalid mark type '{mark_type}', skipping")
+                            continue
+                        
+                        marks_data.append({
+                            "user_id": user_id,
+                            "report_id": report_id,
+                            "visit_date": visit_date,
+                            "mark": mark_type,
+                        })
+                    
+                    if marks_data:
+                        self.client.table("report_visit_marks").insert(marks_data).execute()
+            
+            logger.info(f"Successfully updated report {report_id}")
+            
+            # Return updated report
+            return self.get_by_id(report_id, user_id)
+            
+        except DatabaseServiceError:
+            raise
+        except Exception as e:
+            self._handle_error("update report", e)
+    
+    def delete(self, report_id: str, user_id: str) -> None:
+        """Delete a report record (visit marks are CASCADE deleted)."""
+        try:
+            logger.info(f"Deleting report {report_id} for user {user_id}")
+            
+            # Verify report exists and belongs to user
+            self.get_by_id(report_id, user_id)
+            
+            # Delete report (CASCADE will handle visit marks)
+            response = (
+                self.client.table("reports")
+                .delete()
+                .eq("id", report_id)
+                .eq("user_id", user_id)
+                .execute()
+            )
+            
+            logger.info(f"Successfully deleted report {report_id}")
+            
+        except DatabaseServiceError:
+            raise
+        except Exception as e:
+            self._handle_error("delete report", e)
+
+
+# ============================================================================
 # Service Instances (Singleton pattern)
 # ============================================================================
 
@@ -1412,6 +1845,7 @@ _patient_service: Optional[PatientService] = None
 _care_plan_service: Optional[CarePlanService] = None
 _soap_record_service: Optional[SOAPRecordService] = None
 _plan_service: Optional[PlanService] = None
+_report_service: Optional[ReportService] = None
 
 
 def _get_patient_service() -> PatientService:
@@ -1444,6 +1878,14 @@ def _get_plan_service() -> PlanService:
     if _plan_service is None:
         _plan_service = PlanService()
     return _plan_service
+
+
+def _get_report_service() -> ReportService:
+    """Get singleton ReportService instance."""
+    global _report_service
+    if _report_service is None:
+        _report_service = ReportService()
+    return _report_service
 
 
 # ============================================================================
@@ -1553,3 +1995,29 @@ def create_plan_hospitalization(*args, **kwargs) -> Dict[str, Any]:
 def get_soap_records_for_plan(*args, **kwargs) -> list[Dict[str, Any]]:
     """Fetch SOAP records for a plan's patient within the plan's date range."""
     return _get_plan_service().get_soap_records_for_plan(*args, **kwargs)
+
+
+# Report Operations
+def create_report(*args, **kwargs) -> Dict[str, Any]:
+    """Create a new report with auto-generated visit marks."""
+    return _get_report_service().create(*args, **kwargs)
+
+
+def get_reports_by_patient(*args, **kwargs) -> list[Dict[str, Any]]:
+    """Fetch all reports for a specific patient."""
+    return _get_report_service().get_by_patient(*args, **kwargs)
+
+
+def get_report_by_id(*args, **kwargs) -> Dict[str, Any]:
+    """Fetch a single report by ID with visit marks."""
+    return _get_report_service().get_by_id(*args, **kwargs)
+
+
+def update_report(*args, **kwargs) -> Dict[str, Any]:
+    """Update a report and optionally upsert visit marks."""
+    return _get_report_service().update(*args, **kwargs)
+
+
+def delete_report(*args, **kwargs) -> None:
+    """Delete a report record."""
+    return _get_report_service().delete(*args, **kwargs)

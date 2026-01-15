@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import PropTypes from 'prop-types';
 import { fetchPatientPlans, deletePlan } from '@/lib/planApi';
@@ -28,8 +28,12 @@ export default function PatientPlansModal({ patientId, patientName, isOpen, onCl
   const [error, setError] = useState(null);
   const [confirmDialog, setConfirmDialog] = useState(null);
   const [deletingPlanId, setDeletingPlanId] = useState(null);
+  const isFetchingRef = useRef(false);
 
-  const fetchPlans = async () => {
+  const fetchPlans = useCallback(async () => {
+    if (!patientId || isFetchingRef.current) return;
+    
+    isFetchingRef.current = true;
     try {
       setLoading(true);
       setError(null);
@@ -41,15 +45,15 @@ export default function PatientPlansModal({ patientId, patientName, isOpen, onCl
       setError(err instanceof Error ? err.message : '計画書の取得に失敗しました');
     } finally {
       setLoading(false);
+      isFetchingRef.current = false;
     }
-  };
+  }, [patientId]);
 
   useEffect(() => {
     if (isOpen && patientId) {
       fetchPlans();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen, patientId]);
+  }, [isOpen, patientId, fetchPlans]);
 
   const handleDelete = (plan) => {
     setConfirmDialog({

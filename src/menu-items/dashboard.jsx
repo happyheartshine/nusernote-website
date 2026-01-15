@@ -34,11 +34,11 @@ const dashboard = {
       url: '/plans'
     },
     {
-      id: 'ai',
+      id: 'visit-report',
       title: '報告書',
       type: 'item',
       icon: 'ph ph-user-circle-plus',
-      url: '/ai?tab=records'
+      url: '/reports'
     },
     {
       id: 'calendar',

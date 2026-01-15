@@ -1,0 +1,320 @@
+/**
+ * PDF Styles for Japanese Medical Documents - 精神科訪問看護報告書
+ * 
+ * This CSS file is specifically designed for WeasyPrint PDF generation
+ * with proper Japanese font embedding and exact form layout matching.
+ * 
+ * IMPORTANT: Font path is dynamically injected by Python code.
+ * The @font-face rule below uses a placeholder that will be replaced
+ * with the actual absolute font path at runtime.
+ */
+
+/* ============================================
+   FONT EMBEDDING - CRITICAL FOR JAPANESE TEXT
+   ============================================ */
+
+/**
+ * IPAexGothic Font - Primary Japanese Font
+ * 
+ * Font path will be dynamically injected by Python code.
+ * This ensures proper font embedding regardless of OS (Windows/Linux/Mac).
+ */
+@font-face {
+    font-family: 'IPAexGothic';
+    src: url('file:///app/fonts/IPAexGothic.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
+
+/* ============================================
+   PAGE SETUP - A4 SIZE
+   ============================================ */
+
+@page {
+    size: A4;
+    margin: 10mm 15mm;
+}
+
+/* ============================================
+   BASE STYLES
+   ============================================ */
+
+body {
+    font-family: 'IPAexGothic', 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', 'Meiryo', 'MS Gothic', sans-serif;
+    font-size: 8pt;
+    line-height: 1.5;
+    color: #000;
+    margin: 0;
+    padding: 0;
+}
+
+/* ============================================
+   TITLE SECTION
+   ============================================ */
+
+.title-section {
+    text-align: center;
+    margin-bottom: 4mm;
+    padding-bottom: 2mm;
+}
+
+.title-section h1 {
+    font-size: 16pt;
+    font-weight: bold;
+    margin: 0;
+    padding: 0;
+    letter-spacing: 0.5pt;
+}
+
+/* ============================================
+   MAIN REPORT FORM TABLE
+   ============================================ */
+
+.report-form-table {
+    width: 100%;
+    border-collapse: collapse;
+    border: 1.5pt solid #000;
+    margin-bottom: 0;
+    page-break-inside: avoid;
+    table-layout: fixed;
+}
+
+.report-form-table td {
+    border: 1pt solid #000;
+    padding: 3pt 4pt;
+    vertical-align: middle;
+    font-size: 8pt;
+    line-height: 1.4;
+}
+
+/* ============================================
+   PATIENT INFORMATION CELLS
+   ============================================ */
+
+.report-form-table tr:nth-child(6) .calendar-container,
+.report-form-table tr:nth-child(7) .calendar-container {
+    min-height: 20mm;
+}
+
+.report-form-table .label-cell {
+    background-color: #f5f5f5;
+    font-weight: normal;
+    text-align: left;
+    padding-left: 6pt;
+}
+
+.report-form-table .value-cell {
+    text-align: left;
+    padding-left: 6pt;
+}
+
+/* .value-cell.wide - Wide cells for patient name, address, etc. - no additional styles needed */
+
+.report-form-table .label-cell.small {
+    text-align: center;
+    background-color: #f5f5f5;
+}
+
+.report-form-table .value-cell.small {
+    text-align: center;
+}
+
+/* ============================================
+   VISIT CALENDAR SECTION
+   ============================================ */
+
+.visit-date-label {
+    background-color: #f5f5f5;
+    font-weight: normal;
+    text-align: center;
+    writing-mode: vertical-rl;
+    text-orientation: upright;
+    font-size: 8pt;
+    padding: 4pt;
+}
+
+.calendar-container {
+    vertical-align: top;
+    padding: 2pt;
+}
+
+.calendar-month {
+    width: 100%;
+}
+
+.calendar-header {
+    text-align: center;
+    font-weight: bold;
+    font-size: 9pt;
+    padding: 2pt 0;
+    margin-bottom: 1pt;
+}
+
+.calendar-grid {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 6pt;
+}
+
+.calendar-grid td {
+    border: 0.5pt solid #000;
+    padding: 1pt;
+    text-align: center;
+    vertical-align: middle;
+    height: 8mm;
+}
+
+.calendar-weekdays {
+    background-color: #f0f0f0;
+    font-weight: bold;
+}
+
+.calendar-weekdays td {
+    font-size: 6pt;
+    padding: 1pt;
+}
+
+.calendar-day {
+    position: relative;
+}
+
+.day-number {
+    display: block;
+    font-size: 7pt;
+}
+
+.day-marks {
+    display: block;
+    font-size: 8pt;
+    line-height: 1;
+    margin-top: 1pt;
+}
+
+.legend-column {
+    background-color: #f9f9f9;
+    padding: 4pt;
+    vertical-align: top;
+    font-size: 6.5pt;
+}
+
+.legend-content {
+    font-size: 6.5pt;
+    line-height: 1.6;
+}
+
+.legend-item {
+    margin-bottom: 2pt;
+    padding-left: 2pt;
+}
+
+/* ============================================
+   NARRATIVE SECTIONS
+   ============================================ */
+
+.narrative-label {
+    background-color: #f5f5f5;
+    font-weight: normal;
+    text-align: left;
+    padding-left: 6pt;
+    vertical-align: middle;
+    width: 16.67%; /* 2 columns out of 12 */
+}
+
+.narrative-content {
+    padding-left: 6pt;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    vertical-align: top;
+    width: 83.33%; /* 10 columns out of 12 */
+}
+
+.procedure-label {
+    font-size: 7pt;
+    color: #333;
+    display: block;
+    margin: 0;
+    padding: 0;
+    line-height: 1.2;
+}
+
+.procedure-content {
+    display: block;
+    margin: 0;
+    padding: 0;
+    line-height: 1.2;
+}
+
+.profession-text {
+    display: block;
+    margin: 0;
+    padding: 0;
+    font-size: 7.5pt;
+    line-height: 1.2;
+}
+
+.monitoring-content {
+    display: block;
+    margin: 0;
+    padding: 0;
+    line-height: 1.2;
+}
+
+/* ============================================
+   FOOTER SECTION
+   ============================================ */
+
+.footer-statement-cell {
+    padding: 3pt 4pt;
+    border: 1pt solid #000;
+}
+
+.footer-statement {
+    font-size: 8pt;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.statement-text {
+    text-align: left;
+}
+
+.report-date {
+    text-align: right;
+    font-weight: normal;
+}
+
+.signature-label {
+    background-color: #f5f5f5;
+    text-align: left;
+    padding-left: 6pt;
+    width: 16.67%; /* 2 columns out of 12 */
+}
+
+.signature-value {
+    text-align: left;
+    padding-left: 6pt;
+    width: 66.67%; /* 8 columns out of 12 */
+}
+
+.signature-seal {
+    text-align: center;
+    width: 16.67%; /* 2 columns out of 12 */
+    font-size: 7pt;
+}
+
+/* ============================================
+   PRINT OPTIMIZATIONS
+   ============================================ */
+
+@media print {
+    body {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+    
+    .title-section,
+    .report-form-table {
+        page-break-inside: avoid;
+    }
+}

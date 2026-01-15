@@ -443,3 +443,84 @@ class PlansListResponse(BaseModel):
 
     plans: list[PlanResponse] = Field(..., description="List of plans")
 
+
+# ============================================================================
+# Report (精神科訪問看護報告書) Models
+# ============================================================================
+
+class ReportVisitMarkCreate(BaseModel):
+    """Request body for creating/updating a visit mark."""
+
+    visit_date: str = Field(..., description="Visit date (YYYY-MM-DD)")
+    mark: str = Field(..., description="Mark type: CIRCLE, TRIANGLE, DOUBLE_CIRCLE, SQUARE, CHECK")
+
+
+class ReportCreateRequest(BaseModel):
+    """Request body for creating a report."""
+
+    year_month: str | None = Field(None, description="Year-month in YYYY-MM format (alternative to period_start/period_end)")
+    period_start: str | None = Field(None, description="Period start date (YYYY-MM-DD)")
+    period_end: str | None = Field(None, description="Period end date (YYYY-MM-DD)")
+
+
+class ReportUpdateRequest(BaseModel):
+    """Request body for updating a report."""
+
+    disease_progress_text: str | None = Field(None, description="病状の経過")
+    nursing_rehab_text: str | None = Field(None, description="看護・リハビリテーションの内容")
+    family_situation_text: str | None = Field(None, description="家庭状況")
+    procedure_text: str | None = Field(None, description="処置 / 衛生材料（頻度・種類・サイズ）等及び必要量")
+    monitoring_text: str | None = Field(None, description="特記すべき事項及びモニタリング")
+    gaf_score: int | None = Field(None, description="GAF score")
+    gaf_date: str | None = Field(None, description="GAF date (YYYY-MM-DD)")
+    profession_text: str | None = Field(None, description="訪問した職種")
+    report_date: str | None = Field(None, description="Report date (YYYY-MM-DD)")
+    status: str | None = Field(None, description="Status: DRAFT or FINAL")
+    visit_marks: list[ReportVisitMarkCreate] | None = Field(None, description="Visit marks to upsert")
+
+
+class ReportRegenerateRequest(BaseModel):
+    """Request body for regenerating report marks."""
+
+    force: bool = Field(default=False, description="Force regenerate even if fields are already edited")
+
+
+class ReportVisitMarkResponse(BaseModel):
+    """Response model for a visit mark."""
+
+    id: str = Field(..., description="Visit mark ID")
+    report_id: str = Field(..., description="Report ID")
+    visit_date: str = Field(..., description="Visit date (YYYY-MM-DD)")
+    mark: str = Field(..., description="Mark type")
+    created_at: str = Field(..., description="Created at")
+    updated_at: str = Field(..., description="Updated at")
+
+
+class ReportResponse(BaseModel):
+    """Response model for a report."""
+
+    id: str = Field(..., description="Report ID")
+    patient_id: str = Field(..., description="Patient ID")
+    year_month: str = Field(..., description="Year-month (YYYY-MM)")
+    period_start: str = Field(..., description="Period start date")
+    period_end: str = Field(..., description="Period end date")
+    disease_progress_text: str | None = Field(None, description="病状の経過")
+    nursing_rehab_text: str | None = Field(None, description="看護・リハビリテーションの内容")
+    family_situation_text: str | None = Field(None, description="家庭状況")
+    procedure_text: str | None = Field(None, description="処置 / 衛生材料（頻度・種類・サイズ）等及び必要量")
+    monitoring_text: str | None = Field(None, description="特記すべき事項及びモニタリング")
+    gaf_score: int | None = Field(None, description="GAF score")
+    gaf_date: str | None = Field(None, description="GAF date")
+    profession_text: str = Field(..., description="訪問した職種")
+    report_date: str = Field(..., description="Report date")
+    status: str = Field(..., description="Status: DRAFT or FINAL")
+    created_at: str = Field(..., description="Created at")
+    updated_at: str = Field(..., description="Updated at")
+    visit_marks: list[ReportVisitMarkResponse] = Field(default_factory=list, description="Visit marks")
+
+
+class ReportsListResponse(BaseModel):
+    """Response model for list of reports."""
+
+    reports: list[ReportResponse] = Field(..., description="List of reports")
+
