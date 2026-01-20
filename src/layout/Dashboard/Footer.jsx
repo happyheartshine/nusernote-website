@@ -1,6 +1,3 @@
-// next
-import Link from 'next/link';
-
 // ==============================|| FOOTER ||============================== //
 
 export default function Footer() {
