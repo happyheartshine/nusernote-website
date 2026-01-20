@@ -85,10 +85,23 @@ def get_current_user(
         token_payload: Decoded JWT payload from verify_supabase_token.
         
     Returns:
-        User information dictionary.
+        User information dictionary with required user_id.
+        
+    Raises:
+        HTTPException: If user_id is missing from token (401 Unauthorized).
     """
+    user_id = token_payload.get("sub")
+    
+    # Validate that user_id is present and not empty
+    if not user_id or not isinstance(user_id, str) or not user_id.strip():
+        logger.error(f"user_id is required but missing or invalid in token. Token payload keys: {list(token_payload.keys())}")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="認証トークンにユーザーIDが含まれていません。再度ログインしてください。",
+        )
+    
     return {
-        "user_id": token_payload.get("sub"),
+        "user_id": user_id.strip(),
         "email": token_payload.get("email"),
         "aud": token_payload.get("aud"),
     }

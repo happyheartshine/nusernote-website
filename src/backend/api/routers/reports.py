@@ -172,10 +172,19 @@ async def create_report_endpoint(
     
     Requires authentication via Supabase JWT token.
     
+    AUTO-GENERATED: id, user_id, patient_id, year_month, period_start, period_end,
+                   status (default: DRAFT), profession_text (default), report_date (default), timestamps
+    AUTO-GENERATED VISIT MARKS: CIRCLE (○) for 1 visit, DOUBLE_CIRCLE (◎) for 2+ visits,
+                                CHECK (✔︎) for visits < 30 minutes (from SOAP records)
+    AUTO-PREFILLED (can override): disease_progress_text (from last 10 SOAP records)
+    MANUAL ENTRY REQUIRED: year_month OR (period_start + period_end)
+    
     On create:
     - Creates report row with empty text fields
     - Auto-generates report_visit_marks from soap_records for that month (○/◎ and ✔︎)
     - Optionally prefills disease_progress_text using last N soap_records
+    
+    Note: TRIANGLE (△) and SQUARE (□) marks are manual only, not auto-generated.
     
     Returns the created report with visit marks.
     """

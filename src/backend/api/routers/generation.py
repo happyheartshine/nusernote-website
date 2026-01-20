@@ -114,16 +114,20 @@ async def generate_note(
         parsed_data = parse_soap_response(output)
         # Save to database after successful generation
         try:
+            # user_id is already validated in get_current_user dependency, so it's guaranteed to be present
+            # Handle visit_date - use empty string if not provided, save() will default to today
+            visit_date = request.visitDate.strip() if request.visitDate else ""
+            
             save_soap_record(
                 user_id=current_user["user_id"],
                 patient_id=patient_id,
                 patient_name=patient_name if not patient_id else None,  # Only include for backward compatibility
                 diagnosis=diagnosis if not patient_id else None,  # Only include for backward compatibility
-                visit_date=request.visitDate.strip(),
-                start_time=request.startTime.strip(),
-                end_time=request.endTime.strip(),
+                visit_date=visit_date,
+                start_time=request.startTime.strip() if request.startTime else "",
+                end_time=request.endTime.strip() if request.endTime else "",
                 nurses=request.nurses,
-                chief_complaint=request.chiefComplaint.strip(),
+                chief_complaint=request.chiefComplaint.strip() if request.chiefComplaint else "",
                 s_text=request.sText,
                 o_text=request.oText,
                 soap_output=parsed_data["soap"],

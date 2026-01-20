@@ -532,8 +532,19 @@ class SOAPRecordService(BaseDatabaseService):
     ) -> Dict[str, Any]:
         """Save SOAP record to Supabase database."""
         try:
+            from datetime import date
+            
+            # Validate user_id is required
+            if not user_id or not isinstance(user_id, str) or not user_id.strip():
+                raise DatabaseServiceError("user_id is required and cannot be empty")
+            
+            # Default visit_date to today if not provided
+            if not visit_date or not visit_date.strip():
+                visit_date = date.today().isoformat()
+                logger.info(f"visit_date not provided, defaulting to today: {visit_date}")
+            
             record_data = {
-                "user_id": user_id,
+                "user_id": user_id.strip(),
                 "visit_date": visit_date,
                 "start_time": start_time,
                 "end_time": end_time,

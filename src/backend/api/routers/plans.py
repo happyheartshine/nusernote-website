@@ -201,9 +201,16 @@ async def create_plan_endpoint(
     
     Requires authentication via Supabase JWT token.
     
+    AUTO-GENERATED: id, user_id, patient_id, title (default), status (default), timestamps
+    AUTO-PREFILLED (can override): patient_family_wish (from patient.individual_notes),
+                                   long_term_goal, short_term_goal, nursing_policy (from latest SOAP plan_output)
+    AUTO-CREATED: plan_items (default 5 items), plan_evaluations (2 slots at +3 and +6 months)
+    MANUAL ENTRY REQUIRED: start_date, end_date
+    
     On create:
     - Prefills patient-family wish from patient's individual_notes if empty
-    - Creates default plan_items (5 rows with keys)
+    - Prefills goals/policy from latest SOAP record's plan_output if empty
+    - Creates default plan_items (5 rows with keys) OR populates from SOAP plan_output
     - Creates 2 plan_evaluations slots: start_date+3 months, start_date+6 months
     
     Returns the created plan with items and evaluations.

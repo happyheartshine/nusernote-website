@@ -143,6 +143,12 @@ export default function SOAPTab() {
   };
 
   const handleGenerate = async () => {
+    // Validate patient selection first
+    if (!selectedPatientId || !selectedPatientId.trim()) {
+      setError('利用者を選択してください');
+      return;
+    }
+
     if (!canSubmit) {
       setError('S（主観）またはO（客観）のいずれかを入力してください');
       return;
@@ -348,12 +354,15 @@ export default function SOAPTab() {
           <div className="space-y-4">
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <div>
-                <label className="mb-2 block text-sm font-medium">利用者名</label>
+                <label className="mb-2 block text-sm font-medium">
+                  利用者名 <span className="text-red-500">*</span>
+                </label>
                 <select
                   value={selectedPatientId}
                   onChange={handlePatientChange}
                   className="form-select"
                   disabled={loading}
+                  required
                 >
                   <option value="">選択してください</option>
                   {patients.map((patient) => (
