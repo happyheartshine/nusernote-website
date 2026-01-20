@@ -4,10 +4,14 @@ import { useState, useEffect, useCallback } from 'react';
 import { useAuthProfile } from '@/hooks/useAuthProfile';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { supabase } from '@/lib/supabase';
-import PDFDownloadButton from '@/components/ai/PDFDownloadButton';
-import PDFPreviewButton from '@/components/ai/PDFPreviewButton';
 import PatientPlansModal from '@/components/plans/PatientPlansModal';
 import PatientReportsModal from '@/components/reports/PatientReportsModal';
+import Stepper from '@/components/Stepper';
+import StepperNavigation from '@/components/StepperNavigation';
+import PatientCard from '@/components/PatientCard';
+import CollapsibleSearchBar from '@/components/CollapsibleSearchBar';
+import FloatingActionButton from '@/components/FloatingActionButton';
+import PDFPreviewModal from '@/components/PDFPreviewModal';
 
 // ==============================|| PATIENTS PAGE ||============================== //
 
@@ -24,8 +28,10 @@ export default function PatientsPage() {
   const [confirmDialog, setConfirmDialog] = useState(null);
   const [editingRecord, setEditingRecord] = useState(null);
   const [showForm, setShowForm] = useState(false);
+  const [currentStep, setCurrentStep] = useState(0);
   const [pdfPreviewUrl, setPdfPreviewUrl] = useState(null);
   const [previewPatientId, setPreviewPatientId] = useState(null);
+  const [showPdfModal, setShowPdfModal] = useState(false);
   const [plansModalPatient, setPlansModalPatient] = useState(null);
   const [reportsModalPatient, setReportsModalPatient] = useState(null);
 
@@ -192,6 +198,7 @@ export default function PatientsPage() {
 
   const handleCreate = () => {
     setEditingRecord(null);
+    setCurrentStep(0);
     setFormData({
       patient_name: '',
       gender: '',
@@ -232,6 +239,7 @@ export default function PatientsPage() {
 
   const handleEdit = (record) => {
     setEditingRecord(record);
+    setCurrentStep(0);
     setFormData({
       patient_name: record.patient_name || record.name || '',
       gender: record.gender || '',
@@ -274,15 +282,62 @@ export default function PatientsPage() {
     setProcessingId(null);
     setShowForm(false);
     setEditingRecord(null);
+    setCurrentStep(0);
+  };
+
+  // Stepper configuration
+  const steps = [
+    { label: '患者情報', shortLabel: '患者' },
+    { label: 'キーパーソン', shortLabel: 'キー' },
+    { label: '初回訪問', shortLabel: '訪問' },
+    { label: '医療情報', shortLabel: '医療' },
+    { label: '日常生活', shortLabel: '生活' },
+    { label: '主治医', shortLabel: '医師' },
+    { label: 'その他', shortLabel: 'その他' },
+  ];
+
+  // Step validation
+  const validateStep = (step) => {
+    switch (step) {
+      case 0: // Patient Information
+        return !!formData.patient_name?.trim();
+      case 1: // Key Person (optional)
+        return true;
+      case 2: // Initial Visit (optional)
+        return true;
+      case 3: // Medical Information (optional)
+        return true;
+      case 4: // Daily Life (optional)
+        return true;
+      case 5: // Doctor Information (optional)
+        return true;
+      case 6: // Additional Information (optional)
+        return true;
+      default:
+        return true;
+    }
+  };
+
+  const handleNextStep = () => {
+    if (validateStep(currentStep) && currentStep < steps.length - 1) {
+      setCurrentStep(currentStep + 1);
+    }
+  };
+
+  const handlePreviousStep = () => {
+    if (currentStep > 0) {
+      setCurrentStep(currentStep - 1);
+    }
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
+    if (e) e.preventDefault();
     if (!user?.id) return;
 
     // Validate required fields
     if (!formData.patient_name || !formData.patient_name.trim()) {
       showToast('利用者名は必須です', 'error');
+      setCurrentStep(0); // Go back to first step if validation fails
       return;
     }
 
@@ -389,7 +444,7 @@ export default function PatientsPage() {
       }
 
       handleCancel();
-      fetchPatients();
+      await fetchPatients();
     } catch (error) {
       // Log full error details for debugging
       console.error('Save patient error:', error);
@@ -622,572 +677,566 @@ export default function PatientsPage() {
           )}
 
           {showForm ? (
-            <div className="mb-6 rounded-lg bg-white p-6 shadow">
-              <h2 className="mb-4 text-xl font-semibold text-gray-900">
-                {editingRecord ? '患者情報の編集' : '新規患者情報の作成'}
-              </h2>
-              <form onSubmit={handleSubmit}>
-                <div className="space-y-6">
-                  {/* Patient Information */}
-                  <div className="rounded-lg border border-gray-200 p-4">
-                    <h3 className="mb-3 font-semibold text-gray-700">患者情報</h3>
-                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                      <div>
-                        <label htmlFor="patient_name" className="mb-2 block text-sm font-medium text-gray-700">
-                          患者名 <span className="text-red-500">*</span>
-                        </label>
-                        <input
-                          id="patient_name"
-                          type="text"
-                          name="patient_name"
-                          value={formData.patient_name}
-                          onChange={handleInputChange}
-                          className="form-control"
-                          required
-                        />
-                      </div>
-                      <div>
-                        <label htmlFor="gender" className="mb-2 block text-sm font-medium text-gray-700">
-                          性別
-                        </label>
-                        <select
-                          id="gender"
-                          name="gender"
-                          value={formData.gender}
-                          onChange={handleInputChange}
-                          className="form-select"
-                        >
-                          <option value="">選択してください</option>
-                          <option value="male">男性</option>
-                          <option value="female">女性</option>
-                        </select>
-                      </div>
-                      <div>
-                        <label htmlFor="birth_date" className="mb-2 block text-sm font-medium text-gray-700">
-                          生年月日
-                        </label>
-                        <input
-                          id="birth_date"
-                          type="date"
-                          name="birth_date"
-                          value={formData.birth_date}
-                          onChange={handleInputChange}
-                          className="form-control"
-                        />
-                      </div>
-                      <div>
-                        <label htmlFor="age" className="mb-2 block text-sm font-medium text-gray-700">
-                          年齢
-                        </label>
-                        <input
-                          id="age"
-                          type="number"
-                          name="age"
-                          value={formData.age}
-                          onChange={handleInputChange}
-                          className="form-control"
-                          min="0"
-                          max="150"
-                        />
-                      </div>
-                      <div>
-                        <label htmlFor="patient_contact" className="mb-2 block text-sm font-medium text-gray-700">
-                          連絡先
-                        </label>
-                        <input
-                          id="patient_contact"
-                          type="text"
-                          name="patient_contact"
-                          value={formData.patient_contact}
-                          onChange={handleInputChange}
-                          className="form-control"
-                        />
-                      </div>
-                    </div>
-                    <div className="mt-4">
-                      <label htmlFor="patient_address" className="mb-2 block text-sm font-medium text-gray-700">
-                        住所
-                      </label>
-                      <input
-                        id="patient_address"
-                        type="text"
-                        name="patient_address"
-                        value={formData.patient_address}
-                        onChange={handleInputChange}
-                        className="form-control"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Key Person */}
-                  <div className="rounded-lg border border-gray-200 p-4">
-                    <h3 className="mb-3 font-semibold text-gray-700">キーパーソン情報</h3>
-                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                      <div>
-                        <label htmlFor="key_person_name" className="mb-2 block text-sm font-medium text-gray-700">
-                          氏名
-                        </label>
-                        <input
-                          id="key_person_name"
-                          type="text"
-                          name="key_person_name"
-                          value={formData.key_person_name}
-                          onChange={handleInputChange}
-                          className="form-control"
-                        />
-                      </div>
-                      <div>
-                        <label htmlFor="key_person_relationship" className="mb-2 block text-sm font-medium text-gray-700">
-                          続柄
-                        </label>
-                        <input
-                          id="key_person_relationship"
-                          type="text"
-                          name="key_person_relationship"
-                          value={formData.key_person_relationship}
-                          onChange={handleInputChange}
-                          className="form-control"
-                        />
-                      </div>
-                      <div className="md:col-span-2">
-                        <label htmlFor="key_person_address" className="mb-2 block text-sm font-medium text-gray-700">
-                          住所
-                        </label>
-                        <input
-                          id="key_person_address"
-                          type="text"
-                          name="key_person_address"
-                          value={formData.key_person_address}
-                          onChange={handleInputChange}
-                          className="form-control"
-                        />
-                      </div>
-                      <div>
-                        <label htmlFor="key_person_contact1" className="mb-2 block text-sm font-medium text-gray-700">
-                          連絡先1
-                        </label>
-                        <input
-                          id="key_person_contact1"
-                          type="text"
-                          name="key_person_contact1"
-                          value={formData.key_person_contact1}
-                          onChange={handleInputChange}
-                          className="form-control"
-                        />
-                      </div>
-                      <div>
-                        <label htmlFor="key_person_contact2" className="mb-2 block text-sm font-medium text-gray-700">
-                          連絡先2
-                        </label>
-                        <input
-                          id="key_person_contact2"
-                          type="text"
-                          name="key_person_contact2"
-                          value={formData.key_person_contact2}
-                          onChange={handleInputChange}
-                          className="form-control"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Initial Visit */}
-                  <div className="rounded-lg border border-gray-200 p-4">
-                    <h3 className="mb-3 font-semibold text-gray-700">初回訪問情報</h3>
-                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                      <div>
-                        <label htmlFor="initial_visit_date" className="mb-2 block text-sm font-medium text-gray-700">
-                          初回訪問日
-                        </label>
-                        <input
-                          id="initial_visit_date"
-                          type="date"
-                          name="initial_visit_date"
-                          value={formData.initial_visit_date}
-                          onChange={handleInputChange}
-                          className="form-control"
-                        />
-                      </div>
-                    </div>
-                    <div className="mt-4 grid grid-cols-2 gap-4 md:grid-cols-4">
-                      <div>
-                        <label htmlFor="initial_visit_start_hour" className="mb-2 block text-sm font-medium text-gray-700">
-                          開始時
-                        </label>
-                        <input
-                          id="initial_visit_start_hour"
-                          type="number"
-                          name="initial_visit_start_hour"
-                          value={formData.initial_visit_start_hour}
-                          onChange={handleInputChange}
-                          className="form-control"
-                          min="0"
-                          max="23"
-                        />
-                      </div>
-                      <div>
-                        <label htmlFor="initial_visit_start_minute" className="mb-2 block text-sm font-medium text-gray-700">
-                          開始分
-                        </label>
-                        <input
-                          id="initial_visit_start_minute"
-                          type="number"
-                          name="initial_visit_start_minute"
-                          value={formData.initial_visit_start_minute}
-                          onChange={handleInputChange}
-                          className="form-control"
-                          min="0"
-                          max="59"
-                        />
-                      </div>
-                      <div>
-                        <label htmlFor="initial_visit_end_hour" className="mb-2 block text-sm font-medium text-gray-700">
-                          終了時
-                        </label>
-                        <input
-                          id="initial_visit_end_hour"
-                          type="number"
-                          name="initial_visit_end_hour"
-                          value={formData.initial_visit_end_hour}
-                          onChange={handleInputChange}
-                          className="form-control"
-                          min="0"
-                          max="23"
-                        />
-                      </div>
-                      <div>
-                        <label htmlFor="initial_visit_end_minute" className="mb-2 block text-sm font-medium text-gray-700">
-                          終了分
-                        </label>
-                        <input
-                          id="initial_visit_end_minute"
-                          type="number"
-                          name="initial_visit_end_minute"
-                          value={formData.initial_visit_end_minute}
-                          onChange={handleInputChange}
-                          className="form-control"
-                          min="0"
-                          max="59"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Medical Information */}
-                  <div className="rounded-lg border border-gray-200 p-4">
-                    <h3 className="mb-3 font-semibold text-gray-700">医療情報</h3>
-                    <div className="space-y-4">
-                      <div>
-                        <label htmlFor="main_disease" className="mb-2 block text-sm font-medium text-gray-700">
-                          主たる傷病名
-                        </label>
-                        <input
-                          id="main_disease"
-                          type="text"
-                          name="main_disease"
-                          value={formData.main_disease}
-                          onChange={handleInputChange}
-                          className="form-control"
-                        />
-                      </div>
-                      <div>
-                        <label htmlFor="medical_history" className="mb-2 block text-sm font-medium text-gray-700">
-                          既往歴
-                        </label>
-                        <textarea
-                          id="medical_history"
-                          name="medical_history"
-                          value={formData.medical_history}
-                          onChange={handleInputChange}
-                          rows={3}
-                          className="form-control"
-                        />
-                      </div>
-                      <div>
-                        <label htmlFor="current_illness_history" className="mb-2 block text-sm font-medium text-gray-700">
-                          現病歴
-                        </label>
-                        <textarea
-                          id="current_illness_history"
-                          name="current_illness_history"
-                          value={formData.current_illness_history}
-                          onChange={handleInputChange}
-                          rows={3}
-                          className="form-control"
-                        />
-                      </div>
-                      <div>
-                        <label htmlFor="family_structure" className="mb-2 block text-sm font-medium text-gray-700">
-                          家族構成
-                        </label>
-                        <textarea
-                          id="family_structure"
-                          name="family_structure"
-                          value={formData.family_structure}
-                          onChange={handleInputChange}
-                          rows={2}
-                          className="form-control"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Daily Life Status */}
-                  <div className="rounded-lg border border-gray-200 p-4">
-                    <h3 className="mb-3 font-semibold text-gray-700">日常生活状況</h3>
-                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                      <div>
-                        <label htmlFor="daily_life_meal_nutrition" className="mb-2 block text-sm font-medium text-gray-700">
-                          食事・栄養
-                        </label>
-                        <input
-                          id="daily_life_meal_nutrition"
-                          type="text"
-                          name="daily_life_meal_nutrition"
-                          value={formData.daily_life_meal_nutrition}
-                          onChange={handleInputChange}
-                          className="form-control"
-                        />
-                      </div>
-                      <div>
-                        <label htmlFor="daily_life_hygiene" className="mb-2 block text-sm font-medium text-gray-700">
-                          清潔・整容
-                        </label>
-                        <input
-                          id="daily_life_hygiene"
-                          type="text"
-                          name="daily_life_hygiene"
-                          value={formData.daily_life_hygiene}
-                          onChange={handleInputChange}
-                          className="form-control"
-                        />
-                      </div>
-                      <div>
-                        <label htmlFor="daily_life_medication" className="mb-2 block text-sm font-medium text-gray-700">
-                          服薬
-                        </label>
-                        <input
-                          id="daily_life_medication"
-                          type="text"
-                          name="daily_life_medication"
-                          value={formData.daily_life_medication}
-                          onChange={handleInputChange}
-                          className="form-control"
-                        />
-                      </div>
-                      <div>
-                        <label htmlFor="daily_life_sleep" className="mb-2 block text-sm font-medium text-gray-700">
-                          睡眠
-                        </label>
-                        <input
-                          id="daily_life_sleep"
-                          type="text"
-                          name="daily_life_sleep"
-                          value={formData.daily_life_sleep}
-                          onChange={handleInputChange}
-                          className="form-control"
-                        />
-                      </div>
-                      <div>
-                        <label htmlFor="daily_life_living_environment" className="mb-2 block text-sm font-medium text-gray-700">
-                          生活環境
-                        </label>
-                        <input
-                          id="daily_life_living_environment"
-                          type="text"
-                          name="daily_life_living_environment"
-                          value={formData.daily_life_living_environment}
-                          onChange={handleInputChange}
-                          className="form-control"
-                        />
-                      </div>
-                      <div>
-                        <label htmlFor="daily_life_family_environment" className="mb-2 block text-sm font-medium text-gray-700">
-                          家族環境
-                        </label>
-                        <input
-                          id="daily_life_family_environment"
-                          type="text"
-                          name="daily_life_family_environment"
-                          value={formData.daily_life_family_environment}
-                          onChange={handleInputChange}
-                          className="form-control"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Doctor Information */}
-                  <div className="rounded-lg border border-gray-200 p-4">
-                    <h3 className="mb-3 font-semibold text-gray-700">主治医情報</h3>
-                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                      <div>
-                        <label htmlFor="doctor_name" className="mb-2 block text-sm font-medium text-gray-700">
-                          医師氏名
-                        </label>
-                        <input
-                          id="doctor_name"
-                          type="text"
-                          name="doctor_name"
-                          value={formData.doctor_name}
-                          onChange={handleInputChange}
-                          className="form-control"
-                        />
-                      </div>
-                      <div>
-                        <label htmlFor="hospital_name" className="mb-2 block text-sm font-medium text-gray-700">
-                          医療機関名
-                        </label>
-                        <input
-                          id="hospital_name"
-                          type="text"
-                          name="hospital_name"
-                          value={formData.hospital_name}
-                          onChange={handleInputChange}
-                          className="form-control"
-                        />
-                      </div>
-                      <div>
-                        <label htmlFor="hospital_address" className="mb-2 block text-sm font-medium text-gray-700">
-                          医療機関所在地
-                        </label>
-                        <input
-                          id="hospital_address"
-                          type="text"
-                          name="hospital_address"
-                          value={formData.hospital_address}
-                          onChange={handleInputChange}
-                          className="form-control"
-                        />
-                      </div>
-                      <div>
-                        <label htmlFor="hospital_phone" className="mb-2 block text-sm font-medium text-gray-700">
-                          電話番号
-                        </label>
-                        <input
-                          id="hospital_phone"
-                          type="text"
-                          name="hospital_phone"
-                          value={formData.hospital_phone}
-                          onChange={handleInputChange}
-                          className="form-control"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Additional Information */}
-                  <div className="rounded-lg border border-gray-200 p-4">
-                    <h3 className="mb-3 font-semibold text-gray-700">その他</h3>
-                    <div className="space-y-4">
-                      <div>
-                        <label htmlFor="notes" className="mb-2 block text-sm font-medium text-gray-700">
-                          備考
-                        </label>
-                        <textarea
-                          id="notes"
-                          name="notes"
-                          value={formData.notes}
-                          onChange={handleInputChange}
-                          rows={3}
-                          className="form-control"
-                        />
-                      </div>
-                      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                        <div>
-                          <label htmlFor="recorder_name" className="mb-2 block text-sm font-medium text-gray-700">
-                            記載者
+            <div className="mb-6 rounded-lg bg-white shadow" style={{ minHeight: 'calc(100vh - 200px)' }}>
+              <div className="p-4 border-b border-gray-200">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-xl font-semibold text-gray-900">
+                    {editingRecord ? '患者情報の編集' : '新規患者情報の作成'}
+                  </h2>
+                  <button
+                    onClick={handleCancel}
+                    className="btn btn-sm btn-outline-secondary"
+                    disabled={!!processingId}
+                  >
+                    <i className="ph ph-x me-1"></i>
+                    キャンセル
+                  </button>
+                </div>
+              </div>
+              <form onSubmit={handleSubmit} className="flex flex-col" style={{ height: 'calc(100vh - 280px)' }}>
+                <Stepper steps={steps} currentStep={currentStep}>
+                  <div className="p-4 md:p-6">
+                    {/* Step 0: Patient Information */}
+                    {currentStep === 0 && (
+                      <div className="space-y-4">
+                        <h3 className="text-lg font-semibold text-gray-700 mb-4">患者情報</h3>
+                        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                          <div>
+                            <label htmlFor="patient_name" className="mb-2 block text-sm font-medium text-gray-700">
+                              患者名 <span className="text-red-500">*</span>
+                            </label>
+                            <input
+                              id="patient_name"
+                              type="text"
+                              name="patient_name"
+                              value={formData.patient_name}
+                              onChange={handleInputChange}
+                              className="form-control"
+                              required
+                            />
+                          </div>
+                          <div>
+                            <label htmlFor="gender" className="mb-2 block text-sm font-medium text-gray-700">
+                              性別
+                            </label>
+                            <select
+                              id="gender"
+                              name="gender"
+                              value={formData.gender}
+                              onChange={handleInputChange}
+                              className="form-select"
+                            >
+                              <option value="">選択してください</option>
+                              <option value="male">男性</option>
+                              <option value="female">女性</option>
+                            </select>
+                          </div>
+                          <div>
+                            <label htmlFor="birth_date" className="mb-2 block text-sm font-medium text-gray-700">
+                              生年月日
+                            </label>
+                            <input
+                              id="birth_date"
+                              type="date"
+                              name="birth_date"
+                              value={formData.birth_date}
+                              onChange={handleInputChange}
+                              className="form-control"
+                            />
+                          </div>
+                          <div>
+                            <label htmlFor="age" className="mb-2 block text-sm font-medium text-gray-700">
+                              年齢
+                            </label>
+                            <input
+                              id="age"
+                              type="number"
+                              name="age"
+                              value={formData.age}
+                              onChange={handleInputChange}
+                              className="form-control"
+                              min="0"
+                              max="150"
+                            />
+                          </div>
+                          <div>
+                            <label htmlFor="patient_contact" className="mb-2 block text-sm font-medium text-gray-700">
+                              連絡先
+                            </label>
+                            <input
+                              id="patient_contact"
+                              type="text"
+                              name="patient_contact"
+                              value={formData.patient_contact}
+                              onChange={handleInputChange}
+                              className="form-control"
+                            />
+                          </div>
+                        </div>
+                        <div className="mt-4">
+                          <label htmlFor="patient_address" className="mb-2 block text-sm font-medium text-gray-700">
+                            住所
                           </label>
                           <input
-                            id="recorder_name"
+                            id="patient_address"
                             type="text"
-                            name="recorder_name"
-                            value={formData.recorder_name}
+                            name="patient_address"
+                            value={formData.patient_address}
                             onChange={handleInputChange}
                             className="form-control"
                           />
                         </div>
-                        <div>
-                          <label htmlFor="status" className="mb-2 block text-sm font-medium text-gray-700">
-                            ステータス
-                          </label>
-                          <select
-                            id="status"
-                            name="status"
-                            value={formData.status}
-                            onChange={handleInputChange}
-                            className="form-select"
-                          >
-                            <option value="active">有効</option>
-                            <option value="inactive">無効</option>
-                            <option value="archived">アーカイブ</option>
-                          </select>
+                      </div>
+                    )}
+
+                    {/* Step 1: Key Person */}
+                    {currentStep === 1 && (
+                      <div className="space-y-4">
+                        <h3 className="text-lg font-semibold text-gray-700 mb-4">キーパーソン情報</h3>
+                        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                          <div>
+                            <label htmlFor="key_person_name" className="mb-2 block text-sm font-medium text-gray-700">
+                              氏名
+                            </label>
+                            <input
+                              id="key_person_name"
+                              type="text"
+                              name="key_person_name"
+                              value={formData.key_person_name}
+                              onChange={handleInputChange}
+                              className="form-control"
+                            />
+                          </div>
+                          <div>
+                            <label htmlFor="key_person_relationship" className="mb-2 block text-sm font-medium text-gray-700">
+                              続柄
+                            </label>
+                            <input
+                              id="key_person_relationship"
+                              type="text"
+                              name="key_person_relationship"
+                              value={formData.key_person_relationship}
+                              onChange={handleInputChange}
+                              className="form-control"
+                            />
+                          </div>
+                          <div className="md:col-span-2">
+                            <label htmlFor="key_person_address" className="mb-2 block text-sm font-medium text-gray-700">
+                              住所
+                            </label>
+                            <input
+                              id="key_person_address"
+                              type="text"
+                              name="key_person_address"
+                              value={formData.key_person_address}
+                              onChange={handleInputChange}
+                              className="form-control"
+                            />
+                          </div>
+                          <div>
+                            <label htmlFor="key_person_contact1" className="mb-2 block text-sm font-medium text-gray-700">
+                              連絡先1
+                            </label>
+                            <input
+                              id="key_person_contact1"
+                              type="text"
+                              name="key_person_contact1"
+                              value={formData.key_person_contact1}
+                              onChange={handleInputChange}
+                              className="form-control"
+                            />
+                          </div>
+                          <div>
+                            <label htmlFor="key_person_contact2" className="mb-2 block text-sm font-medium text-gray-700">
+                              連絡先2
+                            </label>
+                            <input
+                              id="key_person_contact2"
+                              type="text"
+                              name="key_person_contact2"
+                              value={formData.key_person_contact2}
+                              onChange={handleInputChange}
+                              className="form-control"
+                            />
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="mt-6 flex justify-end gap-3">
-                  <button type="button" onClick={handleCancel} className="btn btn-secondary" disabled={processingId}>
-                    キャンセル
-                  </button>
-                  <button type="submit" className="btn btn-primary" disabled={!!processingId}>
-                    {processingId ? (
-                      <span key="loading" className="flex items-center">
-                        <span className="me-2 inline-block h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></span>
-                        保存中...
-                      </span>
-                    ) : (
-                      <span key="ready" className="flex items-center">
-                        <i className="ph ph-check me-2"></i>
-                        {editingRecord ? '更新' : '作成'}
-                      </span>
                     )}
-                  </button>
-                </div>
+
+                    {/* Step 2: Initial Visit */}
+                    {currentStep === 2 && (
+                      <div className="space-y-4">
+                        <h3 className="text-lg font-semibold text-gray-700 mb-4">初回訪問情報</h3>
+                        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                          <div>
+                            <label htmlFor="initial_visit_date" className="mb-2 block text-sm font-medium text-gray-700">
+                              初回訪問日
+                            </label>
+                            <input
+                              id="initial_visit_date"
+                              type="date"
+                              name="initial_visit_date"
+                              value={formData.initial_visit_date}
+                              onChange={handleInputChange}
+                              className="form-control"
+                            />
+                          </div>
+                        </div>
+                        <div className="mt-4 grid grid-cols-2 gap-4 md:grid-cols-4">
+                          <div>
+                            <label htmlFor="initial_visit_start_hour" className="mb-2 block text-sm font-medium text-gray-700">
+                              開始時
+                            </label>
+                            <input
+                              id="initial_visit_start_hour"
+                              type="number"
+                              name="initial_visit_start_hour"
+                              value={formData.initial_visit_start_hour}
+                              onChange={handleInputChange}
+                              className="form-control"
+                              min="0"
+                              max="23"
+                            />
+                          </div>
+                          <div>
+                            <label htmlFor="initial_visit_start_minute" className="mb-2 block text-sm font-medium text-gray-700">
+                              開始分
+                            </label>
+                            <input
+                              id="initial_visit_start_minute"
+                              type="number"
+                              name="initial_visit_start_minute"
+                              value={formData.initial_visit_start_minute}
+                              onChange={handleInputChange}
+                              className="form-control"
+                              min="0"
+                              max="59"
+                            />
+                          </div>
+                          <div>
+                            <label htmlFor="initial_visit_end_hour" className="mb-2 block text-sm font-medium text-gray-700">
+                              終了時
+                            </label>
+                            <input
+                              id="initial_visit_end_hour"
+                              type="number"
+                              name="initial_visit_end_hour"
+                              value={formData.initial_visit_end_hour}
+                              onChange={handleInputChange}
+                              className="form-control"
+                              min="0"
+                              max="23"
+                            />
+                          </div>
+                          <div>
+                            <label htmlFor="initial_visit_end_minute" className="mb-2 block text-sm font-medium text-gray-700">
+                              終了分
+                            </label>
+                            <input
+                              id="initial_visit_end_minute"
+                              type="number"
+                              name="initial_visit_end_minute"
+                              value={formData.initial_visit_end_minute}
+                              onChange={handleInputChange}
+                              className="form-control"
+                              min="0"
+                              max="59"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Step 3: Medical Information */}
+                    {currentStep === 3 && (
+                      <div className="space-y-4">
+                        <h3 className="text-lg font-semibold text-gray-700 mb-4">医療情報</h3>
+                        <div className="space-y-4">
+                          <div>
+                            <label htmlFor="main_disease" className="mb-2 block text-sm font-medium text-gray-700">
+                              主たる傷病名
+                            </label>
+                            <input
+                              id="main_disease"
+                              type="text"
+                              name="main_disease"
+                              value={formData.main_disease}
+                              onChange={handleInputChange}
+                              className="form-control"
+                            />
+                          </div>
+                          <div>
+                            <label htmlFor="medical_history" className="mb-2 block text-sm font-medium text-gray-700">
+                              既往歴
+                            </label>
+                            <textarea
+                              id="medical_history"
+                              name="medical_history"
+                              value={formData.medical_history}
+                              onChange={handleInputChange}
+                              rows={3}
+                              className="form-control"
+                            />
+                          </div>
+                          <div>
+                            <label htmlFor="current_illness_history" className="mb-2 block text-sm font-medium text-gray-700">
+                              現病歴
+                            </label>
+                            <textarea
+                              id="current_illness_history"
+                              name="current_illness_history"
+                              value={formData.current_illness_history}
+                              onChange={handleInputChange}
+                              rows={3}
+                              className="form-control"
+                            />
+                          </div>
+                          <div>
+                            <label htmlFor="family_structure" className="mb-2 block text-sm font-medium text-gray-700">
+                              家族構成
+                            </label>
+                            <textarea
+                              id="family_structure"
+                              name="family_structure"
+                              value={formData.family_structure}
+                              onChange={handleInputChange}
+                              rows={2}
+                              className="form-control"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Step 4: Daily Life Status */}
+                    {currentStep === 4 && (
+                      <div className="space-y-4">
+                        <h3 className="text-lg font-semibold text-gray-700 mb-4">日常生活状況</h3>
+                        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                          <div>
+                            <label htmlFor="daily_life_meal_nutrition" className="mb-2 block text-sm font-medium text-gray-700">
+                              食事・栄養
+                            </label>
+                            <input
+                              id="daily_life_meal_nutrition"
+                              type="text"
+                              name="daily_life_meal_nutrition"
+                              value={formData.daily_life_meal_nutrition}
+                              onChange={handleInputChange}
+                              className="form-control"
+                            />
+                          </div>
+                          <div>
+                            <label htmlFor="daily_life_hygiene" className="mb-2 block text-sm font-medium text-gray-700">
+                              清潔・整容
+                            </label>
+                            <input
+                              id="daily_life_hygiene"
+                              type="text"
+                              name="daily_life_hygiene"
+                              value={formData.daily_life_hygiene}
+                              onChange={handleInputChange}
+                              className="form-control"
+                            />
+                          </div>
+                          <div>
+                            <label htmlFor="daily_life_medication" className="mb-2 block text-sm font-medium text-gray-700">
+                              服薬
+                            </label>
+                            <input
+                              id="daily_life_medication"
+                              type="text"
+                              name="daily_life_medication"
+                              value={formData.daily_life_medication}
+                              onChange={handleInputChange}
+                              className="form-control"
+                            />
+                          </div>
+                          <div>
+                            <label htmlFor="daily_life_sleep" className="mb-2 block text-sm font-medium text-gray-700">
+                              睡眠
+                            </label>
+                            <input
+                              id="daily_life_sleep"
+                              type="text"
+                              name="daily_life_sleep"
+                              value={formData.daily_life_sleep}
+                              onChange={handleInputChange}
+                              className="form-control"
+                            />
+                          </div>
+                          <div>
+                            <label htmlFor="daily_life_living_environment" className="mb-2 block text-sm font-medium text-gray-700">
+                              生活環境
+                            </label>
+                            <input
+                              id="daily_life_living_environment"
+                              type="text"
+                              name="daily_life_living_environment"
+                              value={formData.daily_life_living_environment}
+                              onChange={handleInputChange}
+                              className="form-control"
+                            />
+                          </div>
+                          <div>
+                            <label htmlFor="daily_life_family_environment" className="mb-2 block text-sm font-medium text-gray-700">
+                              家族環境
+                            </label>
+                            <input
+                              id="daily_life_family_environment"
+                              type="text"
+                              name="daily_life_family_environment"
+                              value={formData.daily_life_family_environment}
+                              onChange={handleInputChange}
+                              className="form-control"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Step 5: Doctor Information */}
+                    {currentStep === 5 && (
+                      <div className="space-y-4">
+                        <h3 className="text-lg font-semibold text-gray-700 mb-4">主治医情報</h3>
+                        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                          <div>
+                            <label htmlFor="doctor_name" className="mb-2 block text-sm font-medium text-gray-700">
+                              医師氏名
+                            </label>
+                            <input
+                              id="doctor_name"
+                              type="text"
+                              name="doctor_name"
+                              value={formData.doctor_name}
+                              onChange={handleInputChange}
+                              className="form-control"
+                            />
+                          </div>
+                          <div>
+                            <label htmlFor="hospital_name" className="mb-2 block text-sm font-medium text-gray-700">
+                              医療機関名
+                            </label>
+                            <input
+                              id="hospital_name"
+                              type="text"
+                              name="hospital_name"
+                              value={formData.hospital_name}
+                              onChange={handleInputChange}
+                              className="form-control"
+                            />
+                          </div>
+                          <div>
+                            <label htmlFor="hospital_address" className="mb-2 block text-sm font-medium text-gray-700">
+                              医療機関所在地
+                            </label>
+                            <input
+                              id="hospital_address"
+                              type="text"
+                              name="hospital_address"
+                              value={formData.hospital_address}
+                              onChange={handleInputChange}
+                              className="form-control"
+                            />
+                          </div>
+                          <div>
+                            <label htmlFor="hospital_phone" className="mb-2 block text-sm font-medium text-gray-700">
+                              電話番号
+                            </label>
+                            <input
+                              id="hospital_phone"
+                              type="text"
+                              name="hospital_phone"
+                              value={formData.hospital_phone}
+                              onChange={handleInputChange}
+                              className="form-control"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Step 6: Additional Information */}
+                    {currentStep === 6 && (
+                      <div className="space-y-4">
+                        <h3 className="text-lg font-semibold text-gray-700 mb-4">その他</h3>
+                        <div className="space-y-4">
+                          <div>
+                            <label htmlFor="notes" className="mb-2 block text-sm font-medium text-gray-700">
+                              備考
+                            </label>
+                            <textarea
+                              id="notes"
+                              name="notes"
+                              value={formData.notes}
+                              onChange={handleInputChange}
+                              rows={3}
+                              className="form-control"
+                            />
+                          </div>
+                          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                            <div>
+                              <label htmlFor="recorder_name" className="mb-2 block text-sm font-medium text-gray-700">
+                                記載者
+                              </label>
+                              <input
+                                id="recorder_name"
+                                type="text"
+                                name="recorder_name"
+                                value={formData.recorder_name}
+                                onChange={handleInputChange}
+                                className="form-control"
+                              />
+                            </div>
+                            <div>
+                              <label htmlFor="status" className="mb-2 block text-sm font-medium text-gray-700">
+                                ステータス
+                              </label>
+                              <select
+                                id="status"
+                                name="status"
+                                value={formData.status}
+                                onChange={handleInputChange}
+                                className="form-select"
+                              >
+                                <option value="active">有効</option>
+                                <option value="inactive">無効</option>
+                                <option value="archived">アーカイブ</option>
+                              </select>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </Stepper>
+                <StepperNavigation
+                  currentStep={currentStep}
+                  totalSteps={steps.length}
+                  onPrevious={handlePreviousStep}
+                  onNext={handleNextStep}
+                  onSave={handleSubmit}
+                  canGoNext={validateStep(currentStep)}
+                  isSubmitting={!!processingId}
+                  showSave={currentStep === steps.length - 1}
+                />
               </form>
             </div>
           ) : (
-            <div className="mb-6 rounded-lg bg-white p-6 shadow">
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <div>
-                  <label htmlFor="search" className="mb-2 block text-sm font-medium text-gray-700">
-                    検索
-                  </label>
-                  <input
-                    id="search"
-                    type="text"
-                    placeholder="患者名、主疾患、メモで検索"
-                    value={searchQuery}
-                    onChange={(e) => {
-                      setSearchQuery(e.target.value);
-                      setCurrentPage(1); // Reset to first page when search changes
-                    }}
-                    className="form-control w-full"
-                  />
-                </div>
-                <div>
-                  <label htmlFor="status-filter" className="mb-2 block text-sm font-medium text-gray-700">
-                    ステータス
-                  </label>
-                  <select
-                    id="status-filter"
-                    value={statusFilter}
-                    onChange={(e) => {
-                      setStatusFilter(e.target.value);
-                      setCurrentPage(1); // Reset to first page when filter changes
-                    }}
-                    className="form-select w-full"
-                  >
-                    <option value="all">すべて</option>
-                    <option value="active">有効</option>
-                    <option value="inactive">無効</option>
-                    <option value="archived">アーカイブ</option>
-                  </select>
-                </div>
-              </div>
-            </div>
+            <>
+              <CollapsibleSearchBar
+                searchQuery={searchQuery}
+                onSearchChange={(value) => {
+                  setSearchQuery(value);
+                  setCurrentPage(1);
+                }}
+                statusFilter={statusFilter}
+                onStatusFilterChange={(value) => {
+                  setStatusFilter(value);
+                  setCurrentPage(1);
+                }}
+              />
+            </>
           )}
         </div>
 
@@ -1208,157 +1257,138 @@ export default function PatientsPage() {
             </p>
           </div>
         ) : (
-          <div className="overflow-hidden rounded-lg bg-white shadow">
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
-                      患者名
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
-                      主たる傷病名
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
-                      初回訪問日
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
-                      ステータス
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
-                      作成日
-                    </th>
-                    <th className="px-6 py-3 text-right text-xs font-medium tracking-wider text-gray-500 uppercase">
-                      操作
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200 bg-white">
-                  {displayedRecords.map((record) => (
-                    <tr key={record.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4">
-                        <div className="text-sm font-medium text-gray-900">{record.patient_name}</div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="max-w-xs text-sm text-gray-500">{record.main_disease || '—'}</div>
-                      </td>
-                      <td className="px-6 py-4 text-sm whitespace-nowrap text-gray-500">
-                        {formatDate(record.initial_visit_date)}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">{getStatusBadge(record.status)}</td>
-                      <td className="px-6 py-4 text-sm whitespace-nowrap text-gray-500">
-                        {formatDate(record.created_at)}
-                      </td>
-                      <td className="px-6 py-4 text-right text-sm font-medium whitespace-nowrap">
-                        <div className="flex items-center justify-end gap-2">
-                          <button
-                            onClick={() => setPlansModalPatient({ id: record.id, name: record.patient_name })}
-                            className="text-green-600 hover:text-green-900"
-                            title="計画書"
-                          >
-                            <i className="ph ph-file-text"></i>
-                          </button>
-                          <button
-                            onClick={() => setReportsModalPatient({ id: record.id, name: record.patient_name })}
-                            className="text-blue-600 hover:text-blue-900"
-                            title="月次報告書"
-                          >
-                            <i className="ph ph-file-doc"></i>
-                          </button>
-                          <button
-                            onClick={() => {
-                              if (previewPatientId === record.id) {
-                                setPreviewPatientId(null);
-                                setPdfPreviewUrl(null);
-                              } else {
-                                setPreviewPatientId(record.id);
-                                setPdfPreviewUrl(null);
-                              }
-                            }}
-                            className={`${previewPatientId === record.id ? 'text-green-600' : 'text-purple-600'} hover:text-purple-900`}
-                            title={previewPatientId === record.id ? 'PDF操作を閉じる' : 'PDF操作を表示'}
-                          >
-                            <i className={`ph ${previewPatientId === record.id ? 'ph-eye-slash' : 'ph-file-pdf'}`}></i>
-                          </button>
-                          <button
-                            onClick={() => handleEdit(record)}
-                            disabled={processingId === record.id}
-                            className="text-blue-600 hover:text-blue-900 disabled:opacity-50"
-                            title="編集"
-                          >
-                            <i className="ph ph-pencil"></i>
-                          </button>
-                          <button
-                            onClick={() => handleDelete(record)}
-                            disabled={processingId === record.id}
-                            className="text-red-600 hover:text-red-900 disabled:opacity-50"
-                            title="削除"
-                          >
-                            <i className="ph ph-trash"></i>
-                          </button>
-                        </div>
-                      </td>
+          <div className="space-y-4">
+            {/* Desktop: Table View */}
+            <div className="hidden md:block overflow-hidden rounded-lg bg-white shadow">
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
+                        患者名
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
+                        主たる傷病名
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
+                        初回訪問日
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
+                        ステータス
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
+                        作成日
+                      </th>
+                      <th className="px-6 py-3 text-right text-xs font-medium tracking-wider text-gray-500 uppercase">
+                        操作
+                      </th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            
-            {/* PDF Preview and Download Section */}
-            {previewPatientId && (
-              <div className="border-t border-gray-200 p-6">
-                <div className="mb-4 flex items-center justify-between">
-                  <h3 className="text-lg font-semibold text-gray-900">PDF操作</h3>
-                  <button
-                    onClick={() => {
-                      setPreviewPatientId(null);
-                      setPdfPreviewUrl(null);
-                    }}
-                    className="btn btn-sm btn-outline-secondary"
-                  >
-                    <i className="ph ph-x me-1"></i>
-                    閉じる
-                  </button>
-                </div>
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                  <PDFDownloadButton
-                    label="利用者情報 PDFをダウンロード"
-                    endpoint={`/pdf/patient-record/${previewPatientId}`}
-                    filename={`patient_record_${previewPatientId}.pdf`}
-                  />
-                  <PDFPreviewButton
-                    label={pdfPreviewUrl ? '利用者情報 プレビューを閉じる' : '利用者情報 をプレビュー'}
-                    endpoint={`/pdf/patient-record/${previewPatientId}`}
-                    isActive={!!pdfPreviewUrl}
-                    onPreviewReady={(url) => setPdfPreviewUrl(url)}
-                  />
-                </div>
-                
-                {pdfPreviewUrl && (
-                  <div className="mt-4 rounded-lg border border-gray-200 bg-white shadow">
-                    <div className="border-b border-gray-200 bg-gray-50 px-4 py-3">
-                      <div className="flex items-center justify-between">
-                        <span className="font-semibold text-gray-900">PDFプレビュー</span>
-                        <button
-                          type="button"
-                          onClick={() => setPdfPreviewUrl(null)}
-                          className="btn btn-sm btn-outline-secondary"
-                        >
-                          閉じる
-                        </button>
-                      </div>
-                    </div>
-                    <div className="p-0">
-                      <div className="w-full" style={{ height: '600px' }}>
-                        <iframe src={pdfPreviewUrl} title="PDF preview" className="w-full h-full border-0" />
-                      </div>
-                    </div>
-                  </div>
-                )}
+                  </thead>
+                  <tbody className="divide-y divide-gray-200 bg-white">
+                    {displayedRecords.map((record) => (
+                      <tr key={record.id} className="hover:bg-gray-50">
+                        <td className="px-6 py-4">
+                          <div className="text-sm font-medium text-gray-900">{record.patient_name}</div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="max-w-xs text-sm text-gray-500">{record.main_disease || '—'}</div>
+                        </td>
+                        <td className="px-6 py-4 text-sm whitespace-nowrap text-gray-500">
+                          {formatDate(record.initial_visit_date)}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">{getStatusBadge(record.status)}</td>
+                        <td className="px-6 py-4 text-sm whitespace-nowrap text-gray-500">
+                          {formatDate(record.created_at)}
+                        </td>
+                        <td className="px-6 py-4 text-right text-sm font-medium whitespace-nowrap">
+                          <div className="flex items-center justify-end gap-2">
+                            <button
+                              onClick={() => setPlansModalPatient({ id: record.id, name: record.patient_name })}
+                              className="text-green-600 hover:text-green-900"
+                              title="計画書"
+                            >
+                              <i className="ph ph-file-text"></i>
+                            </button>
+                            <button
+                              onClick={() => setReportsModalPatient({ id: record.id, name: record.patient_name })}
+                              className="text-blue-600 hover:text-blue-900"
+                              title="月次報告書"
+                            >
+                              <i className="ph ph-file-doc"></i>
+                            </button>
+                            <button
+                              onClick={() => {
+                                setPreviewPatientId(record.id);
+                                setShowPdfModal(true);
+                              }}
+                              className="text-purple-600 hover:text-purple-900"
+                              title="PDF操作を表示"
+                            >
+                              <i className="ph ph-file-pdf"></i>
+                            </button>
+                            <button
+                              onClick={() => handleEdit(record)}
+                              disabled={processingId === record.id}
+                              className="text-blue-600 hover:text-blue-900 disabled:opacity-50"
+                              title="編集"
+                            >
+                              <i className="ph ph-pencil"></i>
+                            </button>
+                            <button
+                              onClick={() => handleDelete(record)}
+                              disabled={processingId === record.id}
+                              className="text-red-600 hover:text-red-900 disabled:opacity-50"
+                              title="削除"
+                            >
+                              <i className="ph ph-trash"></i>
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
+            </div>
+
+            {/* Mobile: Card View */}
+            <div className="md:hidden space-y-4">
+              {displayedRecords.map((record) => (
+                <PatientCard
+                  key={record.id}
+                  patient={record}
+                  onEdit={handleEdit}
+                  onDelete={handleDelete}
+                  onPlans={() => setPlansModalPatient({ id: record.id, name: record.patient_name })}
+                  onReports={() => setReportsModalPatient({ id: record.id, name: record.patient_name })}
+                  onPdfPreview={() => {
+                    setPreviewPatientId(record.id);
+                    setShowPdfModal(true);
+                  }}
+                  isProcessing={processingId === record.id}
+                  showPdfControls={previewPatientId === record.id && showPdfModal}
+                />
+              ))}
+            </div>
+
+            {/* PDF Preview Modal */}
+            {previewPatientId && (
+              <PDFPreviewModal
+                patientId={previewPatientId}
+                isOpen={showPdfModal}
+                onClose={() => {
+                  setShowPdfModal(false);
+                  setPreviewPatientId(null);
+                  setPdfPreviewUrl(null);
+                }}
+                pdfPreviewUrl={pdfPreviewUrl}
+                onPreviewReady={setPdfPreviewUrl}
+              />
             )}
-            <div className="bg-gray-50 px-6 py-3">
-              <div className="flex items-center justify-between">
+
+            {/* Pagination */}
+            <div className="bg-gray-50 px-6 py-3 border-t border-gray-200 rounded-lg">
+              <div className="flex flex-col md:flex-row items-center justify-between gap-4">
                 <div className="text-sm text-gray-500">
                   全 {filteredPatients.length} 件中 {((currentPage - 1) * pageSize) + 1} - {Math.min(currentPage * pageSize, filteredPatients.length)} 件を表示
                 </div>
@@ -1420,6 +1450,9 @@ export default function PatientsPage() {
           </div>
         )}
       </div>
+
+      {/* Floating Action Button (Mobile Only) */}
+      {!showForm && <FloatingActionButton onClick={handleCreate} />}
     </>
   );
 }
