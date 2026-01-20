@@ -5,6 +5,8 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuthProfile } from '@/hooks/useAuthProfile';
 import { supabase } from '@/lib/supabase';
 import { createPlan } from '@/lib/planApi';
+import Stepper from '@/components/Stepper';
+import StepperNavigation from '@/components/StepperNavigation';
 
 // ==============================|| PLAN CREATE PAGE ||============================== //
 
@@ -19,6 +21,7 @@ export default function PlanCreatePage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
+  const [currentStep, setCurrentStep] = useState(0);
   const [formData, setFormData] = useState({
     start_date: '',
     end_date: '',
@@ -124,9 +127,49 @@ export default function PlanCreatePage() {
     }));
   };
 
+  // Stepper configuration
+  const steps = [
+    { label: '計画期間', shortLabel: '期間' },
+    { label: '目標・方針', shortLabel: '目標' },
+    { label: '処置・材料', shortLabel: '処置' },
+  ];
+
+  // Step validation
+  const validateStep = (step) => {
+    switch (step) {
+      case 0: // Plan Period
+        return !!formData.start_date && !!formData.end_date;
+      case 1: // Goals & Policy (optional)
+        return true;
+      case 2: // Procedures (optional)
+        return true;
+      default:
+        return true;
+    }
+  };
+
+  const handleNextStep = () => {
+    if (validateStep(currentStep) && currentStep < steps.length - 1) {
+      setCurrentStep(currentStep + 1);
+    }
+  };
+
+  const handlePreviousStep = () => {
+    if (currentStep > 0) {
+      setCurrentStep(currentStep - 1);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!patientId) return;
+
+    // Validate required fields
+    if (!formData.start_date || !formData.end_date) {
+      setError('開始日と終了日は必須です');
+      setCurrentStep(0);
+      return;
+    }
 
     setSaving(true);
     setError(null);
@@ -201,9 +244,11 @@ export default function PlanCreatePage() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900">新規計画書作成</h1>
-        <p className="mt-2 text-gray-600">訪問看護計画書を作成します</p>
+      <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div>
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-900">新規計画書作成</h1>
+          <p className="mt-1 md:mt-2 text-sm md:text-base text-gray-600">訪問看護計画書を作成します</p>
+        </div>
       </div>
 
       {error && (
@@ -216,230 +261,262 @@ export default function PlanCreatePage() {
       {/* Patient Header (Read-only) */}
       {patient && (
         <div className="mb-6 rounded-lg border border-gray-200 bg-gray-50 p-6">
-          <h2 className="mb-4 text-xl font-semibold text-gray-900">患者情報</h2>
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <div>
-              <label className="text-sm font-medium text-gray-700">患者名</label>
-              <div className="mt-1 text-gray-900">{patient.name || '—'}</div>
+          <details className="group">
+            <summary className="cursor-pointer text-xl font-semibold text-gray-900 list-none">
+              <div className="flex items-center justify-between">
+                <span>患者情報</span>
+                <i className="ph ph-caret-down group-open:rotate-180 transition-transform"></i>
+              </div>
+            </summary>
+            <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div>
+                <label className="text-sm font-medium text-gray-700">患者名</label>
+                <div className="mt-1 text-gray-900">{patient.name || '—'}</div>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-700">性別</label>
+                <div className="mt-1 text-gray-900">{patient.gender === 'male' ? '男性' : patient.gender === 'female' ? '女性' : '—'}</div>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-700">生年月日</label>
+                <div className="mt-1 text-gray-900">{patient.birth_date || '—'}</div>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-700">住所</label>
+                <div className="mt-1 text-gray-900">{patient.address || '—'}</div>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-700">連絡先</label>
+                <div className="mt-1 text-gray-900">{patient.contact || '—'}</div>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-700">主たる傷病名</label>
+                <div className="mt-1 text-gray-900">{patient.primary_diagnosis || '—'}</div>
+              </div>
+              {patient.key_person_name && (
+                <div className="md:col-span-2">
+                  <details className="mt-2">
+                    <summary className="cursor-pointer text-sm font-medium text-gray-700">
+                      キーパーソン情報
+                    </summary>
+                    <div className="mt-2 grid grid-cols-1 gap-2 md:grid-cols-2">
+                      <div>氏名: {patient.key_person_name}</div>
+                      <div>続柄: {patient.key_person_relationship || '—'}</div>
+                      <div>住所: {patient.key_person_address || '—'}</div>
+                      <div>連絡先: {patient.key_person_contact1 || '—'}</div>
+                    </div>
+                  </details>
+                </div>
+              )}
             </div>
-            <div>
-              <label className="text-sm font-medium text-gray-700">性別</label>
-              <div className="mt-1 text-gray-900">{patient.gender === 'male' ? '男性' : patient.gender === 'female' ? '女性' : '—'}</div>
-            </div>
-            <div>
-              <label className="text-sm font-medium text-gray-700">生年月日</label>
-              <div className="mt-1 text-gray-900">{patient.birth_date || '—'}</div>
-            </div>
-            <div>
-              <label className="text-sm font-medium text-gray-700">住所</label>
-              <div className="mt-1 text-gray-900">{patient.address || '—'}</div>
-            </div>
-            <div>
-              <label className="text-sm font-medium text-gray-700">連絡先</label>
-              <div className="mt-1 text-gray-900">{patient.contact || '—'}</div>
-            </div>
-            <div>
-              <label className="text-sm font-medium text-gray-700">主たる傷病名</label>
-              <div className="mt-1 text-gray-900">{patient.primary_diagnosis || '—'}</div>
-            </div>
-          </div>
+          </details>
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="rounded-lg bg-white p-6 shadow">
-        <div className="space-y-6">
-          {/* Plan Period */}
-          <div className="rounded-lg border border-gray-200 p-4">
-            <h3 className="mb-3 font-semibold text-gray-700">計画期間</h3>
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <div>
-                <label htmlFor="start_date" className="mb-2 block text-sm font-medium text-gray-700">
-                  開始日 <span className="text-red-500">*</span>
-                </label>
-                <input
-                  id="start_date"
-                  type="date"
-                  name="start_date"
-                  value={formData.start_date}
-                  onChange={handleInputChange}
-                  className="form-control"
-                  required
-                />
-              </div>
-              <div>
-                <label htmlFor="end_date" className="mb-2 block text-sm font-medium text-gray-700">
-                  終了日 <span className="text-red-500">*</span>
-                </label>
-                <input
-                  id="end_date"
-                  type="date"
-                  name="end_date"
-                  value={formData.end_date}
-                  onChange={handleInputChange}
-                  className="form-control"
-                  required
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Goals */}
-          <div className="rounded-lg border border-gray-200 p-4">
-            <h3 className="mb-3 font-semibold text-gray-700">目標・方針</h3>
-            <div className="space-y-4">
-              <div>
-                <label htmlFor="long_term_goal" className="mb-2 block text-sm font-medium text-gray-700">
-                  看護の目標（長期目標）
-                </label>
-                <textarea
-                  id="long_term_goal"
-                  name="long_term_goal"
-                  value={formData.long_term_goal}
-                  onChange={handleInputChange}
-                  rows={3}
-                  className="form-control"
-                />
-              </div>
-              <div>
-                <label htmlFor="short_term_goal" className="mb-2 block text-sm font-medium text-gray-700">
-                  短期目標
-                </label>
-                <textarea
-                  id="short_term_goal"
-                  name="short_term_goal"
-                  value={formData.short_term_goal}
-                  onChange={handleInputChange}
-                  rows={2}
-                  className="form-control"
-                />
-              </div>
-              <div>
-                <label htmlFor="nursing_policy" className="mb-2 block text-sm font-medium text-gray-700">
-                  看護援助の方針
-                </label>
-                <textarea
-                  id="nursing_policy"
-                  name="nursing_policy"
-                  value={formData.nursing_policy}
-                  onChange={handleInputChange}
-                  rows={3}
-                  className="form-control"
-                />
-              </div>
-              <div>
-                <label htmlFor="patient_family_wish" className="mb-2 block text-sm font-medium text-gray-700">
-                  利用者・家族の希望
-                </label>
-                <textarea
-                  id="patient_family_wish"
-                  name="patient_family_wish"
-                  value={formData.patient_family_wish}
-                  onChange={handleInputChange}
-                  rows={2}
-                  className="form-control"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Procedure/Materials */}
-          <div className="rounded-lg border border-gray-200 p-4">
-            <h3 className="mb-3 font-semibold text-gray-700">処置・材料</h3>
-            <div className="mb-4">
-              <label className="flex items-center">
-                <input
-                  type="checkbox"
-                  name="has_procedure"
-                  checked={formData.has_procedure}
-                  onChange={handleInputChange}
-                  className="form-check-input input-primary me-2"
-                />
-                <span className="text-sm font-medium text-gray-700">処置・材料あり</span>
-              </label>
-            </div>
-            {formData.has_procedure && (
-              <div className="space-y-4">
-                <div>
-                  <label htmlFor="procedure_content" className="mb-2 block text-sm font-medium text-gray-700">
-                    処置内容
-                  </label>
-                  <textarea
-                    id="procedure_content"
-                    name="procedure_content"
-                    value={formData.procedure_content}
-                    onChange={handleInputChange}
-                    rows={2}
-                    className="form-control"
-                  />
-                </div>
-                <div>
-                  <label htmlFor="material_details" className="mb-2 block text-sm font-medium text-gray-700">
-                    材料の種類・サイズ
-                  </label>
-                  <input
-                    id="material_details"
-                    type="text"
-                    name="material_details"
-                    value={formData.material_details}
-                    onChange={handleInputChange}
-                    className="form-control"
-                  />
-                </div>
-                <div>
-                  <label htmlFor="material_amount" className="mb-2 block text-sm font-medium text-gray-700">
-                    必要数量
-                  </label>
-                  <input
-                    id="material_amount"
-                    type="text"
-                    name="material_amount"
-                    value={formData.material_amount}
-                    onChange={handleInputChange}
-                    className="form-control"
-                  />
-                </div>
-                <div>
-                  <label htmlFor="procedure_note" className="mb-2 block text-sm font-medium text-gray-700">
-                    備考
-                  </label>
-                  <textarea
-                    id="procedure_note"
-                    name="procedure_note"
-                    value={formData.procedure_note}
-                    onChange={handleInputChange}
-                    rows={2}
-                    className="form-control"
-                  />
-                </div>
-              </div>
-            )}
+      {/* Stepper Form */}
+      <div className="mb-6 rounded-lg bg-white shadow" style={{ minHeight: 'calc(100vh - 200px)' }}>
+        <div className="p-4 border-b border-gray-200">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-semibold text-gray-900">新規計画書作成</h2>
+            <button
+              onClick={() => router.back()}
+              className="btn btn-sm btn-outline-secondary"
+              disabled={saving}
+            >
+              <i className="ph ph-x me-1"></i>
+              キャンセル
+            </button>
           </div>
         </div>
+        <form onSubmit={handleSubmit} className="flex flex-col" style={{ height: 'calc(100vh - 280px)' }}>
+          <Stepper steps={steps} currentStep={currentStep}>
+            <div className="p-4 md:p-6">
+              {/* Step 0: Plan Period */}
+              {currentStep === 0 && (
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold text-gray-700 mb-4">計画期間</h3>
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    <div>
+                      <label htmlFor="start_date" className="mb-2 block text-sm font-medium text-gray-700">
+                        開始日 <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        id="start_date"
+                        type="date"
+                        name="start_date"
+                        value={formData.start_date}
+                        onChange={handleInputChange}
+                        className="form-control"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="end_date" className="mb-2 block text-sm font-medium text-gray-700">
+                        終了日 <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        id="end_date"
+                        type="date"
+                        name="end_date"
+                        value={formData.end_date}
+                        onChange={handleInputChange}
+                        className="form-control"
+                        required
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
 
-        <div className="mt-6 flex justify-end gap-3">
-          <button
-            type="button"
-            onClick={() => router.back()}
-            className="btn btn-secondary"
-            disabled={saving}
-          >
-            キャンセル
-          </button>
-          <button type="submit" className="btn btn-primary" disabled={saving}>
-            {saving ? (
-              <span className="flex items-center">
-                <span className="me-2 inline-block h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></span>
-                作成中...
-              </span>
-            ) : (
-              <span className="flex items-center">
-                <i className="ph ph-check me-2"></i>
-                作成
-              </span>
-            )}
-          </button>
-        </div>
-      </form>
+              {/* Step 1: Goals & Policy */}
+              {currentStep === 1 && (
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold text-gray-700 mb-4">目標・方針</h3>
+                  <div className="space-y-4">
+                    <div>
+                      <label htmlFor="long_term_goal" className="mb-2 block text-sm font-medium text-gray-700">
+                        看護の目標（長期目標）
+                      </label>
+                      <textarea
+                        id="long_term_goal"
+                        name="long_term_goal"
+                        value={formData.long_term_goal}
+                        onChange={handleInputChange}
+                        rows={3}
+                        className="form-control"
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="short_term_goal" className="mb-2 block text-sm font-medium text-gray-700">
+                        短期目標
+                      </label>
+                      <textarea
+                        id="short_term_goal"
+                        name="short_term_goal"
+                        value={formData.short_term_goal}
+                        onChange={handleInputChange}
+                        rows={2}
+                        className="form-control"
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="nursing_policy" className="mb-2 block text-sm font-medium text-gray-700">
+                        看護援助の方針
+                      </label>
+                      <textarea
+                        id="nursing_policy"
+                        name="nursing_policy"
+                        value={formData.nursing_policy}
+                        onChange={handleInputChange}
+                        rows={3}
+                        className="form-control"
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="patient_family_wish" className="mb-2 block text-sm font-medium text-gray-700">
+                        利用者・家族の希望
+                      </label>
+                      <textarea
+                        id="patient_family_wish"
+                        name="patient_family_wish"
+                        value={formData.patient_family_wish}
+                        onChange={handleInputChange}
+                        rows={2}
+                        className="form-control"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Step 2: Procedure/Materials */}
+              {currentStep === 2 && (
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold text-gray-700 mb-4">処置・材料</h3>
+                  <div className="mb-4">
+                    <label className="flex items-center">
+                      <input
+                        type="checkbox"
+                        name="has_procedure"
+                        checked={formData.has_procedure}
+                        onChange={handleInputChange}
+                        className="form-check-input input-primary me-2"
+                      />
+                      <span className="text-sm font-medium text-gray-700">処置・材料あり</span>
+                    </label>
+                  </div>
+                  {formData.has_procedure && (
+                    <div className="space-y-4">
+                      <div>
+                        <label htmlFor="procedure_content" className="mb-2 block text-sm font-medium text-gray-700">
+                          処置内容
+                        </label>
+                        <textarea
+                          id="procedure_content"
+                          name="procedure_content"
+                          value={formData.procedure_content}
+                          onChange={handleInputChange}
+                          rows={2}
+                          className="form-control"
+                        />
+                      </div>
+                      <div>
+                        <label htmlFor="material_details" className="mb-2 block text-sm font-medium text-gray-700">
+                          材料の種類・サイズ
+                        </label>
+                        <input
+                          id="material_details"
+                          type="text"
+                          name="material_details"
+                          value={formData.material_details}
+                          onChange={handleInputChange}
+                          className="form-control"
+                        />
+                      </div>
+                      <div>
+                        <label htmlFor="material_amount" className="mb-2 block text-sm font-medium text-gray-700">
+                          必要数量
+                        </label>
+                        <input
+                          id="material_amount"
+                          type="text"
+                          name="material_amount"
+                          value={formData.material_amount}
+                          onChange={handleInputChange}
+                          className="form-control"
+                        />
+                      </div>
+                      <div>
+                        <label htmlFor="procedure_note" className="mb-2 block text-sm font-medium text-gray-700">
+                          備考
+                        </label>
+                        <textarea
+                          id="procedure_note"
+                          name="procedure_note"
+                          value={formData.procedure_note}
+                          onChange={handleInputChange}
+                          rows={2}
+                          className="form-control"
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </Stepper>
+          <StepperNavigation
+            currentStep={currentStep}
+            totalSteps={steps.length}
+            onPrevious={handlePreviousStep}
+            onNext={handleNextStep}
+            onSave={handleSubmit}
+            canGoNext={validateStep(currentStep)}
+            isSubmitting={saving}
+            showSave={currentStep === steps.length - 1}
+          />
+        </form>
+      </div>
     </div>
   );
 }

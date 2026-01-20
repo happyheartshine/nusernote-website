@@ -466,43 +466,42 @@ export default function PlanEditPage() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="mb-6 flex items-center justify-between">
+      <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">計画書編集</h1>
-          <p className="mt-2 text-gray-600">訪問看護計画書の編集</p>
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-900">計画書編集</h1>
+          <p className="mt-1 md:mt-2 text-sm md:text-base text-gray-600">訪問看護計画書の編集</p>
         </div>
-        <div className="flex gap-2">
-          {plan && (
-            <>
+        {plan && (
+          <div className="flex flex-col gap-2 md:flex-row md:gap-2">
+            <button
+              onClick={handlePdfExport}
+              className="btn btn-outline-secondary w-full md:w-auto"
+            >
+              <i className="ph ph-file-pdf me-2"></i>
+              <span className="hidden sm:inline">PDF出力（1ページ）</span>
+              <span className="sm:hidden">PDF出力</span>
+            </button>
+            {!isReadOnly && (
               <button
-                onClick={handlePdfExport}
-                className="btn btn-outline-secondary"
+                onClick={handleSave}
+                disabled={saving}
+                className="btn btn-primary w-full md:w-auto"
               >
-                <i className="ph ph-file-pdf me-2"></i>
-                PDF出力（1ページ）
+                {saving ? (
+                  <span className="flex items-center justify-center">
+                    <span className="me-2 inline-block h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></span>
+                    保存中...
+                  </span>
+                ) : (
+                  <span className="flex items-center justify-center">
+                    <i className="ph ph-check me-2"></i>
+                    保存
+                  </span>
+                )}
               </button>
-              {!isReadOnly && (
-                <button
-                  onClick={handleSave}
-                  disabled={saving}
-                  className="btn btn-primary"
-                >
-                  {saving ? (
-                    <span className="flex items-center">
-                      <span className="me-2 inline-block h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></span>
-                      保存中...
-                    </span>
-                  ) : (
-                    <span className="flex items-center">
-                      <i className="ph ph-check me-2"></i>
-                      保存
-                    </span>
-                  )}
-                </button>
-              )}
-            </>
-          )}
-        </div>
+            )}
+          </div>
+        )}
       </div>
 
       {error && (
@@ -532,50 +531,57 @@ export default function PlanEditPage() {
           {/* Patient Header (Read-only) */}
           {patient && (
             <div className="mb-6 rounded-lg border border-gray-200 bg-gray-50 p-6">
-              <h2 className="mb-4 text-xl font-semibold text-gray-900">患者情報</h2>
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <div>
-                  <label className="text-sm font-medium text-gray-700">患者名</label>
-                  <div className="mt-1 text-gray-900">{patient.name || '—'}</div>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-700">性別</label>
-                  <div className="mt-1 text-gray-900">
-                    {patient.gender === 'male' ? '男性' : patient.gender === 'female' ? '女性' : '—'}
+              <details className="group">
+                <summary className="cursor-pointer text-xl font-semibold text-gray-900 list-none">
+                  <div className="flex items-center justify-between">
+                    <span>患者情報</span>
+                    <i className="ph ph-caret-down group-open:rotate-180 transition-transform"></i>
                   </div>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-700">生年月日</label>
-                  <div className="mt-1 text-gray-900">{patient.birth_date || '—'}</div>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-700">住所</label>
-                  <div className="mt-1 text-gray-900">{patient.address || '—'}</div>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-700">連絡先</label>
-                  <div className="mt-1 text-gray-900">{patient.contact || '—'}</div>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-700">主たる傷病名</label>
-                  <div className="mt-1 text-gray-900">{patient.primary_diagnosis || '—'}</div>
-                </div>
-                {patient.key_person_name && (
-                  <div className="md:col-span-2">
-                    <details className="mt-2">
-                      <summary className="cursor-pointer text-sm font-medium text-gray-700">
-                        キーパーソン情報
-                      </summary>
-                      <div className="mt-2 grid grid-cols-1 gap-2 md:grid-cols-2">
-                        <div>氏名: {patient.key_person_name}</div>
-                        <div>続柄: {patient.key_person_relationship || '—'}</div>
-                        <div>住所: {patient.key_person_address || '—'}</div>
-                        <div>連絡先: {patient.key_person_contact1 || '—'}</div>
-                      </div>
-                    </details>
+                </summary>
+                <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
+                  <div>
+                    <label className="text-sm font-medium text-gray-700">患者名</label>
+                    <div className="mt-1 text-gray-900">{patient.name || '—'}</div>
                   </div>
-                )}
-              </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-700">性別</label>
+                    <div className="mt-1 text-gray-900">
+                      {patient.gender === 'male' ? '男性' : patient.gender === 'female' ? '女性' : '—'}
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-700">生年月日</label>
+                    <div className="mt-1 text-gray-900">{patient.birth_date || '—'}</div>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-700">住所</label>
+                    <div className="mt-1 text-gray-900">{patient.address || '—'}</div>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-700">連絡先</label>
+                    <div className="mt-1 text-gray-900">{patient.contact || '—'}</div>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-700">主たる傷病名</label>
+                    <div className="mt-1 text-gray-900">{patient.primary_diagnosis || '—'}</div>
+                  </div>
+                  {patient.key_person_name && (
+                    <div className="md:col-span-2">
+                      <details className="mt-2">
+                        <summary className="cursor-pointer text-sm font-medium text-gray-700">
+                          キーパーソン情報
+                        </summary>
+                        <div className="mt-2 grid grid-cols-1 gap-2 md:grid-cols-2">
+                          <div>氏名: {patient.key_person_name}</div>
+                          <div>続柄: {patient.key_person_relationship || '—'}</div>
+                          <div>住所: {patient.key_person_address || '—'}</div>
+                          <div>連絡先: {patient.key_person_contact1 || '—'}</div>
+                        </div>
+                      </details>
+                    </div>
+                  )}
+                </div>
+              </details>
             </div>
           )}
 

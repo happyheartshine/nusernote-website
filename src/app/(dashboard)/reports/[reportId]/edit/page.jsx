@@ -14,6 +14,8 @@ import { getSessionFromStorage } from '@/lib/sessionStorage';
 import ReportStatusBadge from '@/components/reports/ReportStatusBadge';
 import CalendarMarksEditor from '@/components/reports/CalendarMarksEditor';
 import ConfirmDialog from '@/components/ConfirmDialog';
+import Stepper from '@/components/Stepper';
+import StepperNavigation from '@/components/StepperNavigation';
 
 // ==============================|| REPORT EDIT PAGE ||============================== //
 
@@ -29,6 +31,7 @@ export default function ReportEditPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
+  const [currentStep, setCurrentStep] = useState(0);
   const [showFinalizeDialog, setShowFinalizeDialog] = useState(false);
 
   const [formData, setFormData] = useState({
@@ -125,6 +128,39 @@ export default function ReportEditPage() {
       ...prev,
       calendar_marks: marks,
     }));
+  };
+
+  // Stepper configuration
+  const steps = [
+    { label: '対象月', shortLabel: '対象月' },
+    { label: 'カレンダー', shortLabel: 'カレンダー' },
+    { label: '報告内容', shortLabel: '報告' },
+  ];
+
+  // Step validation
+  const validateStep = (step) => {
+    switch (step) {
+      case 0: // Month & Status
+        return !!formData.year_month;
+      case 1: // Calendar (optional)
+        return true;
+      case 2: // Report Content (optional)
+        return true;
+      default:
+        return true;
+    }
+  };
+
+  const handleNextStep = () => {
+    if (validateStep(currentStep) && currentStep < steps.length - 1) {
+      setCurrentStep(currentStep + 1);
+    }
+  };
+
+  const handlePreviousStep = () => {
+    if (currentStep > 0) {
+      setCurrentStep(currentStep - 1);
+    }
   };
 
   const handleSave = async () => {
@@ -333,70 +369,33 @@ export default function ReportEditPage() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="mb-6 flex items-center justify-between">
+      <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">月次報告書編集</h1>
-          <p className="mt-2 text-gray-600">月次報告書の編集</p>
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-900">月次報告書編集</h1>
+          <p className="mt-1 md:mt-2 text-sm md:text-base text-gray-600">月次報告書の編集</p>
         </div>
-        <div className="flex gap-2">
-          {report && (
-            <>
-              <button
-                onClick={handlePdfExport}
-                className="btn btn-outline-secondary"
-              >
-                <i className="ph ph-file-pdf me-2"></i>
-                PDF出力（1ページ）
-              </button>
-              {!isReadOnly && (
-                <>
-                  <button
-                    onClick={handleRegenerate}
-                    disabled={saving}
-                    className="btn btn-outline-secondary"
-                  >
-                    {saving ? (
-                      <span className="flex items-center">
-                        <span className="me-2 inline-block h-4 w-4 animate-spin rounded-full border-2 border-gray-500 border-t-transparent"></span>
-                        処理中...
-                      </span>
-                    ) : (
-                      <span className="flex items-center">
-                        <i className="ph ph-magic-wand me-2"></i>
-                        自動生成/再集計
-                      </span>
-                    )}
-                  </button>
-                  <button
-                    onClick={handleSave}
-                    disabled={saving}
-                    className="btn btn-primary"
-                  >
-                    {saving ? (
-                      <span className="flex items-center">
-                        <span className="me-2 inline-block h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></span>
-                        保存中...
-                      </span>
-                    ) : (
-                      <span className="flex items-center">
-                        <i className="ph ph-check me-2"></i>
-                        保存
-                      </span>
-                    )}
-                  </button>
-                  <button
-                    onClick={() => setShowFinalizeDialog(true)}
-                    disabled={saving}
-                    className="btn btn-success"
-                  >
-                    <i className="ph ph-check-circle me-2"></i>
-                    確定（FINAL）
-                  </button>
-                </>
+        {report && !isReadOnly && (
+          <div className="flex flex-col gap-2 md:flex-row md:gap-2">
+            <button
+              onClick={handleRegenerate}
+              disabled={saving}
+              className="btn btn-outline-secondary w-full md:w-auto"
+            >
+              {saving ? (
+                <span className="flex items-center justify-center">
+                  <span className="me-2 inline-block h-4 w-4 animate-spin rounded-full border-2 border-gray-500 border-t-transparent"></span>
+                  処理中...
+                </span>
+              ) : (
+                <span className="flex items-center justify-center">
+                  <i className="ph ph-magic-wand me-2"></i>
+                  <span className="hidden sm:inline">自動生成/再集計</span>
+                  <span className="sm:hidden">再集計</span>
+                </span>
               )}
-            </>
-          )}
-        </div>
+            </button>
+          </div>
+        )}
       </div>
 
       {error && (
@@ -421,192 +420,279 @@ export default function ReportEditPage() {
           {/* Patient Header (Read-only) */}
           {patient && (
             <div className="mb-6 rounded-lg border border-gray-200 bg-gray-50 p-6">
-              <h2 className="mb-4 text-xl font-semibold text-gray-900">患者情報</h2>
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <div>
-                  <label className="text-sm font-medium text-gray-700">患者名</label>
-                  <div className="mt-1 text-gray-900">{patient.name || '—'}</div>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-700">性別</label>
-                  <div className="mt-1 text-gray-900">
-                    {patient.gender === 'male' ? '男性' : patient.gender === 'female' ? '女性' : '—'}
+              <details className="group">
+                <summary className="cursor-pointer text-xl font-semibold text-gray-900 list-none">
+                  <div className="flex items-center justify-between">
+                    <span>患者情報</span>
+                    <i className="ph ph-caret-down group-open:rotate-180 transition-transform"></i>
                   </div>
+                </summary>
+                <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
+                  <div>
+                    <label className="text-sm font-medium text-gray-700">患者名</label>
+                    <div className="mt-1 text-gray-900">{patient.name || '—'}</div>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-700">性別</label>
+                    <div className="mt-1 text-gray-900">
+                      {patient.gender === 'male' ? '男性' : patient.gender === 'female' ? '女性' : '—'}
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-700">生年月日</label>
+                    <div className="mt-1 text-gray-900">{patient.birth_date || '—'}</div>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-700">住所</label>
+                    <div className="mt-1 text-gray-900">{patient.address || '—'}</div>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-700">連絡先</label>
+                    <div className="mt-1 text-gray-900">{patient.contact || '—'}</div>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-700">主たる傷病名</label>
+                    <div className="mt-1 text-gray-900">{patient.primary_diagnosis || patient.main_disease || '—'}</div>
+                  </div>
+                  {patient.key_person_name && (
+                    <div className="md:col-span-2">
+                      <details className="mt-2">
+                        <summary className="cursor-pointer text-sm font-medium text-gray-700">
+                          キーパーソン情報
+                        </summary>
+                        <div className="mt-2 grid grid-cols-1 gap-2 md:grid-cols-2">
+                          <div>氏名: {patient.key_person_name}</div>
+                          <div>続柄: {patient.key_person_relationship || '—'}</div>
+                          <div>住所: {patient.key_person_address || '—'}</div>
+                          <div>連絡先: {patient.key_person_contact1 || '—'}</div>
+                        </div>
+                      </details>
+                    </div>
+                  )}
                 </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-700">生年月日</label>
-                  <div className="mt-1 text-gray-900">{patient.birth_date || '—'}</div>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-700">住所</label>
-                  <div className="mt-1 text-gray-900">{patient.address || '—'}</div>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-700">連絡先</label>
-                  <div className="mt-1 text-gray-900">{patient.contact || '—'}</div>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-700">主たる傷病名</label>
-                  <div className="mt-1 text-gray-900">{patient.primary_diagnosis || patient.main_disease || '—'}</div>
-                </div>
-              </div>
+              </details>
             </div>
           )}
 
-          {/* Month Selector + Status */}
-          <div className="mb-6 rounded-lg border border-gray-200 bg-white p-6 shadow">
-            <h2 className="mb-4 text-xl font-semibold text-gray-900">対象月・ステータス</h2>
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <div>
-                <label htmlFor="year_month" className="mb-2 block text-sm font-medium text-gray-700">
-                  対象月
-                </label>
-                <input
-                  id="year_month"
-                  type="month"
-                  name="year_month"
-                  value={formData.year_month}
-                  onChange={handleInputChange}
-                  className="form-control"
-                  disabled={isReadOnly}
-                />
-              </div>
-              <div>
-                <label className="mb-2 block text-sm font-medium text-gray-700">ステータス</label>
-                <div className="mt-1">
-                  <ReportStatusBadge status={formData.status} />
+          {/* Stepper Form */}
+          <div className="mb-6 rounded-lg bg-white shadow" style={{ minHeight: 'calc(100vh - 200px)' }}>
+            <div className="p-4 border-b border-gray-200">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-semibold text-gray-900">報告書編集</h2>
+                <div className="flex gap-2">
+                  <button
+                    onClick={handlePdfExport}
+                    className="btn btn-sm btn-outline-secondary"
+                    title="PDF出力"
+                  >
+                    <i className="ph ph-file-pdf"></i>
+                    <span className="hidden sm:inline ms-1">PDF出力</span>
+                  </button>
+                  {!isReadOnly && (
+                    <button
+                      onClick={() => setShowFinalizeDialog(true)}
+                      disabled={saving}
+                      className="btn btn-sm btn-success"
+                      title="確定"
+                    >
+                      <i className="ph ph-check-circle"></i>
+                      <span className="hidden sm:inline ms-1">確定</span>
+                    </button>
+                  )}
+                  <button
+                    onClick={() => router.back()}
+                    className="btn btn-sm btn-outline-secondary"
+                    disabled={saving}
+                  >
+                    <i className="ph ph-x me-1"></i>
+                    キャンセル
+                  </button>
                 </div>
               </div>
             </div>
-          </div>
+            <form onSubmit={(e) => { e.preventDefault(); handleSave(); }} className="flex flex-col" style={{ height: 'calc(100vh - 280px)' }}>
+              <Stepper steps={steps} currentStep={currentStep}>
+                <div className="p-4 md:p-6">
+                  {/* Step 0: Month & Status */}
+                  {currentStep === 0 && (
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-semibold text-gray-700 mb-4">対象月・ステータス</h3>
+                      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                        <div>
+                          <label htmlFor="year_month" className="mb-2 block text-sm font-medium text-gray-700">
+                            対象月 <span className="text-red-500">*</span>
+                          </label>
+                          <input
+                            id="year_month"
+                            type="month"
+                            name="year_month"
+                            value={formData.year_month}
+                            onChange={handleInputChange}
+                            className="form-control"
+                            disabled={isReadOnly}
+                            required
+                          />
+                        </div>
+                        <div>
+                          <label className="mb-2 block text-sm font-medium text-gray-700">ステータス</label>
+                          <div className="mt-1">
+                            <ReportStatusBadge status={formData.status} />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
-          {/* Calendar Marks Editor */}
-          {formData.year_month && (
-            <div className="mb-6">
-              <CalendarMarksEditor
-                yearMonth={formData.year_month}
-                marks={formData.calendar_marks}
-                visits={visits}
-                onChange={handleCalendarMarksChange}
-                readOnly={isReadOnly}
+                  {/* Step 1: Calendar Marks */}
+                  {currentStep === 1 && (
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-semibold text-gray-700 mb-4">カレンダーマーク</h3>
+                      {formData.year_month ? (
+                        <CalendarMarksEditor
+                          yearMonth={formData.year_month}
+                          marks={formData.calendar_marks}
+                          visits={visits}
+                          onChange={handleCalendarMarksChange}
+                          readOnly={isReadOnly}
+                        />
+                      ) : (
+                        <div className="text-center py-8 text-gray-500">
+                          対象月を選択してください
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Step 2: Report Content */}
+                  {currentStep === 2 && (
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-semibold text-gray-700 mb-4">報告内容</h3>
+                      <div className="space-y-6">
+                        <div>
+                          <label htmlFor="disease_progress_text" className="mb-2 block text-sm font-medium text-gray-700">
+                            病状の経過
+                          </label>
+                          <textarea
+                            id="disease_progress_text"
+                            name="disease_progress_text"
+                            value={formData.disease_progress_text}
+                            onChange={handleInputChange}
+                            rows={4}
+                            className="form-control"
+                            disabled={isReadOnly}
+                          />
+                        </div>
+
+                        <div>
+                          <label htmlFor="nursing_rehab_text" className="mb-2 block text-sm font-medium text-gray-700">
+                            看護・リハビリテーションの内容
+                          </label>
+                          <textarea
+                            id="nursing_rehab_text"
+                            name="nursing_rehab_text"
+                            value={formData.nursing_rehab_text}
+                            onChange={handleInputChange}
+                            rows={6}
+                            className="form-control"
+                            placeholder="箇条書きで入力してください（例：&#10;・内容1&#10;・内容2）"
+                            disabled={isReadOnly}
+                          />
+                          <p className="mt-1 text-xs text-gray-500">箇条書き形式で入力してください</p>
+                        </div>
+
+                        <div>
+                          <label htmlFor="family_situation_text" className="mb-2 block text-sm font-medium text-gray-700">
+                            家庭状況
+                          </label>
+                          <textarea
+                            id="family_situation_text"
+                            name="family_situation_text"
+                            value={formData.family_situation_text}
+                            onChange={handleInputChange}
+                            rows={4}
+                            className="form-control"
+                            disabled={isReadOnly}
+                          />
+                        </div>
+
+                        <div>
+                          <label htmlFor="procedure_text" className="mb-2 block text-sm font-medium text-gray-700">
+                            処置 / 衛生材料… / 必要量
+                          </label>
+                          <textarea
+                            id="procedure_text"
+                            name="procedure_text"
+                            value={formData.procedure_text}
+                            onChange={handleInputChange}
+                            rows={4}
+                            className="form-control"
+                            disabled={isReadOnly}
+                          />
+                        </div>
+
+                        <div>
+                          <label htmlFor="monitoring_text" className="mb-2 block text-sm font-medium text-gray-700">
+                            特記すべき事項及びモニタリング
+                          </label>
+                          <textarea
+                            id="monitoring_text"
+                            name="monitoring_text"
+                            value={formData.monitoring_text}
+                            onChange={handleInputChange}
+                            rows={4}
+                            className="form-control"
+                            disabled={isReadOnly}
+                          />
+                        </div>
+
+                        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                          <div>
+                            <label htmlFor="gaf_score" className="mb-2 block text-sm font-medium text-gray-700">
+                              GAF score
+                            </label>
+                            <input
+                              id="gaf_score"
+                              type="number"
+                              name="gaf_score"
+                              value={formData.gaf_score}
+                              onChange={handleInputChange}
+                              min="0"
+                              max="100"
+                              className="form-control"
+                              disabled={isReadOnly}
+                            />
+                          </div>
+                          <div>
+                            <label htmlFor="gaf_date" className="mb-2 block text-sm font-medium text-gray-700">
+                              GAF score 評価日
+                            </label>
+                            <input
+                              id="gaf_date"
+                              type="date"
+                              name="gaf_date"
+                              value={formData.gaf_date}
+                              onChange={handleInputChange}
+                              className="form-control"
+                              disabled={isReadOnly}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </Stepper>
+              <StepperNavigation
+                currentStep={currentStep}
+                totalSteps={steps.length}
+                onPrevious={handlePreviousStep}
+                onNext={handleNextStep}
+                onSave={handleSave}
+                canGoNext={validateStep(currentStep)}
+                isSubmitting={saving}
+                showSave={currentStep === steps.length - 1}
               />
-            </div>
-          )}
-
-          {/* Text Blocks */}
-          <div className="mb-6 rounded-lg border border-gray-200 bg-white p-6 shadow">
-            <h2 className="mb-4 text-xl font-semibold text-gray-900">報告内容</h2>
-            <div className="space-y-6">
-              <div>
-                <label htmlFor="disease_progress_text" className="mb-2 block text-sm font-medium text-gray-700">
-                  病状の経過
-                </label>
-                <textarea
-                  id="disease_progress_text"
-                  name="disease_progress_text"
-                  value={formData.disease_progress_text}
-                  onChange={handleInputChange}
-                  rows={4}
-                  className="form-control"
-                  disabled={isReadOnly}
-                />
-              </div>
-
-              <div>
-                <label htmlFor="nursing_rehab_text" className="mb-2 block text-sm font-medium text-gray-700">
-                  看護・リハビリテーションの内容
-                </label>
-                <textarea
-                  id="nursing_rehab_text"
-                  name="nursing_rehab_text"
-                  value={formData.nursing_rehab_text}
-                  onChange={handleInputChange}
-                  rows={6}
-                  className="form-control"
-                  placeholder="箇条書きで入力してください（例：&#10;・内容1&#10;・内容2）"
-                  disabled={isReadOnly}
-                />
-                <p className="mt-1 text-xs text-gray-500">箇条書き形式で入力してください</p>
-              </div>
-
-              <div>
-                <label htmlFor="family_situation_text" className="mb-2 block text-sm font-medium text-gray-700">
-                  家庭状況
-                </label>
-                <textarea
-                  id="family_situation_text"
-                  name="family_situation_text"
-                  value={formData.family_situation_text}
-                  onChange={handleInputChange}
-                  rows={4}
-                  className="form-control"
-                  disabled={isReadOnly}
-                />
-              </div>
-
-              <div>
-                <label htmlFor="procedure_text" className="mb-2 block text-sm font-medium text-gray-700">
-                  処置 / 衛生材料… / 必要量
-                </label>
-                <textarea
-                  id="procedure_text"
-                  name="procedure_text"
-                  value={formData.procedure_text}
-                  onChange={handleInputChange}
-                  rows={4}
-                  className="form-control"
-                  disabled={isReadOnly}
-                />
-              </div>
-
-              <div>
-                <label htmlFor="monitoring_text" className="mb-2 block text-sm font-medium text-gray-700">
-                  特記すべき事項及びモニタリング
-                </label>
-                <textarea
-                  id="monitoring_text"
-                  name="monitoring_text"
-                  value={formData.monitoring_text}
-                  onChange={handleInputChange}
-                  rows={4}
-                  className="form-control"
-                  disabled={isReadOnly}
-                />
-              </div>
-
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <div>
-                  <label htmlFor="gaf_score" className="mb-2 block text-sm font-medium text-gray-700">
-                    GAF score
-                  </label>
-                  <input
-                    id="gaf_score"
-                    type="number"
-                    name="gaf_score"
-                    value={formData.gaf_score}
-                    onChange={handleInputChange}
-                    min="0"
-                    max="100"
-                    className="form-control"
-                    disabled={isReadOnly}
-                  />
-                </div>
-                <div>
-                  <label htmlFor="gaf_date" className="mb-2 block text-sm font-medium text-gray-700">
-                    GAF score 評価日
-                  </label>
-                  <input
-                    id="gaf_date"
-                    type="date"
-                    name="gaf_date"
-                    value={formData.gaf_date}
-                    onChange={handleInputChange}
-                    className="form-control"
-                    disabled={isReadOnly}
-                  />
-                </div>
-              </div>
-            </div>
+            </form>
           </div>
         </>
       )}
