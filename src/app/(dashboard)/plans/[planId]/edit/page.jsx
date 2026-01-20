@@ -8,6 +8,8 @@ import { fetchPlan, updatePlan, hospitalizePlan, autoEvaluatePlan, getPlanPdfUrl
 import { getSessionFromStorage } from '@/lib/sessionStorage';
 import PlanStatusBadge from '@/components/plans/PlanStatusBadge';
 import ConfirmDialog from '@/components/ConfirmDialog';
+import Stepper from '@/components/Stepper';
+import StepperNavigation from '@/components/StepperNavigation';
 
 // ==============================|| PLAN EDIT PAGE ||============================== //
 
@@ -31,6 +33,7 @@ export default function PlanEditPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
+  const [currentStep, setCurrentStep] = useState(0);
   const [showHospitalizeModal, setShowHospitalizeModal] = useState(false);
   const [hospitalizeData, setHospitalizeData] = useState({
     hospitalized_at: '',
@@ -194,6 +197,48 @@ export default function PlanEditPage() {
         }
       ]
     }));
+  };
+
+  // Stepper configuration
+  const steps = [
+    { label: '計画期間', shortLabel: '期間' },
+    { label: '目標・方針', shortLabel: '目標' },
+    { label: '計画項目', shortLabel: '項目' },
+    { label: '3ヶ月評価', shortLabel: '評価' },
+    { label: '処置・材料', shortLabel: '処置' },
+    { label: '計画終了', shortLabel: '終了' },
+  ];
+
+  // Step validation
+  const validateStep = (step) => {
+    switch (step) {
+      case 0: // Plan Period
+        return !!formData.start_date && !!formData.end_date;
+      case 1: // Goals & Policy (optional)
+        return true;
+      case 2: // Plan Items (optional)
+        return true;
+      case 3: // Evaluations (optional)
+        return true;
+      case 4: // Procedures (optional)
+        return true;
+      case 5: // Hospitalization (optional)
+        return true;
+      default:
+        return true;
+    }
+  };
+
+  const handleNextStep = () => {
+    if (validateStep(currentStep) && currentStep < steps.length - 1) {
+      setCurrentStep(currentStep + 1);
+    }
+  };
+
+  const handlePreviousStep = () => {
+    if (currentStep > 0) {
+      setCurrentStep(currentStep - 1);
+    }
   };
 
   const handleSave = async () => {
@@ -534,293 +579,363 @@ export default function PlanEditPage() {
             </div>
           )}
 
-          {/* Plan Period + Status */}
-          <div className="mb-6 rounded-lg border border-gray-200 bg-white p-6 shadow">
-            <h2 className="mb-4 text-xl font-semibold text-gray-900">計画期間・ステータス</h2>
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-              <div>
-                <label htmlFor="start_date" className="mb-2 block text-sm font-medium text-gray-700">
-                  開始日
-                </label>
-                <input
-                  id="start_date"
-                  type="date"
-                  name="start_date"
-                  value={formData.start_date}
-                  onChange={handleInputChange}
-                  className="form-control"
-                  disabled={isReadOnly}
-                />
-              </div>
-              <div>
-                <label htmlFor="end_date" className="mb-2 block text-sm font-medium text-gray-700">
-                  終了日
-                </label>
-                <input
-                  id="end_date"
-                  type="date"
-                  name="end_date"
-                  value={formData.end_date}
-                  onChange={handleInputChange}
-                  className="form-control"
-                  disabled={isReadOnly}
-                />
-              </div>
-              <div>
-                <label className="mb-2 block text-sm font-medium text-gray-700">ステータス</label>
-                <div className="mt-1">
-                  <PlanStatusBadge status={plan.status} />
-                </div>
+          {/* Stepper Form */}
+          <div className="mb-6 rounded-lg bg-white shadow" style={{ minHeight: 'calc(100vh - 200px)' }}>
+            <div className="p-4 border-b border-gray-200">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-semibold text-gray-900">計画書編集</h2>
+                <button
+                  onClick={() => router.back()}
+                  className="btn btn-sm btn-outline-secondary"
+                  disabled={saving}
+                >
+                  <i className="ph ph-x me-1"></i>
+                  キャンセル
+                </button>
               </div>
             </div>
-          </div>
-
-          {/* Goals */}
-          <div className="mb-6 rounded-lg border border-gray-200 bg-white p-6 shadow">
-            <h2 className="mb-4 text-xl font-semibold text-gray-900">目標・方針</h2>
-            <div className="space-y-4">
-              <div>
-                <label htmlFor="long_term_goal" className="mb-2 block text-sm font-medium text-gray-700">
-                  看護の目標（長期目標）
-                </label>
-                <textarea
-                  id="long_term_goal"
-                  name="long_term_goal"
-                  value={formData.long_term_goal}
-                  onChange={handleInputChange}
-                  rows={3}
-                  className="form-control"
-                  disabled={isReadOnly}
-                />
-              </div>
-              <div>
-                <label htmlFor="short_term_goal" className="mb-2 block text-sm font-medium text-gray-700">
-                  短期目標
-                </label>
-                <textarea
-                  id="short_term_goal"
-                  name="short_term_goal"
-                  value={formData.short_term_goal}
-                  onChange={handleInputChange}
-                  rows={2}
-                  className="form-control"
-                  disabled={isReadOnly}
-                />
-              </div>
-              <div>
-                <label htmlFor="policy" className="mb-2 block text-sm font-medium text-gray-700">
-                  看護援助の方針
-                </label>
-                <textarea
-                  id="policy"
-                  name="policy"
-                  value={formData.policy}
-                  onChange={handleInputChange}
-                  rows={3}
-                  className="form-control"
-                  disabled={isReadOnly}
-                />
-              </div>
-              <div>
-                <label htmlFor="patient_family_wish" className="mb-2 block text-sm font-medium text-gray-700">
-                  利用者・家族の希望
-                </label>
-                <textarea
-                  id="patient_family_wish"
-                  name="patient_family_wish"
-                  value={formData.patient_family_wish}
-                  onChange={handleInputChange}
-                  rows={2}
-                  className="form-control"
-                  disabled={isReadOnly}
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Structured Rows (Plan Items) */}
-          <div className="mb-6 rounded-lg border border-gray-200 bg-white p-6 shadow">
-            <h2 className="mb-4 text-xl font-semibold text-gray-900">計画項目</h2>
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-4 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase w-1/4">
-                      項目
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
-                      観察内容
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
-                      援助内容
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200 bg-white">
-                  {formData.items.map((item, index) => (
-                    <tr key={index}>
-                      <td className="px-4 py-3 text-sm font-medium text-gray-900">
-                        {item.label}
-                      </td>
-                      <td className="px-4 py-3">
-                        <textarea
-                          value={item.observation || ''}
-                          onChange={(e) => handleItemChange(index, 'observation', e.target.value)}
-                          rows={2}
-                          className="form-control w-full"
-                          disabled={isReadOnly}
-                        />
-                      </td>
-                      <td className="px-4 py-3">
-                        <textarea
-                          value={item.assistance || ''}
-                          onChange={(e) => handleItemChange(index, 'assistance', e.target.value)}
-                          rows={2}
-                          className="form-control w-full"
-                          disabled={isReadOnly}
-                        />
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          {/* 3-month Evaluations */}
-          <div className="mb-6 rounded-lg border border-gray-200 bg-white p-6 shadow">
-            <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-xl font-semibold text-gray-900">3ヶ月評価</h2>
-              {!isReadOnly && (
-                <div className="flex gap-2">
-                  <button
-                    onClick={handleAutoEvaluate}
-                    disabled={saving}
-                    className="btn btn-outline-secondary btn-sm"
-                  >
-                    <i className="ph ph-magic-wand me-1"></i>
-                    自動判定を実行
-                  </button>
-                  <button
-                    onClick={handleAddEvaluation}
-                    disabled={isReadOnly}
-                    className="btn btn-outline-secondary btn-sm"
-                  >
-                    <i className="ph ph-plus me-1"></i>
-                    評価枠を追加
-                  </button>
-                </div>
-              )}
-            </div>
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              {formData.evaluations.map((evaluation, index) => (
-                <div key={index} className="rounded-lg border border-gray-200 p-4">
-                  <div className="space-y-3">
-                    <div>
-                      <label className="mb-1 block text-sm font-medium text-gray-700">
-                        評価日
-                      </label>
-                      <input
-                        type="date"
-                        value={evaluation.evaluation_date || ''}
-                        onChange={(e) => handleEvaluationChange(index, 'evaluation_date', e.target.value)}
-                        className="form-control"
-                        disabled={isReadOnly}
-                      />
-                    </div>
-                    <div>
-                      <label className="mb-1 block text-sm font-medium text-gray-700">
-                        結果
-                      </label>
-                      <div className="flex gap-4">
-                        {['NONE', 'CIRCLE', 'CHECK'].map((result) => (
-                          <label key={result} className="flex items-center">
-                            <input
-                              type="radio"
-                              name={`evaluation-${index}`}
-                              value={result}
-                              checked={evaluation.result === result}
-                              onChange={(e) => handleEvaluationChange(index, 'result', e.target.value)}
-                              className="form-check-input input-primary me-1"
-                              disabled={isReadOnly}
-                            />
-                            <span className="text-sm text-gray-700">
-                              {result === 'NONE' ? '未評価' : result === 'CIRCLE' ? '◯' : '☑️'}
-                            </span>
+            <form onSubmit={(e) => { e.preventDefault(); handleSave(); }} className="flex flex-col" style={{ height: 'calc(100vh - 280px)' }}>
+              <Stepper steps={steps} currentStep={currentStep}>
+                <div className="p-4 md:p-6">
+                  {/* Step 0: Plan Period & Status */}
+                  {currentStep === 0 && (
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-semibold text-gray-700 mb-4">計画期間・ステータス</h3>
+                      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                        <div>
+                          <label htmlFor="start_date" className="mb-2 block text-sm font-medium text-gray-700">
+                            開始日 <span className="text-red-500">*</span>
                           </label>
+                          <input
+                            id="start_date"
+                            type="date"
+                            name="start_date"
+                            value={formData.start_date}
+                            onChange={handleInputChange}
+                            className="form-control"
+                            disabled={isReadOnly}
+                            required
+                          />
+                        </div>
+                        <div>
+                          <label htmlFor="end_date" className="mb-2 block text-sm font-medium text-gray-700">
+                            終了日 <span className="text-red-500">*</span>
+                          </label>
+                          <input
+                            id="end_date"
+                            type="date"
+                            name="end_date"
+                            value={formData.end_date}
+                            onChange={handleInputChange}
+                            className="form-control"
+                            disabled={isReadOnly}
+                            required
+                          />
+                        </div>
+                        <div>
+                          <label className="mb-2 block text-sm font-medium text-gray-700">ステータス</label>
+                          <div className="mt-1">
+                            <PlanStatusBadge status={plan.status} />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Step 1: Goals & Policy */}
+                  {currentStep === 1 && (
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-semibold text-gray-700 mb-4">目標・方針</h3>
+                      <div className="space-y-4">
+                        <div>
+                          <label htmlFor="long_term_goal" className="mb-2 block text-sm font-medium text-gray-700">
+                            看護の目標（長期目標）
+                          </label>
+                          <textarea
+                            id="long_term_goal"
+                            name="long_term_goal"
+                            value={formData.long_term_goal}
+                            onChange={handleInputChange}
+                            rows={3}
+                            className="form-control"
+                            disabled={isReadOnly}
+                          />
+                        </div>
+                        <div>
+                          <label htmlFor="short_term_goal" className="mb-2 block text-sm font-medium text-gray-700">
+                            短期目標
+                          </label>
+                          <textarea
+                            id="short_term_goal"
+                            name="short_term_goal"
+                            value={formData.short_term_goal}
+                            onChange={handleInputChange}
+                            rows={2}
+                            className="form-control"
+                            disabled={isReadOnly}
+                          />
+                        </div>
+                        <div>
+                          <label htmlFor="policy" className="mb-2 block text-sm font-medium text-gray-700">
+                            看護援助の方針
+                          </label>
+                          <textarea
+                            id="policy"
+                            name="policy"
+                            value={formData.policy}
+                            onChange={handleInputChange}
+                            rows={3}
+                            className="form-control"
+                            disabled={isReadOnly}
+                          />
+                        </div>
+                        <div>
+                          <label htmlFor="patient_family_wish" className="mb-2 block text-sm font-medium text-gray-700">
+                            利用者・家族の希望
+                          </label>
+                          <textarea
+                            id="patient_family_wish"
+                            name="patient_family_wish"
+                            value={formData.patient_family_wish}
+                            onChange={handleInputChange}
+                            rows={2}
+                            className="form-control"
+                            disabled={isReadOnly}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Step 2: Plan Items */}
+                  {currentStep === 2 && (
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-semibold text-gray-700 mb-4">計画項目</h3>
+                      <div className="overflow-x-auto">
+                        <table className="min-w-full divide-y divide-gray-200">
+                          <thead className="bg-gray-50">
+                            <tr>
+                              <th className="px-4 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase w-1/4">
+                                項目
+                              </th>
+                              <th className="px-4 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
+                                観察内容
+                              </th>
+                              <th className="px-4 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
+                                援助内容
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-gray-200 bg-white">
+                            {formData.items.map((item, index) => (
+                              <tr key={index}>
+                                <td className="px-4 py-3 text-sm font-medium text-gray-900">
+                                  {item.label}
+                                </td>
+                                <td className="px-4 py-3">
+                                  <textarea
+                                    value={item.observation || ''}
+                                    onChange={(e) => handleItemChange(index, 'observation', e.target.value)}
+                                    rows={2}
+                                    className="form-control w-full"
+                                    disabled={isReadOnly}
+                                  />
+                                </td>
+                                <td className="px-4 py-3">
+                                  <textarea
+                                    value={item.assistance || ''}
+                                    onChange={(e) => handleItemChange(index, 'assistance', e.target.value)}
+                                    rows={2}
+                                    className="form-control w-full"
+                                    disabled={isReadOnly}
+                                  />
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Step 3: 3-month Evaluations */}
+                  {currentStep === 3 && (
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <h3 className="text-lg font-semibold text-gray-700">3ヶ月評価</h3>
+                        {!isReadOnly && (
+                          <div className="flex gap-2">
+                            <button
+                              type="button"
+                              onClick={handleAutoEvaluate}
+                              disabled={saving}
+                              className="btn btn-outline-secondary btn-sm"
+                            >
+                              <i className="ph ph-magic-wand me-1"></i>
+                              自動判定を実行
+                            </button>
+                            <button
+                              type="button"
+                              onClick={handleAddEvaluation}
+                              disabled={isReadOnly}
+                              className="btn btn-outline-secondary btn-sm"
+                            >
+                              <i className="ph ph-plus me-1"></i>
+                              評価枠を追加
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                        {formData.evaluations.map((evaluation, index) => (
+                          <div key={index} className="rounded-lg border border-gray-200 p-4">
+                            <div className="space-y-3">
+                              <div>
+                                <label className="mb-1 block text-sm font-medium text-gray-700">
+                                  評価日
+                                </label>
+                                <input
+                                  type="date"
+                                  value={evaluation.evaluation_date || ''}
+                                  onChange={(e) => handleEvaluationChange(index, 'evaluation_date', e.target.value)}
+                                  className="form-control"
+                                  disabled={isReadOnly}
+                                />
+                              </div>
+                              <div>
+                                <label className="mb-1 block text-sm font-medium text-gray-700">
+                                  結果
+                                </label>
+                                <div className="flex gap-4">
+                                  {['NONE', 'CIRCLE', 'CHECK'].map((result) => (
+                                    <label key={result} className="flex items-center">
+                                      <input
+                                        type="radio"
+                                        name={`evaluation-${index}`}
+                                        value={result}
+                                        checked={evaluation.result === result}
+                                        onChange={(e) => handleEvaluationChange(index, 'result', e.target.value)}
+                                        className="form-check-input input-primary me-1"
+                                        disabled={isReadOnly}
+                                      />
+                                      <span className="text-sm text-gray-700">
+                                        {result === 'NONE' ? '未評価' : result === 'CIRCLE' ? '◯' : '☑️'}
+                                      </span>
+                                    </label>
+                                  ))}
+                                </div>
+                              </div>
+                              <div>
+                                <label className="mb-1 block text-sm font-medium text-gray-700">
+                                  備考
+                                </label>
+                                <textarea
+                                  value={evaluation.note || ''}
+                                  onChange={(e) => handleEvaluationChange(index, 'note', e.target.value)}
+                                  rows={2}
+                                  className="form-control"
+                                  disabled={isReadOnly}
+                                />
+                              </div>
+                            </div>
+                          </div>
                         ))}
                       </div>
                     </div>
-                    <div>
-                      <label className="mb-1 block text-sm font-medium text-gray-700">
-                        備考
-                      </label>
-                      <textarea
-                        value={evaluation.note || ''}
-                        onChange={(e) => handleEvaluationChange(index, 'note', e.target.value)}
-                        rows={2}
-                        className="form-control"
-                        disabled={isReadOnly}
-                      />
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
+                  )}
 
-          {/* Procedure/Materials */}
-          {formData.care_supplies && formData.care_supplies.length > 0 && (
-            <div className="mb-6 rounded-lg border border-gray-200 bg-white p-6 shadow">
-              <h2 className="mb-4 text-xl font-semibold text-gray-900">処置・材料</h2>
-              {formData.care_supplies.map((supply, index) => (
-                <div key={index} className="space-y-4">
-                  <div>
-                    <label className="mb-2 block text-sm font-medium text-gray-700">
-                      処置内容
-                    </label>
-                    <div className="text-gray-900">{supply.procedure_content || '—'}</div>
-                  </div>
-                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                    <div>
-                      <label className="mb-2 block text-sm font-medium text-gray-700">
-                        材料の種類・サイズ
-                      </label>
-                      <div className="text-gray-900">{supply.material_type_size || '—'}</div>
+                  {/* Step 4: Procedure/Materials */}
+                  {currentStep === 4 && (
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-semibold text-gray-700 mb-4">処置・材料</h3>
+                      {formData.care_supplies && formData.care_supplies.length > 0 ? (
+                        formData.care_supplies.map((supply, index) => (
+                          <div key={index} className="space-y-4 rounded-lg border border-gray-200 p-4">
+                            <div>
+                              <label className="mb-2 block text-sm font-medium text-gray-700">
+                                処置内容
+                              </label>
+                              <div className="text-gray-900">{supply.procedure_content || '—'}</div>
+                            </div>
+                            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                              <div>
+                                <label className="mb-2 block text-sm font-medium text-gray-700">
+                                  材料の種類・サイズ
+                                </label>
+                                <div className="text-gray-900">{supply.material_type_size || '—'}</div>
+                              </div>
+                              <div>
+                                <label className="mb-2 block text-sm font-medium text-gray-700">
+                                  必要数量
+                                </label>
+                                <div className="text-gray-900">{supply.required_amount || '—'}</div>
+                              </div>
+                            </div>
+                            {supply.remark && (
+                              <div>
+                                <label className="mb-2 block text-sm font-medium text-gray-700">
+                                  備考
+                                </label>
+                                <div className="text-gray-900">{supply.remark}</div>
+                              </div>
+                            )}
+                          </div>
+                        ))
+                      ) : (
+                        <div className="text-center py-8 text-gray-500">
+                          処置・材料の情報はありません
+                        </div>
+                      )}
                     </div>
-                    <div>
-                      <label className="mb-2 block text-sm font-medium text-gray-700">
-                        必要数量
-                      </label>
-                      <div className="text-gray-900">{supply.required_amount || '—'}</div>
-                    </div>
-                  </div>
-                  {supply.remark && (
-                    <div>
-                      <label className="mb-2 block text-sm font-medium text-gray-700">
-                        備考
-                      </label>
-                      <div className="text-gray-900">{supply.remark}</div>
+                  )}
+
+                  {/* Step 5: Hospitalization */}
+                  {currentStep === 5 && (
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-semibold text-gray-700 mb-4">計画終了</h3>
+                      {!isReadOnly ? (
+                        <div className="rounded-lg border border-gray-200 p-6">
+                          <p className="mb-4 text-gray-700">
+                            入院により計画書を終了する場合は、以下のボタンをクリックしてください。
+                          </p>
+                          <button
+                            type="button"
+                            onClick={() => setShowHospitalizeModal(true)}
+                            className="btn btn-danger"
+                          >
+                            <i className="ph ph-hospital me-2"></i>
+                            入院あり（計画終了）
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="rounded-lg border border-gray-200 bg-gray-50 p-6">
+                          <p className="text-gray-700">
+                            この計画書は既に終了しています。
+                          </p>
+                          {hospitalization && (
+                            <div className="mt-4 text-sm text-gray-600">
+                              <p>入院日: {hospitalization.hospitalized_at}</p>
+                              {hospitalization.note && <p>備考: {hospitalization.note}</p>}
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
-              ))}
-            </div>
-          )}
-
-          {/* Hospitalization */}
-          {!isReadOnly && (
-            <div className="mb-6 rounded-lg border border-gray-200 bg-white p-6 shadow">
-              <h2 className="mb-4 text-xl font-semibold text-gray-900">計画終了</h2>
-              <button
-                onClick={() => setShowHospitalizeModal(true)}
-                className="btn btn-danger"
-              >
-                <i className="ph ph-hospital me-2"></i>
-                入院あり（計画終了）
-              </button>
-            </div>
-          )}
+              </Stepper>
+              <StepperNavigation
+                currentStep={currentStep}
+                totalSteps={steps.length}
+                onPrevious={handlePreviousStep}
+                onNext={handleNextStep}
+                onSave={handleSave}
+                canGoNext={validateStep(currentStep)}
+                isSubmitting={saving}
+                showSave={currentStep === steps.length - 1}
+              />
+            </form>
+          </div>
         </>
       )}
 

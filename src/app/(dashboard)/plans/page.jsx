@@ -6,8 +6,7 @@ import { useAuthProfile } from '@/hooks/useAuthProfile';
 import { supabase } from '@/lib/supabase';
 import PlanStatusBadge from '@/components/plans/PlanStatusBadge';
 import PlanCard from '@/components/plans/PlanCard';
-import PDFDownloadButton from '@/components/ai/PDFDownloadButton';
-import PDFPreviewButton from '@/components/ai/PDFPreviewButton';
+import PlanPDFPreviewModal from '@/components/plans/PlanPDFPreviewModal';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { deletePlan } from '@/lib/planApi';
 
@@ -38,6 +37,7 @@ export default function PlansListPage() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [previewPlanId, setPreviewPlanId] = useState(null);
   const [pdfPreviewUrl, setPdfPreviewUrl] = useState(null);
+  const [showPdfModal, setShowPdfModal] = useState(false);
   const [confirmDialog, setConfirmDialog] = useState(null);
   const [deletingPlanId, setDeletingPlanId] = useState(null);
 
@@ -287,20 +287,16 @@ export default function PlansListPage() {
                             >
                               <i className="ph ph-pencil"></i>
                             </button>
-                            <button
-                              onClick={() => {
-                                if (previewPlanId === plan.id && pdfPreviewUrl) {
-                                  setPreviewPlanId(null);
-                                  setPdfPreviewUrl(null);
-                                } else {
-                                  setPreviewPlanId(plan.id);
-                                }
-                              }}
-                              className={`p-1 ${previewPlanId === plan.id && pdfPreviewUrl ? 'text-green-600' : 'text-gray-600'} hover:text-green-700`}
-                              title={previewPlanId === plan.id && pdfPreviewUrl ? 'プレビューを閉じる' : 'PDFプレビュー'}
-                            >
-                              <i className="ph ph-eye"></i>
-                            </button>
+                          <button
+                            onClick={() => {
+                              setPreviewPlanId(plan.id);
+                              setShowPdfModal(true);
+                            }}
+                            className="text-purple-600 hover:text-purple-900 p-1"
+                            title="PDF操作を表示"
+                          >
+                            <i className="ph ph-file-pdf"></i>
+                          </button>
                             <button
                               onClick={async () => {
                                 try {
@@ -368,12 +364,8 @@ export default function PlansListPage() {
                 onEdit={(plan) => router.push(`/plans/${plan.id}/edit`)}
                 onDelete={handleDelete}
                 onPreview={(plan) => {
-                  if (previewPlanId === plan.id && pdfPreviewUrl) {
-                    setPreviewPlanId(null);
-                    setPdfPreviewUrl(null);
-                  } else {
-                    setPreviewPlanId(plan.id);
-                  }
+                  setPreviewPlanId(plan.id);
+                  setShowPdfModal(true);
                 }}
                 onDownload={async (plan) => {
                   try {
@@ -409,7 +401,6 @@ export default function PlansListPage() {
                     alert('PDFのダウンロード中にエラーが発生しました。');
                   }
                 }}
-                isPreviewActive={previewPlanId === plan.id && !!pdfPreviewUrl}
                 isDeleting={deletingPlanId === plan.id}
               />
             ))}
@@ -417,50 +408,19 @@ export default function PlansListPage() {
         </>
       )}
 
-      {/* PDF Preview Section */}
+      {/* PDF Preview Modal */}
       {previewPlanId && (
-        <div className="mt-6 rounded-lg border border-gray-200 bg-white shadow">
-          <div className="border-b border-gray-200 bg-gray-50 px-4 py-3">
-            <div className="flex items-center justify-between">
-              <span className="font-semibold text-gray-900">PDFプレビュー</span>
-              <button
-                type="button"
-                onClick={() => {
-                  setPreviewPlanId(null);
-                  setPdfPreviewUrl(null);
-                }}
-                className="btn btn-sm btn-outline-secondary"
-              >
-                閉じる
-              </button>
-            </div>
-          </div>
-          <div className="p-4">
-            <div className="mb-4 grid grid-cols-1 gap-4 md:grid-cols-2">
-              <PDFDownloadButton
-                label="計画書 PDFをダウンロード"
-                endpoint={`/plans/${previewPlanId}/pdf`}
-                filename={`plan_${previewPlanId}.pdf`}
-                method="GET"
-              />
-              <PDFPreviewButton
-                label={pdfPreviewUrl ? 'プレビューを閉じる' : '計画書をプレビュー'}
-                endpoint={`/plans/${previewPlanId}/pdf`}
-                isActive={!!pdfPreviewUrl}
-                onPreviewReady={(url) => setPdfPreviewUrl(url)}
-                method="GET"
-              />
-            </div>
-            
-            {pdfPreviewUrl && (
-              <div className="mt-4 rounded-lg border border-gray-200 bg-white shadow">
-                <div className="w-full" style={{ height: '600px' }}>
-                  <iframe src={pdfPreviewUrl} title="PDF preview" className="w-full h-full border-0" />
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
+        <PlanPDFPreviewModal
+          planId={previewPlanId}
+          isOpen={showPdfModal}
+          onClose={() => {
+            setShowPdfModal(false);
+            setPreviewPlanId(null);
+            setPdfPreviewUrl(null);
+          }}
+          pdfPreviewUrl={pdfPreviewUrl}
+          onPreviewReady={setPdfPreviewUrl}
+        />
       )}
       </div>
     </>

@@ -7,9 +7,8 @@ import { supabase } from '@/lib/supabase';
 import { fetchAllReports, deleteReport } from '@/lib/reportApi';
 import ReportStatusBadge from '@/components/reports/ReportStatusBadge';
 import ReportCard from '@/components/reports/ReportCard';
+import ReportPDFPreviewModal from '@/components/reports/ReportPDFPreviewModal';
 import ConfirmDialog from '@/components/ConfirmDialog';
-import PDFPreviewButton from '@/components/ai/PDFPreviewButton';
-import PDFDownloadButton from '@/components/ai/PDFDownloadButton';
 
 // ==============================|| REPORTS LIST PAGE ||============================== //
 
@@ -36,6 +35,7 @@ export default function ReportsListPage() {
   const [deletingReportId, setDeletingReportId] = useState(null);
   const [previewReportId, setPreviewReportId] = useState(null);
   const [pdfPreviewUrl, setPdfPreviewUrl] = useState(null);
+  const [showPdfModal, setShowPdfModal] = useState(false);
 
   // Fetch all reports
   const fetchReports = useCallback(async () => {
@@ -340,17 +340,13 @@ export default function ReportsListPage() {
                           </button>
                           <button
                             onClick={() => {
-                              if (previewReportId === report.id && pdfPreviewUrl) {
-                                setPreviewReportId(null);
-                                setPdfPreviewUrl(null);
-                              } else {
-                                setPreviewReportId(report.id);
-                              }
+                              setPreviewReportId(report.id);
+                              setShowPdfModal(true);
                             }}
-                            className={`p-1 ${previewReportId === report.id && pdfPreviewUrl ? 'text-green-600' : 'text-gray-600'} hover:text-green-700`}
-                            title={previewReportId === report.id && pdfPreviewUrl ? 'プレビューを閉じる' : 'PDFプレビュー'}
+                            className="text-purple-600 hover:text-purple-900 p-1"
+                            title="PDF操作を表示"
                           >
-                            <i className="ph ph-eye"></i>
+                            <i className="ph ph-file-pdf"></i>
                           </button>
                           <button
                             onClick={async () => {
@@ -421,12 +417,8 @@ export default function ReportsListPage() {
                   onEdit={(report) => router.push(`/reports/${report.id}/edit`)}
                   onDelete={handleDelete}
                   onPreview={(report) => {
-                    if (previewReportId === report.id && pdfPreviewUrl) {
-                      setPreviewReportId(null);
-                      setPdfPreviewUrl(null);
-                    } else {
-                      setPreviewReportId(report.id);
-                    }
+                    setPreviewReportId(report.id);
+                    setShowPdfModal(true);
                   }}
                   onDownload={async (report) => {
                     try {
@@ -462,7 +454,6 @@ export default function ReportsListPage() {
                       alert('PDFのダウンロード中にエラーが発生しました。');
                     }
                   }}
-                  isPreviewActive={previewReportId === report.id && !!pdfPreviewUrl}
                   isDeleting={deletingReportId === report.id}
                 />
               ))}
@@ -470,50 +461,19 @@ export default function ReportsListPage() {
           </>
         )}
 
-      {/* PDF Preview Section */}
+      {/* PDF Preview Modal */}
       {previewReportId && (
-        <div className="mt-6 rounded-lg border border-gray-200 bg-white shadow">
-          <div className="border-b border-gray-200 bg-gray-50 px-4 py-3">
-            <div className="flex items-center justify-between">
-              <span className="font-semibold text-gray-900">PDFプレビュー</span>
-              <button
-                type="button"
-                onClick={() => {
-                  setPreviewReportId(null);
-                  setPdfPreviewUrl(null);
-                }}
-                className="btn btn-sm btn-outline-secondary"
-              >
-                閉じる
-              </button>
-            </div>
-          </div>
-          <div className="p-4">
-            <div className="mb-4 grid grid-cols-1 gap-4 md:grid-cols-2">
-              <PDFDownloadButton
-                label="報告書 PDFをダウンロード"
-                endpoint={`/reports/${previewReportId}/pdf`}
-                filename={`report_${previewReportId}.pdf`}
-                method="GET"
-              />
-              <PDFPreviewButton
-                label={pdfPreviewUrl ? 'プレビューを閉じる' : '報告書をプレビュー'}
-                endpoint={`/reports/${previewReportId}/pdf`}
-                isActive={!!pdfPreviewUrl}
-                onPreviewReady={(url) => setPdfPreviewUrl(url)}
-                method="GET"
-              />
-            </div>
-            
-            {pdfPreviewUrl && (
-              <div className="mt-4 rounded-lg border border-gray-200 bg-white shadow">
-                <div className="w-full" style={{ height: '600px' }}>
-                  <iframe src={pdfPreviewUrl} title="PDF preview" className="w-full h-full border-0" />
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
+        <ReportPDFPreviewModal
+          reportId={previewReportId}
+          isOpen={showPdfModal}
+          onClose={() => {
+            setShowPdfModal(false);
+            setPreviewReportId(null);
+            setPdfPreviewUrl(null);
+          }}
+          pdfPreviewUrl={pdfPreviewUrl}
+          onPreviewReady={setPdfPreviewUrl}
+        />
       )}
       </div>
     </div>

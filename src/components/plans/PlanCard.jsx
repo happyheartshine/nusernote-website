@@ -27,7 +27,6 @@ export default function PlanCard({
   onDelete,
   onPreview,
   onDownload,
-  isPreviewActive = false,
   isDeleting = false,
 }) {
   const patientName = plan.patient?.name || plan.patient_name || '—';
@@ -68,14 +67,10 @@ export default function PlanCard({
           <div className="flex items-center gap-2">
             <button
               onClick={() => onPreview(plan)}
-              className={`p-2 rounded-lg transition-colors ${
-                isPreviewActive
-                  ? 'text-green-600 hover:text-green-900 hover:bg-green-50'
-                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
-              }`}
-              title={isPreviewActive ? 'プレビューを閉じる' : 'PDFプレビュー'}
+              className="p-2 text-purple-600 hover:text-purple-900 hover:bg-purple-50 rounded-lg transition-colors"
+              title="PDF操作を表示"
             >
-              <i className={`ph ${isPreviewActive ? 'ph-eye-slash' : 'ph-eye'} text-lg`}></i>
+              <i className="ph ph-file-pdf text-lg"></i>
             </button>
             <button
               onClick={() => onDownload(plan)}
@@ -121,6 +116,5 @@ PlanCard.propTypes = {
   onDelete: PropTypes.func.isRequired,
   onPreview: PropTypes.func.isRequired,
   onDownload: PropTypes.func.isRequired,
-  isPreviewActive: PropTypes.bool,
   isDeleting: PropTypes.bool,
 };
