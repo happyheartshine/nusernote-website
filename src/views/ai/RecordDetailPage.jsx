@@ -226,22 +226,26 @@ export default function RecordDetailPage({ recordId }) {
                 </div>
               )}
               
-              <div className="mb-6 space-y-3">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  <PDFDownloadButton
-                    label="訪問看護記録書Ⅱ PDFをダウンロード"
-                    endpoint={`/pdf/visit-report/${record.id}`}
-                    filename={`visit_report_${record.id}.pdf`}
-                  />
-                  <PDFPreviewButton
-                    label={pdfPreviewUrl ? '訪問看護記録書Ⅱ プレビューを閉じる' : '訪問看護記録書Ⅱ をプレビュー'}
-                    endpoint={`/pdf/visit-report/${record.id}`}
-                    isActive={!!pdfPreviewUrl}
-                    onPreviewReady={(url) => setPdfPreviewUrl(url)}
-                  />
+              {!pdfPreviewUrl && (
+                <div className="mb-6 space-y-3">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <PDFDownloadButton
+                      label="訪問看護記録書Ⅱ PDFをダウンロード"
+                      endpoint={`/pdf/visit-report/${record.id}`}
+                      filename={`visit_report_${record.id}.pdf`}
+                    />
+                    <PDFPreviewButton
+                      label={pdfPreviewUrl ? '訪問看護記録書Ⅱ プレビューを閉じる' : '訪問看護記録書Ⅱ をプレビュー'}
+                      endpoint={`/pdf/visit-report/${record.id}`}
+                      isActive={!!pdfPreviewUrl}
+                      onPreviewReady={(url) => setPdfPreviewUrl(url)}
+                    />
+                  </div>
                 </div>
+              )}
 
-                {pdfPreviewUrl && (
+              {pdfPreviewUrl && (
+                <div className="mb-6">
                   <div className="card">
                     <div className="card-header flex items-center justify-between">
                       <span>PDFプレビュー</span>
@@ -259,21 +263,28 @@ export default function RecordDetailPage({ recordId }) {
                       </div>
                     </div>
                   </div>
-                )}
-              </div>
+                </div>
+              )}
 
-              <SOAPOutput
-                soapOutput={record.soap_output}
-                planOutput={record.plan_output}
-                visitDate={record.visit_date}
-                startTime={record.start_time || ''}
-                endTime={record.end_time || ''}
-                selectedNurses={record.nurses}
-                diagnosis={record.diagnosis || ''}
-                status={record.status || 'draft'}
-                onSoapUpdate={handleSoapUpdate}
-                onPlanUpdate={handlePlanUpdate}
-              />
+              {!pdfPreviewUrl && (
+                <div className="card flex flex-col" style={{ height: 'calc(100vh - 400px)', minHeight: '500px' }}>
+                  <div className="flex-1 flex flex-col overflow-hidden p-0">
+                    <SOAPOutput
+                      soapOutput={record.soap_output}
+                      planOutput={record.plan_output}
+                      visitDate={record.visit_date}
+                      startTime={record.start_time || ''}
+                      endTime={record.end_time || ''}
+                      selectedNurses={record.nurses}
+                      diagnosis={record.diagnosis || ''}
+                      patientName={record.patient_name}
+                      status={record.status || 'draft'}
+                      onSoapUpdate={handleSoapUpdate}
+                      onPlanUpdate={handlePlanUpdate}
+                    />
+                  </div>
+                </div>
+              )}
             </>
           )}
         </div>

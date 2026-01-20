@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { getSessionFromStorage } from '@/lib/sessionStorage';
+import CollapsibleRecordFilters from './CollapsibleRecordFilters';
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || '';
 const FILTERS_STORAGE_KEY = 'nursenote_records_filters';
@@ -320,81 +321,25 @@ export default function RecordsTab() {
         </div>
       )} */}
 
+      {/* Collapsible Filters */}
+      <CollapsibleRecordFilters
+        dateFrom={dateFrom}
+        onDateFromChange={setDateFrom}
+        dateTo={dateTo}
+        onDateToChange={setDateTo}
+        assignedNurse={assignedNurse}
+        onAssignedNurseChange={setAssignedNurse}
+        nurseNames={nurseNames}
+        onApplyFilters={handleApplyFilters}
+        onClearFilters={handleClearFilters}
+        loading={loading}
+      />
+
       <div className="card">
         <div className="card-header">
           <h5>記録一覧</h5>
         </div>
         <div className="card-body">
-          {/* Filter Controls */}
-          <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-              <div>
-                <label htmlFor="filter-date-from" className="mb-2 block text-sm font-medium">
-                  訪問日（開始）
-                </label>
-                <input
-                  type="date"
-                  id="filter-date-from"
-                  value={dateFrom}
-                  onChange={(e) => setDateFrom(e.target.value)}
-                  className="form-control"
-                />
-              </div>
-
-              <div>
-                <label htmlFor="filter-date-to" className="mb-2 block text-sm font-medium">
-                  訪問日（終了）
-                </label>
-                <input
-                  type="date"
-                  id="filter-date-to"
-                  value={dateTo}
-                  onChange={(e) => setDateTo(e.target.value)}
-                  className="form-control"
-                />
-              </div>
-
-              <div>
-                <label htmlFor="filter-nurse" className="mb-2 block text-sm font-medium">
-                  担当看護師
-                </label>
-                <select
-                  id="filter-nurse"
-                  value={assignedNurse}
-                  onChange={(e) => setAssignedNurse(e.target.value)}
-                  className="form-control"
-                >
-                  <option value="">すべて</option>
-                  {nurseNames.map((nurse) => (
-                    <option key={nurse} value={nurse}>
-                      {nurse}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={handleApplyFilters}
-                className="btn btn-primary"
-                disabled={loading}
-              >
-                <i className="ph ph-funnel me-2"></i>
-                フィルター適用
-              </button>
-              <button
-                type="button"
-                onClick={handleClearFilters}
-                className="btn btn-outline-secondary"
-                disabled={loading}
-              >
-                <i className="ph ph-x me-2"></i>
-                クリア
-              </button>
-            </div>
-          </div>
 
           {loading && (
             <div className="flex items-center justify-center py-12">

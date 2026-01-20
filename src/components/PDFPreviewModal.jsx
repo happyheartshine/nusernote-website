@@ -51,6 +51,16 @@ export default function PDFPreviewModal({ patientId, isOpen, onClose, pdfPreview
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-4">
           <div className="space-y-4 mb-4">
+            {/* Return to User List Button */}
+            <button
+              onClick={onClose}
+              className="btn btn-outline-secondary w-full min-h-[44px] flex items-center justify-center gap-2"
+              type="button"
+            >
+              <i className="ph ph-arrow-left"></i>
+              ユーザーリストに戻る
+            </button>
+
             <PDFDownloadButton
               label="利用者情報 PDFをダウンロード"
               endpoint={`/pdf/patient-record/${patientId}`}
@@ -106,6 +116,19 @@ export default function PDFPreviewModal({ patientId, isOpen, onClose, pdfPreview
           閉じる
         </button>
       </div>
+      
+      {/* Return to User List Button */}
+      <div className="mb-4">
+        <button
+          onClick={onClose}
+          className="btn btn-outline-secondary w-full md:w-auto min-h-[44px] flex items-center justify-center gap-2"
+          type="button"
+        >
+          <i className="ph ph-arrow-left"></i>
+          ユーザーリストに戻る
+        </button>
+      </div>
+
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <PDFDownloadButton
           label="利用者情報 PDFをダウンロード"

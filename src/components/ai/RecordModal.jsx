@@ -125,7 +125,7 @@ export default function RecordModal({ recordId, onClose }) {
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-6">
+        <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
           {loading && (
             <div className="flex items-center justify-center py-12">
               <div className="text-center">
@@ -136,30 +136,34 @@ export default function RecordModal({ recordId, onClose }) {
           )}
 
           {error && (
-            <div className="alert alert-danger">
+            <div className="alert alert-danger m-6">
               <i className="ph ph-warning-circle"></i>
               <p>{error}</p>
             </div>
           )}
 
           {!loading && !error && record && (
-            <>
-              <div className="mb-6 space-y-3">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  <PDFDownloadButton
-                    label="訪問看護記録書Ⅱ PDFをダウンロード"
-                    endpoint={`/pdf/visit-report/${record.id}`}
-                    filename={`visit_report_${record.id}.pdf`}
-                  />
-                  <PDFPreviewButton
-                    label={pdfPreviewUrl ? '訪問看護記録書Ⅱ プレビューを閉じる' : '訪問看護記録書Ⅱ をプレビュー'}
-                    endpoint={`/pdf/visit-report/${record.id}`}
-                    isActive={!!pdfPreviewUrl}
-                    onPreviewReady={(url) => setPdfPreviewUrl(url)}
-                  />
+            <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+              {!pdfPreviewUrl && (
+                <div className="p-6 pb-4 space-y-3 flex-shrink-0">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <PDFDownloadButton
+                      label="訪問看護記録書Ⅱ PDFをダウンロード"
+                      endpoint={`/pdf/visit-report/${record.id}`}
+                      filename={`visit_report_${record.id}.pdf`}
+                    />
+                    <PDFPreviewButton
+                      label={pdfPreviewUrl ? '訪問看護記録書Ⅱ プレビューを閉じる' : '訪問看護記録書Ⅱ をプレビュー'} 
+                      endpoint={`/pdf/visit-report/${record.id}`}
+                      isActive={!!pdfPreviewUrl}
+                      onPreviewReady={(url) => setPdfPreviewUrl(url)}
+                    />
+                  </div>
                 </div>
+              )}
 
-                {pdfPreviewUrl && (
+              {pdfPreviewUrl && (
+                <div className="p-6 pb-4 flex-shrink-0">
                   <div className="card">
                     <div className="card-header flex items-center justify-between">
                       <span>PDFプレビュー</span>
@@ -177,19 +181,26 @@ export default function RecordModal({ recordId, onClose }) {
                       </div>
                     </div>
                   </div>
-                )}
-              </div>
+                </div>
+              )}
 
-              <SOAPOutput
-                soapOutput={record.soap_output}
-                planOutput={record.plan_output}
-                visitDate={record.visit_date}
-                startTime={record.start_time || ''}
-                endTime={record.end_time || ''}
-                selectedNurses={record.nurses}
-                diagnosis={record.diagnosis || ''}
-              />
-            </>
+              {!pdfPreviewUrl && (
+                <div className="flex-1 flex flex-col min-h-0 p-6 pt-0">
+                  <div className="card flex-1 flex flex-col overflow-hidden p-0">
+                    <SOAPOutput
+                      soapOutput={record.soap_output}
+                      planOutput={record.plan_output}
+                      visitDate={record.visit_date}
+                      startTime={record.start_time || ''}
+                      endTime={record.end_time || ''}
+                      selectedNurses={record.nurses}
+                      diagnosis={record.diagnosis || ''}
+                      patientName={record.patient_name}
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
           )}
         </div>
       </div>

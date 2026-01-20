@@ -8,6 +8,8 @@ import { useAuthProfile } from '@/hooks/useAuthProfile';
 import { supabase } from '@/lib/supabase';
 import VoiceInputButton from './VoiceInputButton';
 import SOAPOutput from './SOAPOutput';
+import Stepper from '@/components/Stepper';
+import StepperNavigation from '@/components/StepperNavigation';
 
 const NURSE_OPTIONS = ['吉村', 'A子', 'B子', 'C子'];
 
@@ -51,6 +53,8 @@ export default function SOAPTab() {
   const [soapOutput, setSoapOutput] = useState(null);
   const [planOutput, setPlanOutput] = useState(null);
   const [copyState, setCopyState] = useState('idle');
+  const [currentStep, setCurrentStep] = useState(0);
+  const [showForm, setShowForm] = useState(true);
 
   const resultsRef = useRef(null);
   const sTextareaRef = useRef(null);
@@ -133,6 +137,42 @@ export default function SOAPTab() {
   const canSubmit = useMemo(() => {
     return Boolean(sText.trim() || oText.trim());
   }, [sText, oText]);
+
+  // Stepper configuration
+  const steps = [
+    { label: '利用者情報', shortLabel: '利用者' },
+    { label: '訪問情報', shortLabel: '訪問' },
+    { label: 'SOAP入力', shortLabel: 'SOAP' },
+  ];
+
+  // Step validation
+  const validateStep = (step) => {
+    switch (step) {
+      case 0: // Patient Information
+        return !!selectedPatientId?.trim();
+      case 1: // Visit Information (optional)
+        return true;
+      case 2: // SOAP Input
+        return canSubmit;
+      default:
+        return true;
+    }
+  };
+
+  const handleNextStep = () => {
+    if (validateStep(currentStep) && currentStep < steps.length - 1) {
+      setCurrentStep(currentStep + 1);
+    } else if (currentStep === steps.length - 1 && validateStep(currentStep)) {
+      // Last step - trigger generate
+      handleGenerate();
+    }
+  };
+
+  const handlePreviousStep = () => {
+    if (currentStep > 0) {
+      setCurrentStep(currentStep - 1);
+    }
+  };
 
   const scrollToResults = () => {
     if (resultsRef.current) {
@@ -222,6 +262,7 @@ export default function SOAPTab() {
       const { soap, plan } = parseApiResponse(responseText);
       setSoapOutput(soap);
       setPlanOutput(plan);
+      setShowForm(false); // Hide form, show results
       scrollToResults();
     } catch (err) {
       console.error(err);
@@ -245,6 +286,8 @@ export default function SOAPTab() {
     setPlanOutput(null);
     setError(null);
     setCopyState('idle');
+    setCurrentStep(0);
+    setShowForm(true);
   };
 
   const handleCopy = async () => {
@@ -346,179 +389,219 @@ export default function SOAPTab() {
 
   return (
     <div className="space-y-6">
-      <div className="card">
-        <div className="card-header">
-          <h5>入力情報</h5>
-        </div>
-        <div className="card-body">
-          <div className="space-y-4">
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <div>
-                <label className="mb-2 block text-sm font-medium">
-                  利用者名 <span className="text-red-500">*</span>
-                </label>
-                <select
-                  value={selectedPatientId}
-                  onChange={handlePatientChange}
-                  className="form-select"
-                  disabled={loading}
-                  required
-                >
-                  <option value="">選択してください</option>
-                  {patients.map((patient) => (
-                    <option key={patient.id} value={patient.id}>
-                      {patient.name}
-                    </option>
-                  ))}
-                </select>
-                {patients.length === 0 && (
-                  <p className="mt-1 text-xs text-gray-500">
-                    患者が登録されていません。
-                    <a href="/patients" className="text-blue-600 hover:underline ml-1">
-                      患者を登録
-                    </a>
-                  </p>
-                )}
-              </div>
-
-              <div>
-                <label className="mb-2 block text-sm font-medium">主疾患</label>
-                <input
-                  type="text"
-                  value={diagnosis}
-                  onChange={(e) => setDiagnosis(e.target.value)}
-                  className="form-control"
-                  placeholder="主疾患（患者を選択すると自動入力、編集可能）"
-                  disabled={loading}
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="mb-2 block text-sm font-medium">看護師名</label>
-              <div className="flex flex-wrap gap-3">
-                {NURSE_OPTIONS.map((nurse) => (
-                  <label key={nurse} className="flex items-center space-x-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={selectedNurses.includes(nurse)}
-                      onChange={() => toggleNurse(nurse)}
-                      className="form-check-input input-primary"
-                      disabled={loading}
-                    />
-                    <span>{nurse}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <label className="mb-2 block text-sm font-medium">訪問日</label>
-              <input
-                type="date"
-                value={visitDate}
-                onChange={(e) => setVisitDate(e.target.value)}
-                className="form-control"
+      {showForm ? (
+        <div className="card" style={{ minHeight: 'calc(100vh - 200px)' }}>
+          <div className="card-header">
+            <div className="flex items-center justify-between">
+              <h5>入力情報</h5>
+              <button
+                type="button"
+                onClick={handleClear}
                 disabled={loading}
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="mb-2 block text-sm font-medium">訪問開始時間</label>
-                <input
-                  type="time"
-                  value={startTime}
-                  onChange={(e) => setStartTime(e.target.value)}
-                  className="form-control"
-                  disabled={loading}
-                />
-              </div>
-              <div>
-                <label className="mb-2 block text-sm font-medium">訪問終了時間</label>
-                <input
-                  type="time"
-                  value={endTime}
-                  onChange={(e) => setEndTime(e.target.value)}
-                  className="form-control"
-                  disabled={loading}
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="mb-2 block text-sm font-medium">主訴</label>
-              <input
-                type="text"
-                value={chiefComplaint}
-                onChange={(e) => setChiefComplaint(e.target.value)}
-                className="form-control"
-                placeholder="主訴を入力"
-                disabled={loading}
-              />
-            </div>
-
-            <div>
-              <label className="mb-2 block text-sm font-medium">S（主観）</label>
-              <div className="relative">
-                <textarea
-                  ref={sTextareaRef}
-                  value={sText}
-                  onChange={(e) => setSText(e.target.value)}
-                  className="form-control resize-none"
-                  style={{ maxHeight: `${MAX_TEXTAREA_HEIGHT}px` }}
-                  placeholder="S（任意）"
-                  rows={4}
-                  disabled={loading}
-                />
-                <div className="absolute bottom-3 right-3">
-                  <VoiceInputButton onResult={handleVoiceResultS} disabled={loading} />
-                </div>
-              </div>
-            </div>
-
-            <div>
-              <label className="mb-2 block text-sm font-medium">O（客観）</label>
-              <div className="relative">
-                <textarea
-                  ref={oTextareaRef}
-                  value={oText}
-                  onChange={(e) => setOText(e.target.value)}
-                  className="form-control resize-none"
-                  style={{ maxHeight: `${MAX_TEXTAREA_HEIGHT}px` }}
-                  placeholder="O（任意）"
-                  rows={4}
-                  disabled={loading}
-                />
-                <div className="absolute bottom-3 right-3">
-                  <VoiceInputButton onResult={handleVoiceResultO} disabled={loading} />
-                </div>
-              </div>
+                className="btn btn-sm btn-outline-secondary"
+              >
+                <i className="ph ph-x me-1"></i>
+                クリア
+              </button>
             </div>
           </div>
-        </div>
-      </div>
+          <form className="flex flex-col" style={{ height: 'calc(100vh - 280px)' }}>
+            <Stepper steps={steps} currentStep={currentStep}>
+              <div className="card-body p-4 md:p-6">
+                {/* Step 0: Patient Information */}
+                {currentStep === 0 && (
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-semibold text-gray-700 mb-4">利用者情報</h3>
+                    <div className="space-y-4">
+                      <div>
+                        <label className="mb-2 block text-sm font-medium">
+                          利用者名 <span className="text-red-500">*</span>
+                        </label>
+                        <select
+                          value={selectedPatientId}
+                          onChange={handlePatientChange}
+                          className="form-select"
+                          disabled={loading}
+                          required
+                        >
+                          <option value="">選択してください</option>
+                          {patients.map((patient) => (
+                            <option key={patient.id} value={patient.id}>
+                              {patient.name}
+                            </option>
+                          ))}
+                        </select>
+                        {patients.length === 0 && (
+                          <p className="mt-1 text-xs text-gray-500">
+                            患者が登録されていません。
+                            <a href="/patients" className="text-blue-600 hover:underline ml-1">
+                              患者を登録
+                            </a>
+                          </p>
+                        )}
+                      </div>
 
-      <div className="flex gap-4">
-        <button
-          type="button"
-          onClick={handleGenerate}
-          disabled={loading || !canSubmit}
-          className="btn btn-primary flex-1"
-        >
-          {loading ? (
-            <span className="flex items-center justify-center gap-2">
-              <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
-              生成中...
-            </span>
-          ) : (
-            '要約する（AI）'
-          )}
-        </button>
-        <button type="button" onClick={handleClear} disabled={loading} className="btn btn-outline-secondary flex-1">
-          入力をクリア
-        </button>
-      </div>
+                      <div>
+                        <label className="mb-2 block text-sm font-medium">主疾患</label>
+                        <input
+                          type="text"
+                          value={diagnosis}
+                          onChange={(e) => setDiagnosis(e.target.value)}
+                          className="form-control"
+                          placeholder="主疾患（患者を選択すると自動入力、編集可能）"
+                          disabled={loading}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Step 1: Visit Information */}
+                {currentStep === 1 && (
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-semibold text-gray-700 mb-4">訪問情報</h3>
+                    <div className="space-y-4">
+                      <div>
+                        <label className="mb-2 block text-sm font-medium">看護師名</label>
+                        <div className="flex flex-wrap gap-3">
+                          {NURSE_OPTIONS.map((nurse) => (
+                            <label key={nurse} className="flex items-center space-x-2 cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={selectedNurses.includes(nurse)}
+                                onChange={() => toggleNurse(nurse)}
+                                className="form-check-input input-primary"
+                                disabled={loading}
+                              />
+                              <span>{nurse}</span>
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="mb-2 block text-sm font-medium">訪問日</label>
+                        <input
+                          type="date"
+                          value={visitDate}
+                          onChange={(e) => setVisitDate(e.target.value)}
+                          className="form-control"
+                          disabled={loading}
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="mb-2 block text-sm font-medium">訪問開始時間</label>
+                          <input
+                            type="time"
+                            value={startTime}
+                            onChange={(e) => setStartTime(e.target.value)}
+                            className="form-control"
+                            disabled={loading}
+                          />
+                        </div>
+                        <div>
+                          <label className="mb-2 block text-sm font-medium">訪問終了時間</label>
+                          <input
+                            type="time"
+                            value={endTime}
+                            onChange={(e) => setEndTime(e.target.value)}
+                            className="form-control"
+                            disabled={loading}
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="mb-2 block text-sm font-medium">主訴</label>
+                        <input
+                          type="text"
+                          value={chiefComplaint}
+                          onChange={(e) => setChiefComplaint(e.target.value)}
+                          className="form-control"
+                          placeholder="主訴を入力"
+                          disabled={loading}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Step 2: SOAP Input */}
+                {currentStep === 2 && (
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-semibold text-gray-700 mb-4">SOAP入力</h3>
+                    <div className="space-y-4">
+                      <div>
+                        <label className="mb-2 block text-sm font-medium">S（主観）</label>
+                        <div className="relative">
+                          <textarea
+                            ref={sTextareaRef}
+                            value={sText}
+                            onChange={(e) => setSText(e.target.value)}
+                            className="form-control resize-none"
+                            style={{ maxHeight: `${MAX_TEXTAREA_HEIGHT}px` }}
+                            placeholder="S（任意）"
+                            rows={4}
+                            disabled={loading}
+                          />
+                          <div className="absolute bottom-3 right-3">
+                            <VoiceInputButton onResult={handleVoiceResultS} disabled={loading} />
+                          </div>
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="mb-2 block text-sm font-medium">O（客観）</label>
+                        <div className="relative">
+                          <textarea
+                            ref={oTextareaRef}
+                            value={oText}
+                            onChange={(e) => setOText(e.target.value)}
+                            className="form-control resize-none"
+                            style={{ maxHeight: `${MAX_TEXTAREA_HEIGHT}px` }}
+                            placeholder="O（任意）"
+                            rows={4}
+                            disabled={loading}
+                          />
+                          <div className="absolute bottom-3 right-3">
+                            <VoiceInputButton onResult={handleVoiceResultO} disabled={loading} />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </Stepper>
+            <StepperNavigation
+              currentStep={currentStep}
+              totalSteps={steps.length}
+              onPrevious={handlePreviousStep}
+              onNext={handleNextStep}
+              onSave={handleGenerate}
+              canGoNext={validateStep(currentStep)}
+              isSubmitting={loading}
+              showSave={currentStep === steps.length - 1}
+            />
+          </form>
+        </div>
+      ) : (
+        <div className="flex gap-4">
+          <button
+            type="button"
+            onClick={() => setShowForm(true)}
+            className="btn btn-outline-secondary flex-1"
+          >
+            <i className="ph ph-arrow-left me-2"></i>
+            入力に戻る
+          </button>
+          <button type="button" onClick={handleClear} className="btn btn-outline-secondary flex-1">
+            新規作成
+          </button>
+        </div>
+      )}
 
       {error && (
         <div className="alert alert-danger">
@@ -528,34 +611,41 @@ export default function SOAPTab() {
       )}
 
       {soapOutput && (
-        <div ref={resultsRef} className="space-y-6">
-          <SOAPOutput
-            soapOutput={soapOutput}
-            planOutput={planOutput}
-            visitDate={visitDate || getDefaultValues().visitDate}
-            startTime={startTime || getDefaultValues().startTime}
-            endTime={endTime || getDefaultValues().endTime}
-            selectedNurses={selectedNurses.length > 0 ? selectedNurses : getDefaultValues().selectedNurses}
-            diagnosis={diagnosis || getDefaultValues().diagnosis}
-            patientName={getSelectedPatientName() || getDefaultValues().patientName}
-            onSoapUpdate={setSoapOutput}
-            onPlanUpdate={setPlanOutput}
-          />
+        <div ref={resultsRef} className="flex flex-col" style={{ height: 'calc(100vh - 200px)', maxHeight: 'calc(100vh - 200px)' }}>
+          <div className="card flex-1 flex flex-col overflow-hidden p-0">
+            <div className="flex-1 flex flex-col min-h-0">
+              <SOAPOutput
+                soapOutput={soapOutput}
+                planOutput={planOutput}
+                visitDate={visitDate || getDefaultValues().visitDate}
+                startTime={startTime || getDefaultValues().startTime}
+                endTime={endTime || getDefaultValues().endTime}
+                selectedNurses={selectedNurses.length > 0 ? selectedNurses : getDefaultValues().selectedNurses}
+                diagnosis={diagnosis || getDefaultValues().diagnosis}
+                patientName={getSelectedPatientName() || getDefaultValues().patientName}
+                onSoapUpdate={setSoapOutput}
+                onPlanUpdate={setPlanOutput}
+              />
+            </div>
+          </div>
 
-          <button
-            type="button"
-            onClick={handleCopy}
-            className="btn btn-success w-full"
-          >
-            {copyState === 'copied' ? (
-              <span className="flex items-center justify-center gap-2">
-                <i className="ph ph-check"></i>
-                記録確定しました
-              </span>
-            ) : (
-              '記録確定'
-            )}
-          </button>
+          {/* Fixed Action Bar - Always Visible */}
+          <div className="flex-shrink-0 bg-white border-t border-gray-200 p-4 shadow-lg">
+            <button
+              type="button"
+              onClick={handleCopy}
+              className="btn btn-success w-full min-h-[44px]"
+            >
+              {copyState === 'copied' ? (
+                <span className="flex items-center justify-center gap-2">
+                  <i className="ph ph-check"></i>
+                  記録確定しました
+                </span>
+              ) : (
+                '記録確定'
+              )}
+            </button>
+          </div>
         </div>
       )}
     </div>
