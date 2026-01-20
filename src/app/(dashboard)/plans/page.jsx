@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAuthProfile } from '@/hooks/useAuthProfile';
 import { supabase } from '@/lib/supabase';
 import PlanStatusBadge from '@/components/plans/PlanStatusBadge';
+import PlanCard from '@/components/plans/PlanCard';
 import PDFDownloadButton from '@/components/ai/PDFDownloadButton';
 import PDFPreviewButton from '@/components/ai/PDFPreviewButton';
 import ConfirmDialog from '@/components/ConfirmDialog';
@@ -234,127 +235,186 @@ export default function PlansListPage() {
           </p>
         </div>
       ) : (
-        <div className="overflow-hidden rounded-lg bg-white shadow">
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
-                    患者名
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
-                    期間
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
-                    ステータス
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
-                    作成日
-                  </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium tracking-wider text-gray-500 uppercase">
-                    操作
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200 bg-white">
-                {filteredPlans.map((plan) => {
-                  const patientName = plan.patient?.name || plan.patient_name || '—';
-                  return (
-                    <tr key={plan.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4">
-                        <div className="text-sm font-medium text-gray-900">{patientName}</div>
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-500">
-                        <div>
-                          {formatDate(plan.start_date)} ～ {formatDate(plan.end_date)}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <PlanStatusBadge status={plan.status} />
-                      </td>
-                      <td className="px-6 py-4 text-sm whitespace-nowrap text-gray-500">
-                        {formatDate(plan.created_at)}
-                      </td>
-                      <td className="px-6 py-4 text-right text-sm font-medium whitespace-nowrap">
-                        <div className="flex items-center justify-end gap-2">
-                          <button
-                            onClick={() => router.push(`/plans/${plan.id}/edit`)}
-                            className="text-blue-600 hover:text-blue-900 p-1"
-                            title="編集"
-                          >
-                            <i className="ph ph-pencil"></i>
-                          </button>
-                          <button
-                            onClick={() => {
-                              if (previewPlanId === plan.id && pdfPreviewUrl) {
-                                setPreviewPlanId(null);
-                                setPdfPreviewUrl(null);
-                              } else {
-                                setPreviewPlanId(plan.id);
-                              }
-                            }}
-                            className={`p-1 ${previewPlanId === plan.id && pdfPreviewUrl ? 'text-green-600' : 'text-gray-600'} hover:text-green-700`}
-                            title={previewPlanId === plan.id && pdfPreviewUrl ? 'プレビューを閉じる' : 'PDFプレビュー'}
-                          >
-                            <i className="ph ph-eye"></i>
-                          </button>
-                          <button
-                            onClick={async () => {
-                              try {
-                                const { getSessionFromStorage } = await import('@/lib/sessionStorage');
-                                const session = getSessionFromStorage();
-                                if (!session) {
-                                  alert('認証が必要です。再度ログインしてください。');
-                                  return;
+        <>
+          {/* Desktop: Table View */}
+          <div className="hidden md:block overflow-hidden rounded-lg bg-white shadow">
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
+                      患者名
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
+                      期間
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
+                      ステータス
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
+                      作成日
+                    </th>
+                    <th className="px-6 py-3 text-right text-xs font-medium tracking-wider text-gray-500 uppercase">
+                      操作
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200 bg-white">
+                  {filteredPlans.map((plan) => {
+                    const patientName = plan.patient?.name || plan.patient_name || '—';
+                    return (
+                      <tr key={plan.id} className="hover:bg-gray-50">
+                        <td className="px-6 py-4">
+                          <div className="text-sm font-medium text-gray-900">{patientName}</div>
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-500">
+                          <div>
+                            {formatDate(plan.start_date)} ～ {formatDate(plan.end_date)}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <PlanStatusBadge status={plan.status} />
+                        </td>
+                        <td className="px-6 py-4 text-sm whitespace-nowrap text-gray-500">
+                          {formatDate(plan.created_at)}
+                        </td>
+                        <td className="px-6 py-4 text-right text-sm font-medium whitespace-nowrap">
+                          <div className="flex items-center justify-end gap-2">
+                            <button
+                              onClick={() => router.push(`/plans/${plan.id}/edit`)}
+                              className="text-blue-600 hover:text-blue-900 p-1"
+                              title="編集"
+                            >
+                              <i className="ph ph-pencil"></i>
+                            </button>
+                            <button
+                              onClick={() => {
+                                if (previewPlanId === plan.id && pdfPreviewUrl) {
+                                  setPreviewPlanId(null);
+                                  setPdfPreviewUrl(null);
+                                } else {
+                                  setPreviewPlanId(plan.id);
                                 }
-                                const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || '';
-                                const url = `${BACKEND_URL}/plans/${plan.id}/pdf`;
-                                const response = await fetch(url, {
-                                  method: 'GET',
-                                  headers: {
-                                    'Authorization': `Bearer ${session.access_token}`,
-                                    'ngrok-skip-browser-warning': 'true',
-                                  },
-                                });
-                                if (!response.ok) {
-                                  throw new Error(`PDF生成に失敗しました: ${response.status}`);
+                              }}
+                              className={`p-1 ${previewPlanId === plan.id && pdfPreviewUrl ? 'text-green-600' : 'text-gray-600'} hover:text-green-700`}
+                              title={previewPlanId === plan.id && pdfPreviewUrl ? 'プレビューを閉じる' : 'PDFプレビュー'}
+                            >
+                              <i className="ph ph-eye"></i>
+                            </button>
+                            <button
+                              onClick={async () => {
+                                try {
+                                  const { getSessionFromStorage } = await import('@/lib/sessionStorage');
+                                  const session = getSessionFromStorage();
+                                  if (!session) {
+                                    alert('認証が必要です。再度ログインしてください。');
+                                    return;
+                                  }
+                                  const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || '';
+                                  const url = `${BACKEND_URL}/plans/${plan.id}/pdf`;
+                                  const response = await fetch(url, {
+                                    method: 'GET',
+                                    headers: {
+                                      'Authorization': `Bearer ${session.access_token}`,
+                                      'ngrok-skip-browser-warning': 'true',
+                                    },
+                                  });
+                                  if (!response.ok) {
+                                    throw new Error(`PDF生成に失敗しました: ${response.status}`);
+                                  }
+                                  const blob = await response.blob();
+                                  const blobUrl = window.URL.createObjectURL(blob);
+                                  const link = document.createElement('a');
+                                  link.href = blobUrl;
+                                  link.download = `plan_${plan.id}.pdf`;
+                                  document.body.appendChild(link);
+                                  link.click();
+                                  document.body.removeChild(link);
+                                  window.URL.revokeObjectURL(blobUrl);
+                                } catch (err) {
+                                  console.error('Error downloading PDF:', err);
+                                  alert('PDFのダウンロード中にエラーが発生しました。');
                                 }
-                                const blob = await response.blob();
-                                const blobUrl = window.URL.createObjectURL(blob);
-                                const link = document.createElement('a');
-                                link.href = blobUrl;
-                                link.download = `plan_${plan.id}.pdf`;
-                                document.body.appendChild(link);
-                                link.click();
-                                document.body.removeChild(link);
-                                window.URL.revokeObjectURL(blobUrl);
-                              } catch (err) {
-                                console.error('Error downloading PDF:', err);
-                                alert('PDFのダウンロード中にエラーが発生しました。');
-                              }
-                            }}
-                            className="text-gray-600 hover:text-blue-700 p-1"
-                            title="PDFダウンロード"
-                          >
-                            <i className="ph ph-download"></i>
-                          </button>
-                          <button
-                            onClick={() => handleDelete(plan)}
-                            disabled={deletingPlanId === plan.id}
-                            className="text-red-600 hover:text-red-900 disabled:opacity-50 p-1"
-                            title="削除"
-                          >
-                            <i className="ph ph-trash"></i>
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                              }}
+                              className="text-gray-600 hover:text-blue-700 p-1"
+                              title="PDFダウンロード"
+                            >
+                              <i className="ph ph-download"></i>
+                            </button>
+                            <button
+                              onClick={() => handleDelete(plan)}
+                              disabled={deletingPlanId === plan.id}
+                              className="text-red-600 hover:text-red-900 disabled:opacity-50 p-1"
+                              title="削除"
+                            >
+                              <i className="ph ph-trash"></i>
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           </div>
-        </div>
+
+          {/* Mobile: Card View */}
+          <div className="md:hidden space-y-4">
+            {filteredPlans.map((plan) => (
+              <PlanCard
+                key={plan.id}
+                plan={plan}
+                onEdit={(plan) => router.push(`/plans/${plan.id}/edit`)}
+                onDelete={handleDelete}
+                onPreview={(plan) => {
+                  if (previewPlanId === plan.id && pdfPreviewUrl) {
+                    setPreviewPlanId(null);
+                    setPdfPreviewUrl(null);
+                  } else {
+                    setPreviewPlanId(plan.id);
+                  }
+                }}
+                onDownload={async (plan) => {
+                  try {
+                    const { getSessionFromStorage } = await import('@/lib/sessionStorage');
+                    const session = getSessionFromStorage();
+                    if (!session) {
+                      alert('認証が必要です。再度ログインしてください。');
+                      return;
+                    }
+                    const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || '';
+                    const url = `${BACKEND_URL}/plans/${plan.id}/pdf`;
+                    const response = await fetch(url, {
+                      method: 'GET',
+                      headers: {
+                        'Authorization': `Bearer ${session.access_token}`,
+                        'ngrok-skip-browser-warning': 'true',
+                      },
+                    });
+                    if (!response.ok) {
+                      throw new Error(`PDF生成に失敗しました: ${response.status}`);
+                    }
+                    const blob = await response.blob();
+                    const blobUrl = window.URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.href = blobUrl;
+                    link.download = `plan_${plan.id}.pdf`;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    window.URL.revokeObjectURL(blobUrl);
+                  } catch (err) {
+                    console.error('Error downloading PDF:', err);
+                    alert('PDFのダウンロード中にエラーが発生しました。');
+                  }
+                }}
+                isPreviewActive={previewPlanId === plan.id && !!pdfPreviewUrl}
+                isDeleting={deletingPlanId === plan.id}
+              />
+            ))}
+          </div>
+        </>
       )}
 
       {/* PDF Preview Section */}

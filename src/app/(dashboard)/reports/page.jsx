@@ -6,6 +6,7 @@ import { useAuthProfile } from '@/hooks/useAuthProfile';
 import { supabase } from '@/lib/supabase';
 import { fetchAllReports, deleteReport } from '@/lib/reportApi';
 import ReportStatusBadge from '@/components/reports/ReportStatusBadge';
+import ReportCard from '@/components/reports/ReportCard';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import PDFPreviewButton from '@/components/ai/PDFPreviewButton';
 import PDFDownloadButton from '@/components/ai/PDFDownloadButton';
@@ -288,126 +289,185 @@ export default function ReportsListPage() {
             </p>
           </div>
         ) : (
-          <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white shadow">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
-                    患者名
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
-                    対象月
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
-                    ステータス
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
-                    作成日
-                  </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium tracking-wider text-gray-500 uppercase">
-                    操作
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200 bg-white">
-                {filteredReports.map((report) => (
-                  <tr key={report.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 text-sm font-medium text-gray-900">
-                      {report.patient_name || '不明'}
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-500">
-                      {formatYearMonth(report.year_month)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <ReportStatusBadge status={report.status || 'DRAFT'} />
-                    </td>
-                    <td className="px-6 py-4 text-sm whitespace-nowrap text-gray-500">
-                      {report.created_at
-                        ? new Date(report.created_at).toLocaleDateString('ja-JP')
-                        : '—'}
-                    </td>
-                    <td className="px-6 py-4 text-right text-sm font-medium whitespace-nowrap">
-                      <div className="flex items-center justify-end gap-2">
-                        <button
-                          onClick={() => router.push(`/reports/${report.id}/edit`)}
-                          className="text-blue-600 hover:text-blue-900 p-1"
-                          title="編集"
-                        >
-                          <i className="ph ph-pencil"></i>
-                        </button>
-                        <button
-                          onClick={() => {
-                            if (previewReportId === report.id && pdfPreviewUrl) {
-                              setPreviewReportId(null);
-                              setPdfPreviewUrl(null);
-                            } else {
-                              setPreviewReportId(report.id);
-                            }
-                          }}
-                          className={`p-1 ${previewReportId === report.id && pdfPreviewUrl ? 'text-green-600' : 'text-gray-600'} hover:text-green-700`}
-                          title={previewReportId === report.id && pdfPreviewUrl ? 'プレビューを閉じる' : 'PDFプレビュー'}
-                        >
-                          <i className="ph ph-eye"></i>
-                        </button>
-                        <button
-                          onClick={async () => {
-                            try {
-                              const { getSessionFromStorage } = await import('@/lib/sessionStorage');
-                              const session = getSessionFromStorage();
-                              if (!session) {
-                                alert('認証が必要です。再度ログインしてください。');
-                                return;
-                              }
-                              const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || '';
-                              const url = `${BACKEND_URL}/reports/${report.id}/pdf`;
-                              const response = await fetch(url, {
-                                method: 'GET',
-                                headers: {
-                                  'Authorization': `Bearer ${session.access_token}`,
-                                  'ngrok-skip-browser-warning': 'true',
-                                },
-                              });
-                              if (!response.ok) {
-                                throw new Error(`PDF生成に失敗しました: ${response.status}`);
-                              }
-                              const blob = await response.blob();
-                              const blobUrl = window.URL.createObjectURL(blob);
-                              const link = document.createElement('a');
-                              link.href = blobUrl;
-                              link.download = `report_${report.id}.pdf`;
-                              document.body.appendChild(link);
-                              link.click();
-                              document.body.removeChild(link);
-                              window.URL.revokeObjectURL(blobUrl);
-                            } catch (err) {
-                              console.error('Error downloading PDF:', err);
-                              alert('PDFのダウンロード中にエラーが発生しました。');
-                            }
-                          }}
-                          className="text-gray-600 hover:text-blue-700 p-1"
-                          title="PDFダウンロード"
-                        >
-                          <i className="ph ph-download"></i>
-                        </button>
-                        <button
-                          onClick={() => handleDelete(report)}
-                          disabled={deletingReportId === report.id}
-                          className="text-red-600 hover:text-red-900 p-1 disabled:opacity-50"
-                          title="削除"
-                        >
-                          {deletingReportId === report.id ? (
-                            <div className="h-4 w-4 animate-spin rounded-full border-2 border-red-600 border-t-transparent"></div>
-                          ) : (
-                            <i className="ph ph-trash"></i>
-                          )}
-                        </button>
-                      </div>
-                    </td>
+          <>
+            {/* Desktop: Table View */}
+            <div className="hidden md:block overflow-x-auto rounded-lg border border-gray-200 bg-white shadow">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
+                      患者名
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
+                      対象月
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
+                      ステータス
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
+                      作成日
+                    </th>
+                    <th className="px-6 py-3 text-right text-xs font-medium tracking-wider text-gray-500 uppercase">
+                      操作
+                    </th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody className="divide-y divide-gray-200 bg-white">
+                  {filteredReports.map((report) => (
+                    <tr key={report.id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 text-sm font-medium text-gray-900">
+                        {report.patient_name || '不明'}
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-500">
+                        {formatYearMonth(report.year_month)}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <ReportStatusBadge status={report.status || 'DRAFT'} />
+                      </td>
+                      <td className="px-6 py-4 text-sm whitespace-nowrap text-gray-500">
+                        {report.created_at
+                          ? new Date(report.created_at).toLocaleDateString('ja-JP')
+                          : '—'}
+                      </td>
+                      <td className="px-6 py-4 text-right text-sm font-medium whitespace-nowrap">
+                        <div className="flex items-center justify-end gap-2">
+                          <button
+                            onClick={() => router.push(`/reports/${report.id}/edit`)}
+                            className="text-blue-600 hover:text-blue-900 p-1"
+                            title="編集"
+                          >
+                            <i className="ph ph-pencil"></i>
+                          </button>
+                          <button
+                            onClick={() => {
+                              if (previewReportId === report.id && pdfPreviewUrl) {
+                                setPreviewReportId(null);
+                                setPdfPreviewUrl(null);
+                              } else {
+                                setPreviewReportId(report.id);
+                              }
+                            }}
+                            className={`p-1 ${previewReportId === report.id && pdfPreviewUrl ? 'text-green-600' : 'text-gray-600'} hover:text-green-700`}
+                            title={previewReportId === report.id && pdfPreviewUrl ? 'プレビューを閉じる' : 'PDFプレビュー'}
+                          >
+                            <i className="ph ph-eye"></i>
+                          </button>
+                          <button
+                            onClick={async () => {
+                              try {
+                                const { getSessionFromStorage } = await import('@/lib/sessionStorage');
+                                const session = getSessionFromStorage();
+                                if (!session) {
+                                  alert('認証が必要です。再度ログインしてください。');
+                                  return;
+                                }
+                                const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || '';
+                                const url = `${BACKEND_URL}/reports/${report.id}/pdf`;
+                                const response = await fetch(url, {
+                                  method: 'GET',
+                                  headers: {
+                                    'Authorization': `Bearer ${session.access_token}`,
+                                    'ngrok-skip-browser-warning': 'true',
+                                  },
+                                });
+                                if (!response.ok) {
+                                  throw new Error(`PDF生成に失敗しました: ${response.status}`);
+                                }
+                                const blob = await response.blob();
+                                const blobUrl = window.URL.createObjectURL(blob);
+                                const link = document.createElement('a');
+                                link.href = blobUrl;
+                                link.download = `report_${report.id}.pdf`;
+                                document.body.appendChild(link);
+                                link.click();
+                                document.body.removeChild(link);
+                                window.URL.revokeObjectURL(blobUrl);
+                              } catch (err) {
+                                console.error('Error downloading PDF:', err);
+                                alert('PDFのダウンロード中にエラーが発生しました。');
+                              }
+                            }}
+                            className="text-gray-600 hover:text-blue-700 p-1"
+                            title="PDFダウンロード"
+                          >
+                            <i className="ph ph-download"></i>
+                          </button>
+                          <button
+                            onClick={() => handleDelete(report)}
+                            disabled={deletingReportId === report.id}
+                            className="text-red-600 hover:text-red-900 p-1 disabled:opacity-50"
+                            title="削除"
+                          >
+                            {deletingReportId === report.id ? (
+                              <div className="h-4 w-4 animate-spin rounded-full border-2 border-red-600 border-t-transparent"></div>
+                            ) : (
+                              <i className="ph ph-trash"></i>
+                            )}
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile: Card View */}
+            <div className="md:hidden space-y-4">
+              {filteredReports.map((report) => (
+                <ReportCard
+                  key={report.id}
+                  report={report}
+                  onEdit={(report) => router.push(`/reports/${report.id}/edit`)}
+                  onDelete={handleDelete}
+                  onPreview={(report) => {
+                    if (previewReportId === report.id && pdfPreviewUrl) {
+                      setPreviewReportId(null);
+                      setPdfPreviewUrl(null);
+                    } else {
+                      setPreviewReportId(report.id);
+                    }
+                  }}
+                  onDownload={async (report) => {
+                    try {
+                      const { getSessionFromStorage } = await import('@/lib/sessionStorage');
+                      const session = getSessionFromStorage();
+                      if (!session) {
+                        alert('認証が必要です。再度ログインしてください。');
+                        return;
+                      }
+                      const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || '';
+                      const url = `${BACKEND_URL}/reports/${report.id}/pdf`;
+                      const response = await fetch(url, {
+                        method: 'GET',
+                        headers: {
+                          'Authorization': `Bearer ${session.access_token}`,
+                          'ngrok-skip-browser-warning': 'true',
+                        },
+                      });
+                      if (!response.ok) {
+                        throw new Error(`PDF生成に失敗しました: ${response.status}`);
+                      }
+                      const blob = await response.blob();
+                      const blobUrl = window.URL.createObjectURL(blob);
+                      const link = document.createElement('a');
+                      link.href = blobUrl;
+                      link.download = `report_${report.id}.pdf`;
+                      document.body.appendChild(link);
+                      link.click();
+                      document.body.removeChild(link);
+                      window.URL.revokeObjectURL(blobUrl);
+                    } catch (err) {
+                      console.error('Error downloading PDF:', err);
+                      alert('PDFのダウンロード中にエラーが発生しました。');
+                    }
+                  }}
+                  isPreviewActive={previewReportId === report.id && !!pdfPreviewUrl}
+                  isDeleting={deletingReportId === report.id}
+                />
+              ))}
+            </div>
+          </>
         )}
 
       {/* PDF Preview Section */}
