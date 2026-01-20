@@ -90,13 +90,40 @@ export default function PatientsPage() {
         throw error;
       }
 
-      // Map patient data to display format
+      // Map patient data to display format - include all fields
       const mappedData = (data || []).map((patient) => ({
         ...patient,
         patient_name: patient.name || '',
         main_disease: patient.primary_diagnosis || '',
         patient_address: patient.address || '',
-        patient_contact: patient.contact || ''
+        patient_contact: patient.contact || '',
+        // Map all fields to match formData structure
+        birth_date: patient.birth_date || '',
+        key_person_name: patient.key_person_name || '',
+        key_person_relationship: patient.key_person_relationship || '',
+        key_person_address: patient.key_person_address || '',
+        key_person_contact1: patient.key_person_contact1 || '',
+        key_person_contact2: patient.key_person_contact2 || '',
+        initial_visit_date: patient.initial_visit_date || '',
+        initial_visit_start_hour: patient.initial_visit_start_hour || '',
+        initial_visit_start_minute: patient.initial_visit_start_minute || '',
+        initial_visit_end_hour: patient.initial_visit_end_hour || '',
+        initial_visit_end_minute: patient.initial_visit_end_minute || '',
+        medical_history: patient.medical_history || '',
+        current_illness_history: patient.current_illness_history || '',
+        family_structure: patient.family_structure || '',
+        daily_life_meal_nutrition: patient.daily_life_meal_nutrition || '',
+        daily_life_hygiene: patient.daily_life_hygiene || '',
+        daily_life_medication: patient.daily_life_medication || '',
+        daily_life_sleep: patient.daily_life_sleep || '',
+        daily_life_living_environment: patient.daily_life_living_environment || '',
+        daily_life_family_environment: patient.daily_life_family_environment || '',
+        doctor_name: patient.doctor_name || '',
+        hospital_name: patient.hospital_name || '',
+        hospital_address: patient.hospital_address || '',
+        hospital_phone: patient.hospital_phone || '',
+        recorder_name: patient.recorder_name || '',
+        notes: patient.individual_notes || ''
       }));
       setPatients(mappedData || []);
     } catch (error) {
@@ -206,12 +233,12 @@ export default function PatientsPage() {
   const handleEdit = (record) => {
     setEditingRecord(record);
     setFormData({
-      patient_name: record.patient_name || '',
+      patient_name: record.patient_name || record.name || '',
       gender: record.gender || '',
       birth_date: record.birth_date || '',
       age: record.age ? String(record.age) : '',
-      patient_address: record.patient_address || '',
-      patient_contact: record.patient_contact || '',
+      patient_address: record.patient_address || record.address || '',
+      patient_contact: record.patient_contact || record.contact || '',
       key_person_name: record.key_person_name || '',
       key_person_relationship: record.key_person_relationship || '',
       key_person_address: record.key_person_address || '',
@@ -222,7 +249,7 @@ export default function PatientsPage() {
       initial_visit_start_minute: record.initial_visit_start_minute ? String(record.initial_visit_start_minute) : '',
       initial_visit_end_hour: record.initial_visit_end_hour ? String(record.initial_visit_end_hour) : '',
       initial_visit_end_minute: record.initial_visit_end_minute ? String(record.initial_visit_end_minute) : '',
-      main_disease: record.main_disease || '',
+      main_disease: record.main_disease || record.primary_diagnosis || '',
       medical_history: record.medical_history || '',
       current_illness_history: record.current_illness_history || '',
       family_structure: record.family_structure || '',
@@ -236,7 +263,7 @@ export default function PatientsPage() {
       hospital_name: record.hospital_name || '',
       hospital_address: record.hospital_address || '',
       hospital_phone: record.hospital_phone || '',
-      notes: record.notes || '',
+      notes: record.notes || record.individual_notes || '',
       recorder_name: record.recorder_name || '',
       status: record.status || 'active'
     });
@@ -261,7 +288,7 @@ export default function PatientsPage() {
 
     setProcessingId(editingRecord?.id || 'new');
     try {
-      // Prepare patient data
+      // Prepare patient data - include ALL fields
       const patientData = {
         name: formData.patient_name.trim(),
         gender: formData.gender || null,
@@ -287,16 +314,34 @@ export default function PatientsPage() {
         initial_visit_start_minute: formData.initial_visit_start_minute ? parseInt(formData.initial_visit_start_minute, 10) : null,
         initial_visit_end_hour: formData.initial_visit_end_hour ? parseInt(formData.initial_visit_end_hour, 10) : null,
         initial_visit_end_minute: formData.initial_visit_end_minute ? parseInt(formData.initial_visit_end_minute, 10) : null,
+        daily_life_meal_nutrition: formData.daily_life_meal_nutrition?.trim() || null,
+        daily_life_hygiene: formData.daily_life_hygiene?.trim() || null,
+        daily_life_medication: formData.daily_life_medication?.trim() || null,
+        daily_life_sleep: formData.daily_life_sleep?.trim() || null,
+        daily_life_living_environment: formData.daily_life_living_environment?.trim() || null,
+        daily_life_family_environment: formData.daily_life_family_environment?.trim() || null,
+        recorder_name: formData.recorder_name?.trim() || null,
         individual_notes: formData.notes?.trim() || null,
         status: formData.status || 'active'
       };
 
-      // Remove null/undefined values
+      // Convert empty strings to null, but keep null values for updates
+      // This allows clearing fields when updating
       Object.keys(patientData).forEach(key => {
-        if (patientData[key] === null || patientData[key] === undefined || patientData[key] === '') {
-          delete patientData[key];
+        if (patientData[key] === '') {
+          patientData[key] = null;
         }
       });
+      
+      // For create: remove null values (optional fields)
+      // For update: keep null values to allow clearing fields
+      if (!editingRecord) {
+        Object.keys(patientData).forEach(key => {
+          if (patientData[key] === null || patientData[key] === undefined) {
+            delete patientData[key];
+          }
+        });
+      }
 
       if (editingRecord) {
         // Update existing patient

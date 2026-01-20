@@ -80,6 +80,13 @@ async def create_patient_endpoint(
             initial_visit_start_minute=request.initial_visit_start_minute,
             initial_visit_end_hour=request.initial_visit_end_hour,
             initial_visit_end_minute=request.initial_visit_end_minute,
+            daily_life_meal_nutrition=request.daily_life_meal_nutrition,
+            daily_life_hygiene=request.daily_life_hygiene,
+            daily_life_medication=request.daily_life_medication,
+            daily_life_sleep=request.daily_life_sleep,
+            daily_life_living_environment=request.daily_life_living_environment,
+            daily_life_family_environment=request.daily_life_family_environment,
+            recorder_name=request.recorder_name,
         )
         
         return PatientResponse(**{k: str(v) if k in ["id", "created_at", "updated_at"] or (k in ["birth_date", "initial_visit_date"] and v) else v for k, v in patient_data.items()})
@@ -261,6 +268,13 @@ async def update_patient_endpoint(
             initial_visit_start_minute=request.initial_visit_start_minute,
             initial_visit_end_hour=request.initial_visit_end_hour,
             initial_visit_end_minute=request.initial_visit_end_minute,
+            daily_life_meal_nutrition=request.daily_life_meal_nutrition,
+            daily_life_hygiene=request.daily_life_hygiene,
+            daily_life_medication=request.daily_life_medication,
+            daily_life_sleep=request.daily_life_sleep,
+            daily_life_living_environment=request.daily_life_living_environment,
+            daily_life_family_environment=request.daily_life_family_environment,
+            recorder_name=request.recorder_name,
         )
         
         return PatientResponse(**{k: str(v) if k in ["id", "created_at", "updated_at"] or (k in ["birth_date", "initial_visit_date"] and v) else v for k, v in updated_patient.items()})

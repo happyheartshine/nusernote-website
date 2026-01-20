@@ -130,6 +130,13 @@ class PatientService(BaseDatabaseService):
         initial_visit_start_minute: Optional[int] = None,
         initial_visit_end_hour: Optional[int] = None,
         initial_visit_end_minute: Optional[int] = None,
+        daily_life_meal_nutrition: Optional[str] = None,
+        daily_life_hygiene: Optional[str] = None,
+        daily_life_medication: Optional[str] = None,
+        daily_life_sleep: Optional[str] = None,
+        daily_life_living_environment: Optional[str] = None,
+        daily_life_family_environment: Optional[str] = None,
+        recorder_name: Optional[str] = None,
     ) -> Dict[str, Any]:
         """Create a new patient record."""
         try:
@@ -178,6 +185,13 @@ class PatientService(BaseDatabaseService):
                 "initial_visit_start_minute": initial_visit_start_minute,
                 "initial_visit_end_hour": initial_visit_end_hour,
                 "initial_visit_end_minute": initial_visit_end_minute,
+                "daily_life_meal_nutrition": daily_life_meal_nutrition,
+                "daily_life_hygiene": daily_life_hygiene,
+                "daily_life_medication": daily_life_medication,
+                "daily_life_sleep": daily_life_sleep,
+                "daily_life_living_environment": daily_life_living_environment,
+                "daily_life_family_environment": daily_life_family_environment,
+                "recorder_name": recorder_name,
             }
             
             for field, value in optional_fields.items():
@@ -290,6 +304,13 @@ class PatientService(BaseDatabaseService):
         initial_visit_start_minute: Optional[int] = None,
         initial_visit_end_hour: Optional[int] = None,
         initial_visit_end_minute: Optional[int] = None,
+        daily_life_meal_nutrition: Optional[str] = None,
+        daily_life_hygiene: Optional[str] = None,
+        daily_life_medication: Optional[str] = None,
+        daily_life_sleep: Optional[str] = None,
+        daily_life_living_environment: Optional[str] = None,
+        daily_life_family_environment: Optional[str] = None,
+        recorder_name: Optional[str] = None,
     ) -> Dict[str, Any]:
         """Update a patient record."""
         try:
@@ -340,6 +361,13 @@ class PatientService(BaseDatabaseService):
                 "initial_visit_start_minute": initial_visit_start_minute,
                 "initial_visit_end_hour": initial_visit_end_hour,
                 "initial_visit_end_minute": initial_visit_end_minute,
+                "daily_life_meal_nutrition": daily_life_meal_nutrition,
+                "daily_life_hygiene": daily_life_hygiene,
+                "daily_life_medication": daily_life_medication,
+                "daily_life_sleep": daily_life_sleep,
+                "daily_life_living_environment": daily_life_living_environment,
+                "daily_life_family_environment": daily_life_family_environment,
+                "recorder_name": recorder_name,
             }
             
             for field, value in optional_fields.items():

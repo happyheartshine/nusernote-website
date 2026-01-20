@@ -47,6 +47,17 @@ class PatientCreateRequest(BaseModel):
     initial_visit_start_minute: int | None = Field(None, description="初回訪問開始分")
     initial_visit_end_hour: int | None = Field(None, description="初回訪問終了時")
     initial_visit_end_minute: int | None = Field(None, description="初回訪問終了分")
+    
+    # Daily Life Status
+    daily_life_meal_nutrition: str | None = Field(None, description="日常生活状況 - 食事・栄養")
+    daily_life_hygiene: str | None = Field(None, description="日常生活状況 - 清潔・整容")
+    daily_life_medication: str | None = Field(None, description="日常生活状況 - 服薬")
+    daily_life_sleep: str | None = Field(None, description="日常生活状況 - 睡眠")
+    daily_life_living_environment: str | None = Field(None, description="日常生活状況 - 生活環境")
+    daily_life_family_environment: str | None = Field(None, description="日常生活状況 - 家族環境")
+    
+    # Recorder Information
+    recorder_name: str | None = Field(None, description="記載者")
 
 
 class PatientUpdateRequest(BaseModel):
@@ -95,6 +106,17 @@ class PatientUpdateRequest(BaseModel):
     initial_visit_start_minute: int | None = Field(None, description="初回訪問開始分")
     initial_visit_end_hour: int | None = Field(None, description="初回訪問終了時")
     initial_visit_end_minute: int | None = Field(None, description="初回訪問終了分")
+    
+    # Daily Life Status
+    daily_life_meal_nutrition: str | None = Field(None, description="日常生活状況 - 食事・栄養")
+    daily_life_hygiene: str | None = Field(None, description="日常生活状況 - 清潔・整容")
+    daily_life_medication: str | None = Field(None, description="日常生活状況 - 服薬")
+    daily_life_sleep: str | None = Field(None, description="日常生活状況 - 睡眠")
+    daily_life_living_environment: str | None = Field(None, description="日常生活状況 - 生活環境")
+    daily_life_family_environment: str | None = Field(None, description="日常生活状況 - 家族環境")
+    
+    # Recorder Information
+    recorder_name: str | None = Field(None, description="記載者")
 
 
 class PatientResponse(BaseModel):
@@ -146,6 +168,17 @@ class PatientResponse(BaseModel):
     initial_visit_start_minute: int | None = Field(None, description="初回訪問開始分")
     initial_visit_end_hour: int | None = Field(None, description="初回訪問終了時")
     initial_visit_end_minute: int | None = Field(None, description="初回訪問終了分")
+    
+    # Daily Life Status
+    daily_life_meal_nutrition: str | None = Field(None, description="日常生活状況 - 食事・栄養")
+    daily_life_hygiene: str | None = Field(None, description="日常生活状況 - 清潔・整容")
+    daily_life_medication: str | None = Field(None, description="日常生活状況 - 服薬")
+    daily_life_sleep: str | None = Field(None, description="日常生活状況 - 睡眠")
+    daily_life_living_environment: str | None = Field(None, description="日常生活状況 - 生活環境")
+    daily_life_family_environment: str | None = Field(None, description="日常生活状況 - 家族環境")
+    
+    # Recorder Information
+    recorder_name: str | None = Field(None, description="記載者")
 
 
 class PatientsListResponse(BaseModel):
