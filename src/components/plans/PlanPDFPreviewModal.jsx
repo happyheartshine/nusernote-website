@@ -129,22 +129,22 @@ export default function PlanPDFPreviewModal({ planId, isOpen, onClose, pdfPrevie
   // Mobile: Full-screen modal
   if (isMobile) {
     return (
-      <div className="fixed inset-0 z-50 bg-white flex flex-col overflow-x-hidden">
+      <div className="fixed inset-0 z-50 bg-white flex flex-col overflow-x-hidden" style={{ width: '100vw', maxWidth: '100vw', boxSizing: 'border-box' }}>
         {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 bg-white">
-          <div className="flex items-center gap-3">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 bg-white" style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
+          <div className="flex items-center gap-3 flex-shrink min-w-0">
             <button
               onClick={onClose}
-              className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+              className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0"
               aria-label="戻る"
             >
               <i className="ph ph-arrow-left text-xl"></i>
             </button>
-            <h3 className="text-lg font-semibold text-gray-900">PDF操作</h3>
+            <h3 className="text-lg font-semibold text-gray-900 truncate">PDF操作</h3>
           </div>
           <button
             onClick={onClose}
-            className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+            className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0"
             aria-label="閉じる"
           >
             <i className="ph ph-x text-xl"></i>
@@ -152,9 +152,9 @@ export default function PlanPDFPreviewModal({ planId, isOpen, onClose, pdfPrevie
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto overflow-x-hidden p-3 sm:p-4">
+        <div className="flex-1 overflow-y-auto overflow-x-hidden p-3 sm:p-4" style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
           {/* Mini icon toolbar (mobile) */}
-          <div className="mb-3 flex items-center justify-between gap-2">
+          <div className="mb-3 flex items-center justify-between gap-2" style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
             {/* Back to plans list */}
             <button
               type="button"
@@ -206,29 +206,29 @@ export default function PlanPDFPreviewModal({ planId, isOpen, onClose, pdfPrevie
           {/* Desktop-style buttons stay for md+ via responsive utilities if needed (not shown on mobile) */}
 
           {pdfPreviewUrl && (
-            <div className="mt-3 sm:mt-4 rounded-lg border border-gray-200 bg-white shadow overflow-hidden">
-              <div className="border-b border-gray-200 bg-gray-50 px-3 sm:px-4 py-2.5 sm:py-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm sm:text-base font-semibold text-gray-900">PDFプレビュー</span>
+            <div className="mt-3 sm:mt-4 rounded-lg border border-gray-200 bg-white shadow overflow-hidden" style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
+              <div className="border-b border-gray-200 bg-gray-50 px-3 sm:px-4 py-2.5 sm:py-3" style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-sm sm:text-base font-semibold text-gray-900 truncate flex-shrink min-w-0">PDFプレビュー</span>
                   <button
                     type="button"
                     onClick={() => onPreviewReady(null)}
-                    className="btn btn-sm btn-outline-secondary text-xs sm:text-sm"
+                    className="btn btn-sm btn-outline-secondary text-xs sm:text-sm flex-shrink-0"
                   >
                     閉じる
                   </button>
                 </div>
               </div>
-              <div className="p-0 overflow-hidden">
+              <div className="p-0 overflow-hidden" style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
                 <div
                   className="w-full overflow-hidden"
-                  style={{ height: 'calc(100vh - 280px)', minHeight: '360px' }}
+                  style={{ height: 'calc(100vh - 280px)', minHeight: '360px', width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}
                 >
                   <iframe
                     src={pdfPreviewUrl}
                     title="PDF preview"
                     className="w-full h-full border-0 block"
-                    style={{ maxWidth: '100%' }}
+                    style={{ maxWidth: '100%', width: '100%', boxSizing: 'border-box' }}
                   />
                 </div>
               </div>

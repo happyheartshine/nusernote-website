@@ -388,12 +388,12 @@ export default function SOAPTab() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box', overflowX: 'hidden' }}>
       {showForm ? (
-        <div className="card" style={{ minHeight: 'calc(100vh - 200px)' }}>
-          <div className="card-header">
-            <div className="flex items-center justify-between gap-2">
-              <h5 className="text-sm sm:text-base">入力情報</h5>
+        <div className="card" style={{ minHeight: 'calc(100vh - 200px)', width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
+          <div className="card-header" style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
+            <div className="flex items-center justify-between gap-2" style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
+              <h5 className="text-sm sm:text-base truncate flex-shrink min-w-0">入力情報</h5>
               {/* Mobile: mini clear button */}
               <button
                 type="button"
@@ -416,9 +416,9 @@ export default function SOAPTab() {
               </button>
             </div>
           </div>
-          <form className="flex flex-col" style={{ height: 'calc(100vh - 280px)' }}>
+          <form className="flex flex-col" style={{ height: 'calc(100vh - 280px)', width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
             <Stepper steps={steps} currentStep={currentStep}>
-              <div className="card-body p-4 md:p-6">
+              <div className="card-body p-4 md:p-6" style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box', overflowX: 'hidden' }}>
                 {/* Step 0: Patient Information */}
                 {currentStep === 0 && (
                   <div className="space-y-4">
@@ -472,9 +472,9 @@ export default function SOAPTab() {
                   <div className="space-y-4">
                     <h3 className="text-lg font-semibold text-gray-700 mb-4">訪問情報</h3>
                     <div className="space-y-4">
-                      <div>
+                      <div style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
                         <label className="mb-2 block text-sm font-medium">看護師名</label>
-                        <div className="flex flex-wrap gap-3">
+                        <div className="flex flex-wrap gap-3" style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
                           {NURSE_OPTIONS.map((nurse) => (
                             <label key={nurse} className="flex items-center space-x-2 cursor-pointer">
                               <input
@@ -501,8 +501,8 @@ export default function SOAPTab() {
                         />
                       </div>
 
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
+                      <div className="grid grid-cols-2 gap-4" style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
+                        <div style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
                           <label className="mb-2 block text-sm font-medium">訪問開始時間</label>
                           <input
                             type="time"
@@ -510,9 +510,10 @@ export default function SOAPTab() {
                             onChange={(e) => setStartTime(e.target.value)}
                             className="form-control"
                             disabled={loading}
+                            style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}
                           />
                         </div>
-                        <div>
+                        <div style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
                           <label className="mb-2 block text-sm font-medium">訪問終了時間</label>
                           <input
                             type="time"
@@ -520,6 +521,7 @@ export default function SOAPTab() {
                             onChange={(e) => setEndTime(e.target.value)}
                             className="form-control"
                             disabled={loading}
+                            style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}
                           />
                         </div>
                       </div>
@@ -599,12 +601,12 @@ export default function SOAPTab() {
           </form>
         </div>
       ) : (
-        <div className="flex gap-3 justify-end">
+        <div className="flex gap-3 justify-end" style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box', overflowX: 'hidden' }}>
           {/* Back to input - mini button on mobile, normal on desktop */}
           <button
             type="button"
             onClick={() => setShowForm(true)}
-            className="h-9 w-9 flex items-center justify-center rounded-full border border-gray-300 bg-white text-gray-600 text-lg shadow-sm active:scale-95 transition sm:h-auto sm:w-auto sm:px-3 sm:py-1.5 sm:rounded-md sm:border sm:bg-white sm:text-gray-700"
+            className="h-9 w-9 flex items-center justify-center rounded-full border border-gray-300 bg-white text-gray-600 text-lg shadow-sm active:scale-95 transition sm:h-auto sm:w-auto sm:px-3 sm:py-1.5 sm:rounded-md sm:border sm:bg-white sm:text-gray-700 flex-shrink-0"
             aria-label="入力に戻る"
           >
             <i className="ph ph-arrow-left sm:me-1" />
@@ -614,7 +616,7 @@ export default function SOAPTab() {
           <button
             type="button"
             onClick={handleClear}
-            className="h-9 w-9 flex items-center justify-center rounded-full border border-gray-300 bg-white text-gray-600 text-lg shadow-sm active:scale-95 transition sm:h-auto sm:w-auto sm:px-3 sm:py-1.5 sm:rounded-md sm:border sm:bg-white sm:text-gray-700"
+            className="h-9 w-9 flex items-center justify-center rounded-full border border-gray-300 bg-white text-gray-600 text-lg shadow-sm active:scale-95 transition sm:h-auto sm:w-auto sm:px-3 sm:py-1.5 sm:rounded-md sm:border sm:bg-white sm:text-gray-700 flex-shrink-0"
           >
             <i className="ph ph-plus sm:me-1" />
             <span className="hidden sm:inline">新規作成</span>
@@ -630,9 +632,9 @@ export default function SOAPTab() {
       )}
 
       {soapOutput && (
-        <div ref={resultsRef} className="flex flex-col" style={{ height: 'calc(100vh - 200px)', maxHeight: 'calc(100vh - 200px)' }}>
-          <div className="card flex-1 flex flex-col overflow-hidden p-0">
-            <div className="flex-1 flex flex-col min-h-0">
+        <div ref={resultsRef} className="flex flex-col" style={{ height: 'calc(100vh - 200px)', maxHeight: 'calc(100vh - 200px)', width: '100%', maxWidth: '100%', boxSizing: 'border-box', overflowX: 'hidden' }}>
+          <div className="card flex-1 flex flex-col overflow-hidden p-0" style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
+            <div className="flex-1 flex flex-col min-h-0" style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
               <SOAPOutput
                 soapOutput={soapOutput}
                 planOutput={planOutput}
@@ -649,12 +651,12 @@ export default function SOAPTab() {
           </div>
 
           {/* Fixed Action Bar - Always Visible */}
-          <div className="flex-shrink-0 bg-white border-t border-gray-200 p-3 sm:p-4 shadow-lg flex justify-end">
+          <div className="flex-shrink-0 bg-white border-t border-gray-200 p-3 sm:p-4 shadow-lg flex justify-end" style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
             {/* Mini confirm button on mobile, full label on desktop */}
             <button
               type="button"
               onClick={handleCopy}
-              className="h-10 w-10 flex items-center justify-center rounded-full bg-emerald-500 text-white text-xl shadow-md active:scale-95 transition sm:h-auto sm:w-auto sm:px-4 sm:py-2 sm:rounded-md sm:text-sm sm:min-h-[40px]"
+              className="h-10 w-10 flex items-center justify-center rounded-full bg-emerald-500 text-white text-xl shadow-md active:scale-95 transition sm:h-auto sm:w-auto sm:px-4 sm:py-2 sm:rounded-md sm:text-sm sm:min-h-[40px] flex-shrink-0"
             >
               {copyState === 'copied' ? (
                 <>

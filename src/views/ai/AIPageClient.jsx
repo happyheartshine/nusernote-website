@@ -30,11 +30,11 @@ export default function AIPageClient() {
   };
 
   return (
-    <div className="grid grid-cols-12 gap-6">
-      <div className="col-span-12">
+    <div className="grid grid-cols-12 gap-6" style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box', overflowX: 'hidden' }}>
+      <div className="col-span-12" style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
         <TabNavigation activeTab={activeTab} onTabChange={handleTabChange} />
 
-        <div className="mt-6">
+        <div className="mt-6" style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
           {activeTab === 'soap' && <SOAPTab />}
           {activeTab === 'records' && <RecordsTab />}
         </div>

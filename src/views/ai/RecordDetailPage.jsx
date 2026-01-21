@@ -18,6 +18,18 @@ export default function RecordDetailPage({ recordId }) {
   const [error, setError] = useState(null);
   const [pdfPreviewUrl, setPdfPreviewUrl] = useState(null);
   const [updating, setUpdating] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+  const [pdfDownloadLoading, setPdfDownloadLoading] = useState(false);
+  const [pdfPreviewLoading, setPdfPreviewLoading] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   useEffect(() => {
     if (!recordId) {
@@ -177,6 +189,97 @@ export default function RecordDetailPage({ recordId }) {
     }
   };
 
+  const handleMobileDownload = async () => {
+    if (!record) return;
+
+    setPdfDownloadLoading(true);
+    try {
+      const session = getSessionFromStorage();
+      if (!session) {
+        setError('認証が必要です。再度ログインしてください。');
+        return;
+      }
+
+      const response = await fetch(`${BACKEND_URL}/pdf/visit-report/${record.id}`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'ngrok-skip-browser-warning': 'true',
+        },
+      });
+
+      if (!response.ok) {
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.error || errorData.detail || `エラー: ${response.status}`);
+        } else {
+          throw new Error(`PDF生成に失敗しました: ${response.status}`);
+        }
+      }
+
+      const blob = await response.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = `visit_report_${record.id}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(blobUrl);
+    } catch (err) {
+      console.error('Error downloading PDF:', err);
+      setError(err instanceof Error ? err.message : 'PDFのダウンロード中にエラーが発生しました。');
+    } finally {
+      setPdfDownloadLoading(false);
+    }
+  };
+
+  const handleMobilePreview = async () => {
+    if (pdfPreviewUrl) {
+      setPdfPreviewUrl(null);
+      return;
+    }
+
+    if (!record) return;
+
+    setPdfPreviewLoading(true);
+    try {
+      const session = getSessionFromStorage();
+      if (!session) {
+        setError('認証が必要です。再度ログインしてください。');
+        return;
+      }
+
+      const response = await fetch(`${BACKEND_URL}/pdf/visit-report/${record.id}`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'ngrok-skip-browser-warning': 'true',
+        },
+      });
+
+      if (!response.ok) {
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.error || errorData.detail || `エラー: ${response.status}`);
+        } else {
+          throw new Error(`PDF生成に失敗しました: ${response.status}`);
+        }
+      }
+
+      const blob = await response.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+      setPdfPreviewUrl(blobUrl);
+    } catch (err) {
+      console.error('Error fetching PDF for preview:', err);
+      setError(err instanceof Error ? err.message : 'PDFプレビュー中にエラーが発生しました。');
+    } finally {
+      setPdfPreviewLoading(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Back Button */}
@@ -227,19 +330,54 @@ export default function RecordDetailPage({ recordId }) {
               )}
               
               {!pdfPreviewUrl && (
-                <div className="mb-6 space-y-3">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <PDFDownloadButton
-                      label="訪問看護記録書Ⅱ PDFをダウンロード"
-                      endpoint={`/pdf/visit-report/${record.id}`}
-                      filename={`visit_report_${record.id}.pdf`}
-                    />
-                    <PDFPreviewButton
-                      label={pdfPreviewUrl ? '訪問看護記録書Ⅱ プレビューを閉じる' : '訪問看護記録書Ⅱ をプレビュー'}
-                      endpoint={`/pdf/visit-report/${record.id}`}
-                      isActive={!!pdfPreviewUrl}
-                      onPreviewReady={(url) => setPdfPreviewUrl(url)}
-                    />
+                <div className="mb-6">
+                  {/* Mobile: Mini icon buttons */}
+                  <div className="flex items-center justify-end gap-2 sm:hidden">
+                    <button
+                      type="button"
+                      onClick={handleMobileDownload}
+                      disabled={pdfDownloadLoading}
+                      className="h-9 w-9 flex items-center justify-center rounded-full border border-gray-300 bg-white text-blue-600 text-lg shadow-sm active:scale-95 transition disabled:opacity-60"
+                      title="PDFダウンロード"
+                      aria-label="PDFダウンロード"
+                    >
+                      {pdfDownloadLoading ? (
+                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-blue-600 border-t-transparent" />
+                      ) : (
+                        <i className="ph ph-download" />
+                      )}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleMobilePreview}
+                      disabled={pdfPreviewLoading}
+                      className="h-9 w-9 flex items-center justify-center rounded-full border border-gray-300 bg-white text-purple-600 text-lg shadow-sm active:scale-95 transition disabled:opacity-60"
+                      title="PDFプレビュー"
+                      aria-label="PDFプレビュー"
+                    >
+                      {pdfPreviewLoading ? (
+                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-purple-600 border-t-transparent" />
+                      ) : (
+                        <i className="ph ph-file-pdf" />
+                      )}
+                    </button>
+                  </div>
+
+                  {/* Desktop: Full-width buttons */}
+                  <div className="hidden sm:block space-y-3">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <PDFDownloadButton
+                        label="訪問看護記録書Ⅱ PDFをダウンロード"
+                        endpoint={`/pdf/visit-report/${record.id}`}
+                        filename={`visit_report_${record.id}.pdf`}
+                      />
+                      <PDFPreviewButton
+                        label={pdfPreviewUrl ? '訪問看護記録書Ⅱ プレビューを閉じる' : '訪問看護記録書Ⅱ をプレビュー'}
+                        endpoint={`/pdf/visit-report/${record.id}`}
+                        isActive={!!pdfPreviewUrl}
+                        onPreviewReady={(url) => setPdfPreviewUrl(url)}
+                      />
+                    </div>
                   </div>
                 </div>
               )}
