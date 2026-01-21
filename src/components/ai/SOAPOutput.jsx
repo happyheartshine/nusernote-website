@@ -212,12 +212,12 @@ export default function SOAPOutput({
       {/* Sub-tabs for A and P sections */}
       {(activeTab === 'a' || activeTab === 'p') && (
         <div className="border-b border-gray-200 bg-gray-50 flex-shrink-0">
-          <div className="flex overflow-x-auto">
+          <div className="flex overflow-x-auto scroll-smooth [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]" style={{ WebkitOverflowScrolling: 'touch' }}>
             {(activeTab === 'a' ? assessmentSubTabs : planSubTabs).map((subTab) => (
               <button
                 key={subTab.key}
                 onClick={() => setActiveSubTab(subTab.key)}
-                className={`px-3 py-2 min-h-[44px] text-xs font-medium whitespace-nowrap transition-colors ${
+                className={`px-2 py-2 sm:px-3 min-h-[44px] text-[10px] sm:text-xs font-medium whitespace-nowrap transition-colors flex-shrink-0 ${
                   activeSubTab === subTab.key
                     ? 'bg-white text-primary border-b-2 border-primary'
                     : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
