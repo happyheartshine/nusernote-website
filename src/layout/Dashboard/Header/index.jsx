@@ -15,10 +15,10 @@ export default function Header() {
 
   return (
     <>
-      <header className="pc-header">
-        <div className="header-wrapper flex grow px-[25px] max-sm:px-[15px]">
+      <header className="pc-header max-sm:h-12 max-sm:min-h-0">
+        <div className="header-wrapper flex grow px-[25px] max-sm:px-[12px]">
           <div className="pc-mob-drp me-auto">
-            <ul className="*:min-h-header-height inline-flex *:inline-flex *:items-center">
+            <ul className="*:min-h-header-height max-sm:*:min-h-[44px] inline-flex *:inline-flex *:items-center">
               <li className="pc-h-item pc-sidebar-collapse max-lg:hidden lg:inline-flex">
                 <a
                   href="#"
@@ -45,7 +45,7 @@ export default function Header() {
             </ul>
           </div>
           <div className="ms-auto">
-            <ul className="*:min-h-header-height inline-flex *:inline-flex *:items-center">
+            <ul className="*:min-h-header-height max-sm:*:min-h-[44px] inline-flex *:inline-flex *:items-center">
               <HeaderSetting />
               <HeaderNotification />
               <HeaderUserProfile />

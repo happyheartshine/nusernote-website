@@ -115,14 +115,29 @@ export default function RecordModal({ recordId, onClose }) {
     >
       <div className="relative w-full max-w-4xl max-h-[90vh] bg-white rounded-lg shadow-2xl overflow-hidden flex flex-col">
         <div className="card-header flex items-center justify-between">
-          <h5>
+          <h5 className="text-sm sm:text-base">
             {record
               ? `${record.patient_name} - ${new Date(record.visit_date).toLocaleDateString('ja-JP')}`
               : '記録詳細'}
           </h5>
-          <button onClick={onClose} className="btn btn-sm btn-outline-secondary" aria-label="閉じる">
-            <i className="ph ph-x"></i>
-          </button>
+          <div className="flex items-center gap-2">
+            {/* Mobile: mini close button */}
+            <button
+              onClick={onClose}
+              className="h-8 w-8 flex items-center justify-center rounded-full border border-gray-300 bg-white text-gray-600 text-lg shadow-sm active:scale-95 transition sm:hidden"
+              aria-label="閉じる"
+            >
+              <i className="ph ph-x" />
+            </button>
+            {/* Desktop: original close button */}
+            <button
+              onClick={onClose}
+              className="btn btn-sm btn-outline-secondary hidden sm:inline-flex"
+              aria-label="閉じる"
+            >
+              <i className="ph ph-x"></i>
+            </button>
+          </div>
         </div>
 
         <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
@@ -145,19 +160,76 @@ export default function RecordModal({ recordId, onClose }) {
           {!loading && !error && record && (
             <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
               {!pdfPreviewUrl && (
-                <div className="p-6 pb-4 space-y-3 flex-shrink-0">
+                <div className="p-4 sm:p-6 pb-4 space-y-3 flex-shrink-0">
+                  {/* Mobile: mini icon buttons */}
+                  <div className="flex items-center justify-end gap-2 sm:hidden">
+                    <button
+                      type="button"
+                      className="h-9 w-9 flex items-center justify-center rounded-full border border-gray-300 bg-white text-blue-600 text-lg shadow-sm active:scale-95 transition"
+                      title="PDFダウンロード"
+                      aria-label="PDFダウンロード"
+                      onClick={() => {
+                        // Trigger hidden full-width download button via ref-less click
+                        const hiddenBtn = document.getElementById(`record-download-${record.id}`);
+                        hiddenBtn?.click();
+                      }}
+                    >
+                      <i className="ph ph-download" />
+                    </button>
+                    <button
+                      type="button"
+                      className={`h-9 w-9 flex items-center justify-center rounded-full border shadow-sm active:scale-95 transition ${
+                        pdfPreviewUrl
+                          ? 'border-green-400 bg-green-50 text-green-700'
+                          : 'border-gray-300 bg-white text-purple-600'
+                      }`}
+                      title={pdfPreviewUrl ? 'プレビューを閉じる' : 'PDFプレビュー'}
+                      aria-label={pdfPreviewUrl ? 'プレビューを閉じる' : 'PDFプレビュー'}
+                      onClick={() => {
+                        const hiddenBtn = document.getElementById(`record-preview-${record.id}`);
+                        hiddenBtn?.click();
+                      }}
+                    >
+                      <i className={pdfPreviewUrl ? 'ph ph-eye-slash' : 'ph ph-file-pdf'} />
+                    </button>
+                  </div>
+
+                  {/* Desktop / shared: full-width buttons (hidden on mobile) */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <PDFDownloadButton
-                      label="訪問看護記録書Ⅱ PDFをダウンロード"
-                      endpoint={`/pdf/visit-report/${record.id}`}
-                      filename={`visit_report_${record.id}.pdf`}
-                    />
-                    <PDFPreviewButton
-                      label={pdfPreviewUrl ? '訪問看護記録書Ⅱ プレビューを閉じる' : '訪問看護記録書Ⅱ をプレビュー'} 
-                      endpoint={`/pdf/visit-report/${record.id}`}
-                      isActive={!!pdfPreviewUrl}
-                      onPreviewReady={(url) => setPdfPreviewUrl(url)}
-                    />
+                    <div className="hidden sm:block">
+                      <PDFDownloadButton
+                        label="訪問看護記録書Ⅱ PDFをダウンロード"
+                        endpoint={`/pdf/visit-report/${record.id}`}
+                        filename={`visit_report_${record.id}.pdf`}
+                      />
+                    </div>
+                    <div className="hidden sm:block">
+                      <PDFPreviewButton
+                        label={pdfPreviewUrl ? '訪問看護記録書Ⅱ プレビューを閉じる' : '訪問看護記録書Ⅱ をプレビュー'} 
+                        endpoint={`/pdf/visit-report/${record.id}`}
+                        isActive={!!pdfPreviewUrl}
+                        onPreviewReady={(url) => setPdfPreviewUrl(url)}
+                      />
+                    </div>
+
+                    {/* Hidden controls for mobile mini buttons to trigger */}
+                    <div className="hidden">
+                      <button id={`record-download-${record.id}`} type="button">
+                        <PDFDownloadButton
+                          label="訪問看護記録書Ⅱ PDFをダウンロード"
+                          endpoint={`/pdf/visit-report/${record.id}`}
+                          filename={`visit_report_${record.id}.pdf`}
+                        />
+                      </button>
+                      <button id={`record-preview-${record.id}`} type="button">
+                        <PDFPreviewButton
+                          label={pdfPreviewUrl ? '訪問看護記録書Ⅱ プレビューを閉じる' : '訪問看護記録書Ⅱ をプレビュー'} 
+                          endpoint={`/pdf/visit-report/${record.id}`}
+                          isActive={!!pdfPreviewUrl}
+                          onPreviewReady={(url) => setPdfPreviewUrl(url)}
+                        />
+                      </button>
+                    </div>
                   </div>
                 </div>
               )}

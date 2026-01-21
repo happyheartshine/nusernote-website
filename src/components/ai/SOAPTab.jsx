@@ -392,13 +392,24 @@ export default function SOAPTab() {
       {showForm ? (
         <div className="card" style={{ minHeight: 'calc(100vh - 200px)' }}>
           <div className="card-header">
-            <div className="flex items-center justify-between">
-              <h5>入力情報</h5>
+            <div className="flex items-center justify-between gap-2">
+              <h5 className="text-sm sm:text-base">入力情報</h5>
+              {/* Mobile: mini clear button */}
               <button
                 type="button"
                 onClick={handleClear}
                 disabled={loading}
-                className="btn btn-sm btn-outline-secondary"
+                className="h-8 w-8 flex items-center justify-center rounded-full border border-gray-300 bg-white text-gray-600 text-lg shadow-sm active:scale-95 transition sm:hidden disabled:opacity-60"
+                aria-label="クリア"
+              >
+                <i className="ph ph-x" />
+              </button>
+              {/* Desktop: normal clear button */}
+              <button
+                type="button"
+                onClick={handleClear}
+                disabled={loading}
+                className="btn btn-sm btn-outline-secondary hidden sm:inline-flex"
               >
                 <i className="ph ph-x me-1"></i>
                 クリア
@@ -588,17 +599,25 @@ export default function SOAPTab() {
           </form>
         </div>
       ) : (
-        <div className="flex gap-4">
+        <div className="flex gap-3 justify-end">
+          {/* Back to input - mini button on mobile, normal on desktop */}
           <button
             type="button"
             onClick={() => setShowForm(true)}
-            className="btn btn-outline-secondary flex-1"
+            className="h-9 w-9 flex items-center justify-center rounded-full border border-gray-300 bg-white text-gray-600 text-lg shadow-sm active:scale-95 transition sm:h-auto sm:w-auto sm:px-3 sm:py-1.5 sm:rounded-md sm:border sm:bg-white sm:text-gray-700"
+            aria-label="入力に戻る"
           >
-            <i className="ph ph-arrow-left me-2"></i>
-            入力に戻る
+            <i className="ph ph-arrow-left sm:me-1" />
+            <span className="hidden sm:inline">入力に戻る</span>
           </button>
-          <button type="button" onClick={handleClear} className="btn btn-outline-secondary flex-1">
-            新規作成
+          {/* New record - mini plus on mobile, text on desktop */}
+          <button
+            type="button"
+            onClick={handleClear}
+            className="h-9 w-9 flex items-center justify-center rounded-full border border-gray-300 bg-white text-gray-600 text-lg shadow-sm active:scale-95 transition sm:h-auto sm:w-auto sm:px-3 sm:py-1.5 sm:rounded-md sm:border sm:bg-white sm:text-gray-700"
+          >
+            <i className="ph ph-plus sm:me-1" />
+            <span className="hidden sm:inline">新規作成</span>
           </button>
         </div>
       )}
@@ -630,19 +649,23 @@ export default function SOAPTab() {
           </div>
 
           {/* Fixed Action Bar - Always Visible */}
-          <div className="flex-shrink-0 bg-white border-t border-gray-200 p-4 shadow-lg">
+          <div className="flex-shrink-0 bg-white border-t border-gray-200 p-3 sm:p-4 shadow-lg flex justify-end">
+            {/* Mini confirm button on mobile, full label on desktop */}
             <button
               type="button"
               onClick={handleCopy}
-              className="btn btn-success w-full min-h-[44px]"
+              className="h-10 w-10 flex items-center justify-center rounded-full bg-emerald-500 text-white text-xl shadow-md active:scale-95 transition sm:h-auto sm:w-auto sm:px-4 sm:py-2 sm:rounded-md sm:text-sm sm:min-h-[40px]"
             >
               {copyState === 'copied' ? (
-                <span className="flex items-center justify-center gap-2">
-                  <i className="ph ph-check"></i>
-                  記録確定しました
-                </span>
+                <>
+                  <i className="ph ph-check" />
+                  <span className="hidden sm:inline ms-2">記録確定しました</span>
+                </>
               ) : (
-                '記録確定'
+                <>
+                  <i className="ph ph-check" />
+                  <span className="hidden sm:inline ms-2">記録確定</span>
+                </>
               )}
             </button>
           </div>

@@ -9,6 +9,7 @@ import ReportStatusBadge from '@/components/reports/ReportStatusBadge';
 import ReportCard from '@/components/reports/ReportCard';
 import ReportPDFPreviewModal from '@/components/reports/ReportPDFPreviewModal';
 import ConfirmDialog from '@/components/ConfirmDialog';
+import CollapsibleReportsFilterBar from '@/components/CollapsibleReportsFilterBar';
 
 // ==============================|| REPORTS LIST PAGE ||============================== //
 
@@ -218,58 +219,30 @@ export default function ReportsListPage() {
         />
       )}
       
-      <div className="container mx-auto px-4 py-8">
-      <div className="mb-6">
-        <div className="mb-6 flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">月次報告書一覧</h1>
-            <p className="mt-2 text-gray-600">月次報告書の管理</p>
+      <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-8">
+      <div className="mb-4 sm:mb-6">
+        <div className="mb-4 sm:mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-0">
+          <div className="flex-1">
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">月次報告書一覧</h1>
+            <p className="mt-1 sm:mt-2 text-sm sm:text-base text-gray-600">月次報告書の管理</p>
           </div>
         </div>
 
         {error && (
-          <div className={`alert mb-6 alert-danger`} role="alert">
+          <div className={`alert mb-4 sm:mb-6 alert-danger text-sm sm:text-base`} role="alert">
             <i className="ph ph-x-circle"></i>
             <div>{error}</div>
           </div>
         )}
 
         {/* Filters */}
-        <div className="mb-6 rounded-lg border border-gray-200 bg-white p-4 shadow">
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <div>
-              <label htmlFor="search-patient" className="mb-2 block text-sm font-medium text-gray-700">
-                患者名で検索
-              </label>
-              <input
-                id="search-patient"
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="患者名を入力..."
-                className="form-control"
-              />
-            </div>
-            <div>
-              <label htmlFor="filter-month" className="mb-2 block text-sm font-medium text-gray-700">
-                対象月で絞り込み
-              </label>
-              <select
-                id="filter-month"
-                value={monthFilter}
-                onChange={(e) => setMonthFilter(e.target.value)}
-                className="form-control"
-              >
-                <option value="">すべて</option>
-                {getMonthOptions().map(option => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-        </div>
+        <CollapsibleReportsFilterBar
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          monthFilter={monthFilter}
+          onMonthFilterChange={setMonthFilter}
+          monthOptions={getMonthOptions()}
+        />
 
         {/* Reports Table */}
         {loading ? (

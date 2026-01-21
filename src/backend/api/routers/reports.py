@@ -20,6 +20,7 @@ from services.database_service import (
     DatabaseServiceError,
     create_report,
     delete_report,
+    get_all_reports,
     get_patient_by_id,
     get_report_by_id,
     get_reports_by_patient,
@@ -83,6 +84,50 @@ def convert_report_to_response(report: Dict[str, Any]) -> ReportResponse:
         updated_at=safe_date_str(report.get("updated_at")) or "",
         visit_marks=visit_marks,
     )
+
+
+@router.get(
+    "/reports",
+    response_model=ReportsListResponse,
+    responses={
+        401: {"model": ErrorResponse, "description": "Authentication error"},
+        500: {"model": ErrorResponse, "description": "Internal server error"},
+    },
+    tags=["reports"],
+    summary="Get all reports",
+    description="Fetch all reports (精神科訪問看護報告書) for the authenticated user.",
+)
+async def get_all_reports_endpoint(
+    current_user: dict = Depends(get_current_user),
+) -> ReportsListResponse:
+    """
+    Fetch all reports for the authenticated user.
+    
+    Requires authentication via Supabase JWT token.
+    
+    Returns list of reports ordered by year_month DESC.
+    """
+    try:
+        # Fetch all reports for the user
+        reports_data = get_all_reports(user_id=current_user["user_id"])
+        
+        # Convert to response format
+        reports = [convert_report_to_response(report) for report in reports_data]
+        
+        return ReportsListResponse(reports=reports)
+        
+    except DatabaseServiceError as db_exc:
+        logger.error(f"Database error fetching all reports: {db_exc}")
+        raise HTTPException(
+            status_code=500,
+            detail="報告書の取得中にエラーが発生しました。",
+        ) from db_exc
+    except Exception as exc:  # pragma: no cover - defensive
+        logger.error(f"Unexpected error fetching all reports: {exc}")
+        raise HTTPException(
+            status_code=500,
+            detail="報告書の取得中にエラーが発生しました。",
+        ) from exc
 
 
 @router.get(

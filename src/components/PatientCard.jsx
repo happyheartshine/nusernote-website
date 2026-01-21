@@ -46,83 +46,87 @@ export default function PatientCard({
   return (
     <div className="bg-white rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
       {/* Card Header */}
-      <div className="px-4 py-3 border-b border-gray-200">
+      <div className="px-3 py-2.5 sm:px-4 sm:py-3 border-b border-gray-200">
         <div className="flex items-start justify-between">
           <div className="flex-1">
-            <h3 className="text-lg font-semibold text-gray-900">{patient.patient_name}</h3>
+            <h3 className="text-base sm:text-lg font-semibold text-gray-900 break-words">
+              {patient.patient_name}
+            </h3>
             {patient.main_disease && (
-              <p className="mt-1 text-sm text-gray-600">{patient.main_disease}</p>
+              <p className="mt-0.5 sm:mt-1 text-xs sm:text-sm text-gray-600 break-words">
+                {patient.main_disease}
+              </p>
             )}
           </div>
-          <div className="ml-2">{getStatusBadge(patient.status)}</div>
+          <div className="ml-2 shrink-0">{getStatusBadge(patient.status)}</div>
         </div>
       </div>
 
       {/* Card Body */}
-      <div className="px-4 py-3 space-y-2">
+      <div className="px-3 py-2.5 sm:px-4 sm:py-3 space-y-1.5 sm:space-y-2">
         {patient.initial_visit_date && (
-          <div className="flex items-center text-sm text-gray-600">
-            <i className="ph ph-calendar me-2 text-gray-400"></i>
+          <div className="flex items-center text-xs sm:text-sm text-gray-600">
+            <i className="ph ph-calendar me-1.5 sm:me-2 text-gray-400 text-sm"></i>
             <span>初回訪問: {formatDate(patient.initial_visit_date)}</span>
           </div>
         )}
         {patient.created_at && (
-          <div className="flex items-center text-sm text-gray-600">
-            <i className="ph ph-clock me-2 text-gray-400"></i>
+          <div className="flex items-center text-xs sm:text-sm text-gray-600">
+            <i className="ph ph-clock me-1.5 sm:me-2 text-gray-400 text-sm"></i>
             <span>作成日: {formatDate(patient.created_at)}</span>
           </div>
         )}
       </div>
 
       {/* Card Actions */}
-      <div className="px-4 py-3 border-t border-gray-200 bg-gray-50">
-        <div className="flex items-center justify-between gap-2">
+      <div className="px-3 py-2.5 sm:px-4 sm:py-3 border-t border-gray-200 bg-gray-50">
+        <div className="flex items-center justify-between gap-1.5 sm:gap-2">
           {/* Left Actions */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2">
             <button
               onClick={() => onPlans(patient)}
-              className="p-2 text-green-600 hover:text-green-900 hover:bg-green-50 rounded-lg transition-colors"
+              className="p-1.5 sm:p-2 text-green-600 hover:text-green-900 hover:bg-green-50 rounded-lg transition-colors"
               title="計画書"
             >
-              <i className="ph ph-file-text text-lg"></i>
+              <i className="ph ph-file-text text-base sm:text-lg"></i>
             </button>
             <button
               onClick={() => onReports(patient)}
-              className="p-2 text-blue-600 hover:text-blue-900 hover:bg-blue-50 rounded-lg transition-colors"
+              className="p-1.5 sm:p-2 text-blue-600 hover:text-blue-900 hover:bg-blue-50 rounded-lg transition-colors"
               title="月次報告書"
             >
-              <i className="ph ph-file-doc text-lg"></i>
+              <i className="ph ph-file-doc text-base sm:text-lg"></i>
             </button>
             <button
               onClick={() => onPdfPreview(patient)}
-              className={`p-2 rounded-lg transition-colors ${
+              className={`p-1.5 sm:p-2 rounded-lg transition-colors ${
                 showPdfControls
                   ? 'text-purple-600 hover:text-purple-900 hover:bg-purple-50'
                   : 'text-purple-600 hover:text-purple-900 hover:bg-purple-50'
               }`}
               title={showPdfControls ? 'PDF操作を閉じる' : 'PDF操作を表示'}
             >
-              <i className={`ph ${showPdfControls ? 'ph-eye-slash' : 'ph-file-pdf'} text-lg`}></i>
+              <i className={`ph ${showPdfControls ? 'ph-eye-slash' : 'ph-file-pdf'} text-base sm:text-lg`}></i>
             </button>
           </div>
 
           {/* Right Actions */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2">
             <button
               onClick={() => onEdit(patient)}
               disabled={isProcessing}
-              className="p-2 text-blue-600 hover:text-blue-900 hover:bg-blue-50 rounded-lg transition-colors disabled:opacity-50"
+              className="p-1.5 sm:p-2 text-blue-600 hover:text-blue-900 hover:bg-blue-50 rounded-lg transition-colors disabled:opacity-50"
               title="編集"
             >
-              <i className="ph ph-pencil text-lg"></i>
+              <i className="ph ph-pencil text-base sm:text-lg"></i>
             </button>
             <button
               onClick={() => onDelete(patient)}
               disabled={isProcessing}
-              className="p-2 text-red-600 hover:text-red-900 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
+              className="p-1.5 sm:p-2 text-red-600 hover:text-red-900 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
               title="削除"
             >
-              <i className="ph ph-trash text-lg"></i>
+              <i className="ph ph-trash text-base sm:text-lg"></i>
             </button>
           </div>
         </div>

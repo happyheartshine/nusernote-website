@@ -9,6 +9,7 @@ import PlanCard from '@/components/plans/PlanCard';
 import PlanPDFPreviewModal from '@/components/plans/PlanPDFPreviewModal';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { deletePlan } from '@/lib/planApi';
+import CollapsiblePlansFilterBar from '@/components/CollapsiblePlansFilterBar';
 
 // ==============================|| PLANS LIST PAGE ||============================== //
 
@@ -171,55 +172,28 @@ export default function PlansListPage() {
           type="danger"
         />
       )}
-      <div className="container mx-auto px-4 py-8">
-      <div className="mb-6">
-        <div className="mb-6 flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">訪問看護計画書</h1>
-            <p className="mt-2 text-gray-600">計画書の一覧と管理</p>
+      <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-8">
+      <div className="mb-4 sm:mb-6">
+        <div className="mb-4 sm:mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-0">
+          <div className="flex-1">
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">訪問看護計画書</h1>
+            <p className="mt-1 sm:mt-2 text-sm sm:text-base text-gray-600">計画書の一覧と管理</p>
           </div>
         </div>
 
         {error && (
-          <div className={`alert mb-6 alert-danger`} role="alert">
+          <div className={`alert mb-4 sm:mb-6 alert-danger text-sm sm:text-base`} role="alert">
             <i className="ph ph-x-circle"></i>
             <div>{error}</div>
           </div>
         )}
 
-        <div className="mb-6 rounded-lg bg-white p-6 shadow">
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <div>
-              <label htmlFor="search" className="mb-2 block text-sm font-medium text-gray-700">
-                患者名で検索
-              </label>
-              <input
-                id="search"
-                type="text"
-                placeholder="患者名で検索"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="form-control w-full"
-              />
-            </div>
-            <div>
-              <label htmlFor="status-filter" className="mb-2 block text-sm font-medium text-gray-700">
-                ステータス
-              </label>
-              <select
-                id="status-filter"
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="form-select w-full"
-              >
-                <option value="all">すべて</option>
-                <option value="ACTIVE">有効</option>
-                <option value="CLOSED">終了</option>
-                <option value="ENDED_BY_HOSPITALIZATION">入院により終了</option>
-              </select>
-            </div>
-          </div>
-        </div>
+        <CollapsiblePlansFilterBar
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          statusFilter={statusFilter}
+          onStatusFilterChange={setStatusFilter}
+        />
       </div>
 
       {filteredPlans.length === 0 ? (

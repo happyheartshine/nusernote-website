@@ -1702,6 +1702,49 @@ class ReportService(BaseDatabaseService):
         except Exception as e:
             self._handle_error("fetch reports", e)
     
+    def get_all(
+        self,
+        user_id: str,
+    ) -> list[Dict[str, Any]]:
+        """Fetch all reports for a user."""
+        try:
+            logger.info(f"Fetching all reports for user {user_id}")
+            
+            response = (
+                self.client.table("reports")
+                .select("*")
+                .eq("user_id", user_id)
+                .order("year_month", desc=True)
+                .execute()
+            )
+            
+            if not response.data:
+                logger.info(f"No reports found for user {user_id}")
+                return []
+            
+            # Fetch visit marks for each report
+            reports = []
+            for report in response.data:
+                report_id = report["id"]
+                
+                marks_response = (
+                    self.client.table("report_visit_marks")
+                    .select("*")
+                    .eq("report_id", report_id)
+                    .eq("user_id", user_id)
+                    .order("visit_date")
+                    .execute()
+                )
+                report["visit_marks"] = marks_response.data if marks_response.data else []
+                
+                reports.append(report)
+            
+            logger.info(f"Successfully fetched {len(reports)} reports for user {user_id}")
+            return reports
+            
+        except Exception as e:
+            self._handle_error("fetch all reports", e)
+    
     def get_by_id(self, report_id: str, user_id: str) -> Dict[str, Any]:
         """Fetch a single report by ID with visit marks."""
         try:
@@ -2045,6 +2088,11 @@ def create_report(*args, **kwargs) -> Dict[str, Any]:
 def get_reports_by_patient(*args, **kwargs) -> list[Dict[str, Any]]:
     """Fetch all reports for a specific patient."""
     return _get_report_service().get_by_patient(*args, **kwargs)
+
+
+def get_all_reports(*args, **kwargs) -> list[Dict[str, Any]]:
+    """Fetch all reports for a user."""
+    return _get_report_service().get_all(*args, **kwargs)
 
 
 def get_report_by_id(*args, **kwargs) -> Dict[str, Any]:

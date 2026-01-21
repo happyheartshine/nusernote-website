@@ -654,15 +654,15 @@ export default function PatientsPage() {
           onClose={() => setReportsModalPatient(null)}
         />
       )}
-      <div className="container mx-auto px-4 py-8">
-        <div className="mb-6">
-          <div className="mb-6 flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">利用者基本情報</h1>
-              <p className="mt-2 text-gray-600">患者情報の作成、編集、削除</p>
+      <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-8">
+        <div className="mb-4 sm:mb-6">
+          <div className="mb-4 sm:mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0">
+            <div className="flex-1">
+              <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">利用者基本情報</h1>
+              <p className="mt-1 sm:mt-2 text-sm sm:text-base text-gray-600">患者情報の作成、編集、削除</p>
             </div>
             {!showForm && (
-              <button onClick={handleCreate} className="btn btn-primary">
+              <button onClick={handleCreate} className="btn btn-primary btn-sm sm:btn-md w-full sm:w-auto">
                 <i className="ph ph-plus me-2"></i>
                 新規作成
               </button>
@@ -670,22 +670,22 @@ export default function PatientsPage() {
           </div>
 
           {toast && (
-            <div className={`alert mb-6 ${toast.type === 'success' ? 'alert-success' : 'alert-danger'}`} role="alert">
+            <div className={`alert mb-4 sm:mb-6 text-sm sm:text-base ${toast.type === 'success' ? 'alert-success' : 'alert-danger'}`} role="alert">
               <i className={`ph ${toast.type === 'success' ? 'ph-check-circle' : 'ph-x-circle'}`}></i>
               <div>{toast.message}</div>
             </div>
           )}
 
           {showForm ? (
-            <div className="mb-6 rounded-lg bg-white shadow" style={{ minHeight: 'calc(100vh - 200px)' }}>
-              <div className="p-4 border-b border-gray-200">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-xl font-semibold text-gray-900">
+            <div className="mb-4 sm:mb-6 rounded-lg bg-white shadow" style={{ minHeight: 'calc(100vh - 180px)' }}>
+              <div className="p-3 sm:p-4 border-b border-gray-200">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-0">
+                  <h2 className="text-lg sm:text-xl font-semibold text-gray-900">
                     {editingRecord ? '患者情報の編集' : '新規患者情報の作成'}
                   </h2>
                   <button
                     onClick={handleCancel}
-                    className="btn btn-sm btn-outline-secondary"
+                    className="btn btn-sm btn-outline-secondary w-full sm:w-auto"
                     disabled={!!processingId}
                   >
                     <i className="ph ph-x me-1"></i>
@@ -693,14 +693,14 @@ export default function PatientsPage() {
                   </button>
                 </div>
               </div>
-              <form onSubmit={handleSubmit} className="flex flex-col" style={{ height: 'calc(100vh - 280px)' }}>
+              <form onSubmit={handleSubmit} className="flex flex-col" style={{ height: 'calc(100vh - 240px)' }}>
                 <Stepper steps={steps} currentStep={currentStep}>
-                  <div className="p-4 md:p-6">
+                  <div className="p-3 sm:p-4 md:p-6">
                     {/* Step 0: Patient Information */}
                     {currentStep === 0 && (
-                      <div className="space-y-4">
-                        <h3 className="text-lg font-semibold text-gray-700 mb-4">患者情報</h3>
-                        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                      <div className="space-y-3 sm:space-y-4">
+                        <h3 className="text-base sm:text-lg font-semibold text-gray-700 mb-3 sm:mb-4">患者情報</h3>
+                        <div className="grid grid-cols-1 gap-3 sm:gap-4 md:grid-cols-2">
                           <div>
                             <label htmlFor="patient_name" className="mb-2 block text-sm font-medium text-gray-700">
                               患者名 <span className="text-red-500">*</span>
@@ -791,9 +791,9 @@ export default function PatientsPage() {
 
                     {/* Step 1: Key Person */}
                     {currentStep === 1 && (
-                      <div className="space-y-4">
-                        <h3 className="text-lg font-semibold text-gray-700 mb-4">キーパーソン情報</h3>
-                        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                      <div className="space-y-3 sm:space-y-4">
+                        <h3 className="text-base sm:text-lg font-semibold text-gray-700 mb-3 sm:mb-4">キーパーソン情報</h3>
+                        <div className="grid grid-cols-1 gap-3 sm:gap-4 md:grid-cols-2">
                           <div>
                             <label htmlFor="key_person_name" className="mb-2 block text-sm font-medium text-gray-700">
                               氏名
@@ -865,9 +865,9 @@ export default function PatientsPage() {
 
                     {/* Step 2: Initial Visit */}
                     {currentStep === 2 && (
-                      <div className="space-y-4">
-                        <h3 className="text-lg font-semibold text-gray-700 mb-4">初回訪問情報</h3>
-                        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                      <div className="space-y-3 sm:space-y-4">
+                        <h3 className="text-base sm:text-lg font-semibold text-gray-700 mb-3 sm:mb-4">初回訪問情報</h3>
+                        <div className="grid grid-cols-1 gap-3 sm:gap-4 md:grid-cols-2">
                           <div>
                             <label htmlFor="initial_visit_date" className="mb-2 block text-sm font-medium text-gray-700">
                               初回訪問日
@@ -882,7 +882,7 @@ export default function PatientsPage() {
                             />
                           </div>
                         </div>
-                        <div className="mt-4 grid grid-cols-2 gap-4 md:grid-cols-4">
+                        <div className="mt-3 sm:mt-4 grid grid-cols-2 gap-2 sm:gap-3 md:gap-4 md:grid-cols-4">
                           <div>
                             <label htmlFor="initial_visit_start_hour" className="mb-2 block text-sm font-medium text-gray-700">
                               開始時
@@ -949,8 +949,8 @@ export default function PatientsPage() {
 
                     {/* Step 3: Medical Information */}
                     {currentStep === 3 && (
-                      <div className="space-y-4">
-                        <h3 className="text-lg font-semibold text-gray-700 mb-4">医療情報</h3>
+                      <div className="space-y-3 sm:space-y-4">
+                        <h3 className="text-base sm:text-lg font-semibold text-gray-700 mb-3 sm:mb-4">医療情報</h3>
                         <div className="space-y-4">
                           <div>
                             <label htmlFor="main_disease" className="mb-2 block text-sm font-medium text-gray-700">
@@ -1010,9 +1010,9 @@ export default function PatientsPage() {
 
                     {/* Step 4: Daily Life Status */}
                     {currentStep === 4 && (
-                      <div className="space-y-4">
-                        <h3 className="text-lg font-semibold text-gray-700 mb-4">日常生活状況</h3>
-                        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                      <div className="space-y-3 sm:space-y-4">
+                        <h3 className="text-base sm:text-lg font-semibold text-gray-700 mb-3 sm:mb-4">日常生活状況</h3>
+                        <div className="grid grid-cols-1 gap-3 sm:gap-4 md:grid-cols-2">
                           <div>
                             <label htmlFor="daily_life_meal_nutrition" className="mb-2 block text-sm font-medium text-gray-700">
                               食事・栄養
@@ -1097,9 +1097,9 @@ export default function PatientsPage() {
 
                     {/* Step 5: Doctor Information */}
                     {currentStep === 5 && (
-                      <div className="space-y-4">
-                        <h3 className="text-lg font-semibold text-gray-700 mb-4">主治医情報</h3>
-                        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                      <div className="space-y-3 sm:space-y-4">
+                        <h3 className="text-base sm:text-lg font-semibold text-gray-700 mb-3 sm:mb-4">主治医情報</h3>
+                        <div className="grid grid-cols-1 gap-3 sm:gap-4 md:grid-cols-2">
                           <div>
                             <label htmlFor="doctor_name" className="mb-2 block text-sm font-medium text-gray-700">
                               医師氏名
@@ -1158,8 +1158,8 @@ export default function PatientsPage() {
 
                     {/* Step 6: Additional Information */}
                     {currentStep === 6 && (
-                      <div className="space-y-4">
-                        <h3 className="text-lg font-semibold text-gray-700 mb-4">その他</h3>
+                      <div className="space-y-3 sm:space-y-4">
+                        <h3 className="text-base sm:text-lg font-semibold text-gray-700 mb-3 sm:mb-4">その他</h3>
                         <div className="space-y-4">
                           <div>
                             <label htmlFor="notes" className="mb-2 block text-sm font-medium text-gray-700">
@@ -1174,7 +1174,7 @@ export default function PatientsPage() {
                               className="form-control"
                             />
                           </div>
-                          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                          <div className="grid grid-cols-1 gap-3 sm:gap-4 md:grid-cols-2">
                             <div>
                               <label htmlFor="recorder_name" className="mb-2 block text-sm font-medium text-gray-700">
                                 記載者
@@ -1241,16 +1241,16 @@ export default function PatientsPage() {
         </div>
 
         {loading ? (
-          <div className="flex items-center justify-center py-12">
-            <div className="h-12 w-12 animate-spin rounded-full border-4 border-blue-500 border-t-transparent"></div>
+          <div className="flex items-center justify-center py-8 sm:py-12">
+            <div className="h-10 w-10 sm:h-12 sm:w-12 animate-spin rounded-full border-4 border-blue-500 border-t-transparent"></div>
           </div>
         ) : filteredPatients.length === 0 ? (
-          <div className="rounded-lg bg-white p-12 text-center shadow">
-            <div className="mb-4 inline-flex h-16 w-16 items-center justify-center rounded-full bg-gray-100">
-              <i className="ph ph-user text-4xl text-gray-400"></i>
+          <div className="rounded-lg bg-white p-6 sm:p-8 md:p-12 text-center shadow">
+            <div className="mb-3 sm:mb-4 inline-flex h-12 w-12 sm:h-16 sm:w-16 items-center justify-center rounded-full bg-gray-100">
+              <i className="ph ph-user text-2xl sm:text-3xl md:text-4xl text-gray-400"></i>
             </div>
-            <h3 className="mb-2 text-lg font-semibold text-gray-900">患者情報が見つかりません</h3>
-            <p className="text-gray-600">
+            <h3 className="mb-2 text-base sm:text-lg font-semibold text-gray-900">患者情報が見つかりません</h3>
+            <p className="text-sm sm:text-base text-gray-600">
               {searchQuery || statusFilter !== 'all'
                 ? '検索条件に一致する患者情報がありません。'
                 : '患者情報を作成してください。'}
@@ -1387,15 +1387,15 @@ export default function PatientsPage() {
             )}
 
             {/* Pagination */}
-            <div className="bg-gray-50 px-6 py-3 border-t border-gray-200 rounded-lg">
-              <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-                <div className="text-sm text-gray-500">
+            <div className="bg-gray-50 px-3 sm:px-4 md:px-6 py-3 border-t border-gray-200 rounded-lg">
+              <div className="flex flex-col md:flex-row items-center justify-between gap-3 sm:gap-4">
+                <div className="text-xs sm:text-sm text-gray-500 text-center sm:text-left">
                   全 {filteredPatients.length} 件中 {((currentPage - 1) * pageSize) + 1} - {Math.min(currentPage * pageSize, filteredPatients.length)} 件を表示
                 </div>
                 
                 {/* Pagination Controls */}
                 {Math.ceil(filteredPatients.length / pageSize) > 1 && (
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1 sm:gap-2 flex-wrap justify-center">
                     <button
                       onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
                       disabled={currentPage === 1}

@@ -18,7 +18,7 @@ export default function TabNavigation({ activeTab, onTabChange }) {
             <button
               key={tab.key}
               onClick={() => onTabChange(tab.key)}
-              className={`btn flex-1 ${
+              className={`btn flex-1 text-xs sm:text-sm py-2 sm:py-2.5 ${
                 activeTab === tab.key ? 'btn-primary' : 'btn-outline-secondary'
               }`}
             >
