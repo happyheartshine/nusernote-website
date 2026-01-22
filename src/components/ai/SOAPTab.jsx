@@ -526,7 +526,7 @@ export default function SOAPTab() {
                         </div>
                       </div>
 
-                      <div>
+                      {/* <div>
                         <label className="mb-2 block text-sm font-medium">主訴</label>
                         <input
                           type="text"
@@ -536,7 +536,7 @@ export default function SOAPTab() {
                           placeholder="主訴を入力"
                           disabled={loading}
                         />
-                      </div>
+                      </div> */}
                     </div>
                   </div>
                 )}
