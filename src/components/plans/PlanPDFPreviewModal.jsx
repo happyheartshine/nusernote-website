@@ -129,9 +129,9 @@ export default function PlanPDFPreviewModal({ planId, isOpen, onClose, pdfPrevie
   // Mobile: Full-screen modal
   if (isMobile) {
     return (
-      <div className="fixed inset-0 z-50 bg-white flex flex-col overflow-x-hidden" style={{ width: '100vw', maxWidth: '100vw', boxSizing: 'border-box' }}>
+      <div className="fixed inset-0 z-50 bg-white flex flex-col overflow-x-hidden" style={{ boxSizing: 'border-box' }}>
         {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 bg-white" style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
+        <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 bg-white flex-shrink-0" style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
           <div className="flex items-center gap-3 flex-shrink min-w-0">
             <button
               onClick={onClose}
@@ -152,9 +152,9 @@ export default function PlanPDFPreviewModal({ planId, isOpen, onClose, pdfPrevie
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto overflow-x-hidden p-3 sm:p-4" style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
+        <div className="flex-1 overflow-y-auto overflow-x-hidden p-3 sm:p-4" style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box', minWidth: 0 }}>
           {/* Mini icon toolbar (mobile) */}
-          <div className="mb-3 flex items-center justify-between gap-2" style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
+          <div className="mb-3 flex items-center justify-between gap-2 flex-shrink-0" style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
             {/* Back to plans list */}
             <button
               type="button"
@@ -206,8 +206,8 @@ export default function PlanPDFPreviewModal({ planId, isOpen, onClose, pdfPrevie
           {/* Desktop-style buttons stay for md+ via responsive utilities if needed (not shown on mobile) */}
 
           {pdfPreviewUrl && (
-            <div className="mt-3 sm:mt-4 rounded-lg border border-gray-200 bg-white shadow overflow-hidden" style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
-              <div className="border-b border-gray-200 bg-gray-50 px-3 sm:px-4 py-2.5 sm:py-3" style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
+            <div className="mt-3 sm:mt-4 rounded-lg border border-gray-200 bg-white shadow overflow-hidden" style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box', minWidth: 0 }}>
+              <div className="border-b border-gray-200 bg-gray-50 px-3 sm:px-4 py-2.5 sm:py-3 flex-shrink-0" style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
                 <div className="flex items-center justify-between gap-2">
                   <span className="text-sm sm:text-base font-semibold text-gray-900 truncate flex-shrink min-w-0">PDFプレビュー</span>
                   <button
@@ -219,7 +219,7 @@ export default function PlanPDFPreviewModal({ planId, isOpen, onClose, pdfPrevie
                   </button>
                 </div>
               </div>
-              <div className="p-0 overflow-hidden" style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
+              <div className="p-0 overflow-hidden" style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box', minWidth: 0 }}>
                 <div
                   className="w-full overflow-hidden"
                   style={{ height: 'calc(100vh - 280px)', minHeight: '360px', width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}
@@ -228,7 +228,7 @@ export default function PlanPDFPreviewModal({ planId, isOpen, onClose, pdfPrevie
                     src={pdfPreviewUrl}
                     title="PDF preview"
                     className="w-full h-full border-0 block"
-                    style={{ maxWidth: '100%', width: '100%', boxSizing: 'border-box' }}
+                    style={{ maxWidth: '100%', width: '100%', boxSizing: 'border-box', display: 'block' }}
                   />
                 </div>
               </div>
